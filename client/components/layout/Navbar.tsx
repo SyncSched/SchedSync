@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { signIn } from 'next-auth/react';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -40,13 +41,13 @@ const Navbar = () => {
                   {item}
                 </Link>
               ))}
-              <Link
-                href="/start"
+              <button
+                onClick={()=>signIn()}
                 className="group relative inline-flex items-center justify-center px-6 py-2 font-medium rounded-full text-white bg-gradient-to-r from-indigo-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 transition-all duration-300"
               >
                 <span className="absolute w-full h-full rounded-full bg-white/10 group-hover:scale-110 transition-transform duration-300" />
                 <span className="relative">Start Now</span>
-              </Link>
+              </button>
             </div>
           </div>
 
