@@ -1,16 +1,68 @@
 import express, { Request, Response } from 'express';
-import router from './routes/routes';
+import passport from 'passport';
+import session from 'express-session'
+import cors from 'cors'
+import { generateToken } from './utils/jwt';
+import './utils/passportConfig'
+import { User } from './models/user.model';
+import { attachPublicRoutes } from './routes/routes';
+import { attachPrivateRoutes } from './routes/routes';
+import { authMiddleware } from './middleware/authMiddleware';
 
 const app = express();
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'default_secret',
+    resave: false,
+    saveUninitialized: false,
+  }),
+);
 
+app.use(passport.initialize());
+app.use(passport.session());
 
+app.use(cors());
 app.use(express.json()); 
-app.use('/api', router);
+
+
+app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+app.get(
+  '/auth/google/callback',
+  passport.authenticate('google', {
+    failureRedirect: 'http://localhost:8080/',
+    session: true,
+  }),
+  (req, res) => {
+    const user = req.user as User;
+    console.log(user);
+    if (user) {
+      const token = generateToken({
+        sub: user.id.toString(),
+        email: user.email,
+      })
+      console.log('Login successful. User details:', req.user);
+      res.redirect(`http://localhost:8080/login?token=${token}`);
+    } else {
+      console.log('Login failed. User not authenticated.');
+      res.redirect('http://localhost:8080/');
+    }
+  },
+);
+
+
+//public routes
+attachPublicRoutes(app);
+
+//Middleware call
+app.use('/', authMiddleware);
+
+//private routes
+attachPrivateRoutes(app);
+
+
 
 const PORT = 3000;
-
-
-// Start the server
 app.listen(PORT, () => {
-  console.log(`Server running  on http://localhost:${PORT}`);
+  console.log(`Server is running on http://localhost:${PORT}`);
 });

@@ -1,11 +1,10 @@
-import { Router } from 'express';
 import {createUserHandler,getAllUsersHandler} from '../controllers/user.controller'
 
+export const attachPublicRoutes = (app:any) : void =>{
 
-const router = Router();
+}
 
-router.post('/users', createUserHandler);
-router.get('/users', getAllUsersHandler);
-
-
-export default router;
+export const attachPrivateRoutes = (app:any) :void =>{
+    app.post('/users',createUserHandler);
+    app.get('/users',getAllUsersHandler);
+}
