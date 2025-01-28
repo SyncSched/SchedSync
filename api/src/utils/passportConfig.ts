@@ -40,7 +40,7 @@ passport.use(
           googleId: profile.id,
           email,
           name: profile.displayName,
-          avatarUrl: avatarUrl || undefined,
+          avatarUrl: avatarUrl || null,
         };
 
         // Use the createUser function to create or fetch the user
@@ -65,7 +65,7 @@ passport.serializeUser((user: any, done) => {
 });
 
 // Deserialize user from the session
-passport.deserializeUser(async (id: number, done) => {
+passport.deserializeUser(async (id: string, done) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id },

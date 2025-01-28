@@ -1,11 +1,11 @@
 
 import { PrismaClient } from '@prisma/client';
-import { User } from '../models/user.model';
+import { CreateUserInput, User } from '../models/user.model';
 
 
 const prisma = new PrismaClient();
 
-export const createUser = async (data: Omit<User, 'id' | 'createdAt'>): Promise<User | null> => {
+export const createUser = async (data: CreateUserInput): Promise<User | null> => {
   // Check if the user already exists
   const existingUser = await prisma.user.findUnique({
     where: { email: data.email }, // Assuming `email` is unique

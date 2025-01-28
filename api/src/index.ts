@@ -36,7 +36,7 @@ app.get(
   (req, res) => {
     const user = req.user as User;
     console.log(user);
-    if (user) {
+    if (user && user.id) {
       const token = generateToken({
         sub: user.id.toString(),
         email: user.email,

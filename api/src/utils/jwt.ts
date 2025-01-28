@@ -12,7 +12,7 @@ interface JwtPayload {
 // Function to generate a JWT
 export const generateToken = (payload: JwtPayload): string => {
   return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: '1h', // Token expires in 1 hour
+    expiresIn: '5h', // Token expires in 1 hour
   });
 };
 
