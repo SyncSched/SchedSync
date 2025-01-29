@@ -31,7 +31,7 @@ passport.use(
         const avatarUrl = profile.photos && profile.photos.length > 0 ? profile.photos[0].value : null;
 
         // Validate email before proceeding
-        if (!email) {
+        if (!email || !avatarUrl) {
           return done(new Error('No email found for Google account.'));
         }
 
@@ -40,7 +40,7 @@ passport.use(
           googleId: profile.id,
           email,
           name: profile.displayName,
-          avatarUrl: avatarUrl || null,
+          avatarUrl: avatarUrl,
         };
 
         // Use the createUser function to create or fetch the user

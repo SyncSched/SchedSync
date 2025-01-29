@@ -19,8 +19,8 @@ export interface Task {
     id: string;
     userId: string;
     user: User;
-    originalData?: ScheduleData;
-    adjustments?: Adjustment[];
+    originalData: ScheduleData;
+    adjustments: Adjustment[];
     createdAt: Date;
   }
   
