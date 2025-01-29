@@ -26,7 +26,7 @@ export interface Task {
   
   // Input types for creating/updating
   export type CreateScheduleInput = Omit<Schedule, 'id' | 'createdAt' | 'adjustments'>  & {
-    originalData: any; // Use proper type for your JSON data
+    originalData: ScheduleData; // Use proper type for your JSON data
   };
   export type UpdateScheduleInput = Partial<CreateScheduleInput>;
   

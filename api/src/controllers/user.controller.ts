@@ -28,7 +28,6 @@ import { createUser , getAllUsers } from '../services/user.service';
     }
   };
 
-
-  export const getCurrentUser = (req:Request,res:Response) =>{
+  export const getCurrentUser = (req:Request,res:Response) : void =>{
     res.json({currentUser:req.user});
   };

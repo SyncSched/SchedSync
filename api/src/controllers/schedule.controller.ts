@@ -1,28 +1,27 @@
-import { Request, Response } from 'express';
+import { Request, Response , NextFunction } from 'express';
 import { createSchedule } from '../services/schedule.service';
-import { create } from 'domain';
+import { BadUserInputError, EntityNotFoundError } from '../errors';
 
 
-export const createScheduleHandler = async(req:Request , res:Response): Promise<void> =>{
-    try{
+export const createScheduleHandler = async(req:Request , res:Response, next: NextFunction): Promise<void> => {
+    try {
         const userId = (req.user as { sub: string })?.sub;
         const clientData = req.body;
 
-        if(!userId || !clientData){
-            res.status(400).json({ error: 'User ID error in Middleware and Authentication.' });
-            return;
+        if (!userId || !clientData) {
+            return next(new BadUserInputError({ message: "User ID or client data is missing" }));
         }
-        const createdSchedule = await createSchedule(clientData,userId);
 
-        if(!createdSchedule){
-            res.status(500).json({ error: 'Failed to create schedule.' });
-            return;
+        const createdSchedule = await createSchedule(clientData, userId);
+
+        if (!createdSchedule) {
+            return next(new EntityNotFoundError("Failed to create Schedule"));
         }
-        console.log(createdSchedule);
+
         res.status(201).json(createdSchedule);
-    }catch(error){
-        console.error("Error Creating Schedule",error);
-        res.status(500).json({error:'Failed to created a Schedule'});
+    } catch (error) {
+        next(error); // Delegate to global error handler
     }
 };
+
 

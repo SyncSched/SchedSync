@@ -3,11 +3,13 @@ import passport from 'passport';
 import session from 'express-session'
 import cors from 'cors'
 import { generateToken } from './utils/jwt';
-import './utils/passportConfig'
 import { User } from './models/user.model';
 import { attachPublicRoutes } from './routes/routes';
 import { attachPrivateRoutes } from './routes/routes';
 import { authMiddleware } from './middleware/authMiddleware';
+import { RouteNotFoundError } from './errors';
+import { handleError } from './middleware/error';
+import './utils/passportConfig'
 
 const app = express();
 app.use(
@@ -60,6 +62,9 @@ app.use('/', authMiddleware);
 //private routes
 attachPrivateRoutes(app);
 
+
+app.use((req, _res, next) => next(new RouteNotFoundError(req.originalUrl)));
+app.use(handleError);
 
 
 const PORT = 3000;

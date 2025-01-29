@@ -7,10 +7,11 @@ export const attachPublicRoutes = (app:any) : void =>{
 }
 
 export const attachPrivateRoutes = (app:any) :void =>{
-
-    // app.get('/users',getAllUsersHandler); //This route is not required but working fine
+    
+    app.get('/users',getAllUsersHandler); //This route is not required but working fine
+    
+    
     app.get('/currentUser',getCurrentUser);
-
     //create a Schedule  -> Here we call AI to schedule that day , call only once per day , whenever person opens the website
     app.post('/createSchedule',createScheduleHandler);
 
