@@ -40,8 +40,10 @@ app.get(
     console.log(user);
     if (user && user.id) {
       const token = generateToken({
-        sub: user.id.toString(),
+        id: user.id.toString(),
         email: user.email,
+        name: user.name,
+        avatarUrl: user.avatarUrl
       })
       console.log('Login successful. User details:', req.user);
       res.redirect(`http://localhost:8080/login?token=${token}`);

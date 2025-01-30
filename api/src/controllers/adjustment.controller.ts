@@ -1,30 +1,43 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { createAdjustment } from "../services/adjustment.service";
-import { CreateAdjustmentInput } from "../models/adjustment.model";
+import { CreateAdjustmentInput, AdjustmentDelta } from "../models/adjustment.model";
+import { BadUserInputError } from "../errors";
 
 export const createAdjustmentHandler = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   try {
-    const userId = req.user.id; // From authentication middleware
-    const scheduleId = req.body.schedule_id; // From request body
+    const userId = (req.user as { id: string })?.id;  //This is a bad code -> bypassing TS , Remove this bug
+    if (!userId) {
+      return next(new BadUserInputError({ message: "User ID is missing or not authenticated" }));
+    }
+
+    const { scheduleId, delta } = req.body;
+    if (!scheduleId || typeof scheduleId !== 'string') {
+      return next(new BadUserInputError({ message: "Schedule ID is required" }));
+    }
+    if (!delta || !Array.isArray(delta)) {
+      return next(new BadUserInputError({ message: "Adjustment data is missing or invalid" }));
+    }
+
+    const AdjustmentDeltas: AdjustmentDelta[] = delta.map((item: any) => {
+      if (!item.change_type || !item.details) {
+        throw new Error('Each delta item must have change_type and details');
+      }
+      return item as AdjustmentDelta; 
+    });
 
     const adjustmentInput: CreateAdjustmentInput = {
-      delta: {
-        user_id: userId,
-        schedule_id: scheduleId,
-        delta: req.body.delta
-      }
+      delta: AdjustmentDeltas,
+      scheduleId
     };
-
     const adjustment = await createAdjustment(adjustmentInput);
-    
+
     res.status(201).json(adjustment);
   } catch (error) {
     console.error("Error creating adjustment:", error);
-    res.status(500).json({
-      error: error instanceof Error ? error.message : "Failed to create adjustment"
-    });
+    next(error); 
   }
 };

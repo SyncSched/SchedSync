@@ -5,7 +5,8 @@ import { BadUserInputError, EntityNotFoundError } from '../errors';
 
 export const createScheduleHandler = async(req:Request , res:Response, next: NextFunction): Promise<void> => {
     try {
-        const userId = (req.user as { sub: string })?.sub;
+        const userId = (req.user as { id: string })?.id; //This is a bad code -> bypassing TS , Remove this bug
+        // const userId = req.user?.id;
         const clientData = req.body;
 
         if (!userId || !clientData) {
@@ -20,7 +21,7 @@ export const createScheduleHandler = async(req:Request , res:Response, next: Nex
 
         res.status(201).json(createdSchedule);
     } catch (error) {
-        next(error); // Delegate to global error handler
+        next(error); 
     }
 };
 

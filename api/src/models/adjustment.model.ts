@@ -4,23 +4,21 @@ export interface Adjustment {
     id: string;
     scheduleId: string;
     schedule: Schedule;
-    delta: AdjustmentData;  // Using the type we just defined
+    delta: AdjustmentDelta[];  
     createdAt: Date;
 }
 
-
-export type CreateAdjustmentInput = Omit<Adjustment, 'id' | 'createdAt' | 'schedule'> & {
-  delta: {
-    user_id: string;
-    schedule_id: string;
-    delta: DeltaItem[];
-  };
+export type AdjustmentDelta = {
+  task_id: string;
+  change_type: ChangeType;
+  details: TimeAdjustmentDetails | DurationAdjustmentDetails | TaskAddedDetails | TaskRemovedDetails;
 };
 
-// Define the possible change types
 export type ChangeType = 'time_adjustment' | 'duration_adjustment' | 'task_added' | 'task_removed';
 
-// Define the different types of details based on change type
+export type CreateAdjustmentInput = Omit<Adjustment, 'id' | 'createdAt' | 'schedule'>
+
+
 export type TimeAdjustmentDetails = {
   from_time: string;
   to_time: string;
@@ -42,20 +40,6 @@ export type TaskRemovedDetails = {
   time: string;
   duration: number;
 };
-
-// Define a type for a single delta item
-export type DeltaItem = {
-  task_id: string;
-  change_type: ChangeType;
-  details: TimeAdjustmentDetails | DurationAdjustmentDetails | TaskAddedDetails | TaskRemovedDetails;
-};
-
-// Define the main adjustment type
-export interface AdjustmentData {
-  user_id: string;
-  schedule_id: string;
-  delta: DeltaItem[];
-}
 
 
 // Type guard functions to check the type of details

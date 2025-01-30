@@ -16,6 +16,6 @@ export const attachPrivateRoutes = (app:any) :void =>{
     app.post('/createSchedule',createScheduleHandler);
 
     //create a Adjustment -> We store all these adjustments in Vector DBs inorder to retrive the matched information
-    // app.post('/createAdjustment',createAdjustmentHandler);
+    app.post('/createAdjustment',createAdjustmentHandler);
 
 }

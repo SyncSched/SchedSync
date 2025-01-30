@@ -5,8 +5,10 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 // Define the payload type for the JWT
 interface JwtPayload {
-  sub: string; // User ID
+  id: string; // User ID
   email: string; // User email
+  name: string;
+  avatarUrl: string;
 }
 
 // Function to generate a JWT
