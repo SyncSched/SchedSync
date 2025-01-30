@@ -9,10 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@types/react-beautiful-dnd": "^13.1.8",
     "next": "15.1.6",
     "react": "^19.0.0",
-    "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
