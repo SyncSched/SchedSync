@@ -15,8 +15,28 @@ datasource db {
 
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
+  id        String          @id @default(cuid())
+  email     String          @unique
+  name      String
+  avatarUrl String
+  googleId  String         @unique
+  schedules Schedule[]
+  createdAt DateTime        @default(now())
+}
+
+model Schedule {
+  id           String          @id @default(cuid())
+  userId       String
+  user         User            @relation(fields: [userId], references: [id] , onDelete: Cascade)
+  originalData Json            // Aim to Store the AI-generated schedule
+  adjustments  Adjustment[]    // Link to adjustments made by the user
+  createdAt    DateTime        @default(now())
+}
+
+model Adjustment {
+  id          String    @id @default(cuid())
+  scheduleId  String
+  schedule    Schedule  @relation(fields: [scheduleId], references: [id] , onDelete: Cascade)
+  delta       Json     // Store the transformation delta here
+  createdAt   DateTime  @default(now())
 }
