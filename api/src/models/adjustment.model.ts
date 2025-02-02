@@ -3,20 +3,24 @@ import { Schedule } from "./schedule.model";
 export interface Adjustment {
     id: string;
     scheduleId: string;
-    schedule: Schedule;
-    delta: AdjustmentDelta[];  
-    createdAt: Date;
+    userId: string;
+    task_id: string;
+    change_type: ChangeType;
+    details: TimeAdjustmentDetails | DurationAdjustmentDetails | TaskAddedDetails | TaskRemovedDetails;
+    adjustedAt: Date;
 }
 
-export type AdjustmentDelta = {
-  task_id: string;
-  change_type: ChangeType;
-  details: TimeAdjustmentDetails | DurationAdjustmentDetails | TaskAddedDetails | TaskRemovedDetails;
-};
+
+export type CreateAdjustmentInput = Omit<Adjustment, 'id' | 'adjustedAt' | 'schedule'>
+
+export function parseDetails(details: any): TimeAdjustmentDetails | DurationAdjustmentDetails | TaskAddedDetails | TaskRemovedDetails {
+  // Perform checks and return the parsed object of the correct type
+  // Example: if (details.type === 'timeAdjustment') return details as TimeAdjustmentDetails;
+  return details as TimeAdjustmentDetails | DurationAdjustmentDetails | TaskAddedDetails | TaskRemovedDetails;
+}
 
 export type ChangeType = 'time_adjustment' | 'duration_adjustment' | 'task_added' | 'task_removed';
 
-export type CreateAdjustmentInput = Omit<Adjustment, 'id' | 'createdAt' | 'schedule'>
 
 
 export type TimeAdjustmentDetails = {

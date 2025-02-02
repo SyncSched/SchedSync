@@ -28,15 +28,36 @@ model Schedule {
   id           String          @id @default(cuid())
   userId       String
   user         User            @relation(fields: [userId], references: [id] , onDelete: Cascade)
-  originalData Json            // Aim to Store the AI-generated schedule
+  originalData Task[]            // Aim to Store the AI-generated schedule
   adjustments  Adjustment[]    // Link to adjustments made by the user
   createdAt    DateTime        @default(now())
 }
 
+
+model Task {
+  id        String   @id @default(cuid())
+  name      String
+  time      String   
+  duration  Int
+  scheduleId String
+  schedule  Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+}
+
+
 model Adjustment {
-  id          String    @id @default(cuid())
-  scheduleId  String
-  schedule    Schedule  @relation(fields: [scheduleId], references: [id] , onDelete: Cascade)
-  delta       Json     // Store the transformation delta here
-  createdAt   DateTime  @default(now())
+  id            String    @id @default(cuid())
+  scheduleId    String
+  schedule      Schedule  @relation(fields: [scheduleId], references: [id] , onDelete: Cascade)
+  task_id       String
+  change_type   ChangeType
+  details       Json
+  userId        String
+  adjustedAt    DateTime  @default(now())
+}
+
+enum ChangeType {
+  time_adjustment
+  duration_adjustment
+  task_added
+  task_removed
 }

@@ -1,0 +1,141 @@
+// /lib/api.ts
+
+export interface User {
+    id?: string;
+    email: string;
+    name: string ;
+    avatarUrl: string;
+    googleId: string;
+    schedules?: Schedule[];
+    createdAt: Date;
+}
+
+export interface UserInfo{
+    id?: string;
+    email: string;
+    name: string ;
+    avatarUrl: string;
+}
+
+export interface Schedule {
+    id: string;
+    userId: string;
+    user: User;
+    originalData: Task[];
+    adjustments: Adjustment[];
+    createdAt: Date;
+  }
+
+  export interface Task {
+    id: string;
+    name: string;
+    time: string;    // Time in "HH:MM" format
+    duration: number; // Duration in minutes
+  }
+
+  export interface Adjustment {
+    id: string;
+    scheduleId: string;
+    userId: string;
+    task_id: string;
+    change_type: ChangeType;
+    details: TimeAdjustmentDetails | DurationAdjustmentDetails | TaskAddedDetails | TaskRemovedDetails;
+    adjustedAt: Date;
+}
+
+
+  export type ChangeType = 'time_adjustment' | 'duration_adjustment' | 'task_added' | 'task_removed';
+
+
+
+  export type TimeAdjustmentDetails = {
+    from_time: string;
+    to_time: string;
+  };
+  
+  export type DurationAdjustmentDetails = {
+    from_duration: number;
+    to_duration: number;
+  };
+  
+  export type TaskAddedDetails = {
+    name: string;
+    time: string;
+    duration: number;
+  };
+  
+  export type TaskRemovedDetails = {
+    name: string;
+    time: string;
+    duration: number;
+  };
+
+  export type CreateAdjustmentInput = {
+    userId: string;
+    scheduleId: string;
+    task_id: string;
+    change_type: ChangeType;
+    details: TimeAdjustmentDetails | DurationAdjustmentDetails | TaskAddedDetails | TaskRemovedDetails;
+  }
+  /**
+   * Fetches the schedule for today.
+   * If no schedule exists, it calls the schedule creation endpoint.
+   */
+  export const getTodaySchedule = async (): Promise<Schedule> => {
+    // Try to get today’s schedule
+    const res = await fetch('http://localhost:3000/getSchedule',{
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization' : `Bearer ${getStoredAuthToken()}`
+      },
+      body: JSON.stringify({ date: new Date().toISOString() })
+    });
+    if (!res.ok) {
+      // If not found (or error), create today’s schedule
+      const createRes = await fetch('http://localhost:3000/api/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' , 'Authorization' : `Bearer ${getStoredAuthToken()}` }
+        // Include any necessary body data if required by your API.
+      });
+      if (!createRes.ok) {
+        throw new Error('Failed to create today’s schedule');
+      }
+      return createRes.json();
+    }
+    return res.json();
+  };
+  
+  /**
+   * Sends a createAdjustment API call with the updated task data.
+   */
+  export const createAdjustment = async (adjustmentData: CreateAdjustmentInput): Promise<Adjustment> => {
+    const res = await fetch('http://localhost:3000/createAdjustment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' , 'Authorization' : `Bearer ${getStoredAuthToken()}` },
+      body: JSON.stringify(adjustmentData)
+    });
+    if (!res.ok) {
+      throw new Error('Failed to save adjustment');
+    }
+    return res.json();
+  };
+  
+  /**
+   * Retrieves the current logged-in user.
+   */
+  export const getCurrentUser = async (): Promise<UserInfo> => {
+    console.log(getStoredAuthToken());
+    const res = await fetch('http://localhost:3000/currentUser',{
+        headers:{
+            'Authorization' : `Bearer ${getStoredAuthToken()}`
+        }
+    });
+    if (!res.ok) {
+      throw new Error('Failed to fetch current user');
+    }
+    return res.json();
+  };
+  
+
+  export const getStoredAuthToken = () => localStorage.getItem('authToken');
