@@ -1,12 +1,12 @@
-import { CustomPDFLoader } from "./rag/loaders/CustomPDFLoader";
-import { CustomSplitter } from "./rag/splitters/CustomSplitter";
-import { PineconeManager } from "./rag/vector-stores/PineconeManager";
-import { CustomRetriever } from "./rag/retrievers/CustomRetriever";
-import { CustomQAChain } from "./rag/chains/CustomQAChain";
-import { EmbeddingsManager } from "./rag/embedding/EmbeddingsManager ";
-import { CustomDocument } from "./types/CustomDocument";
-import dotenv from "dotenv";
-import { PineconeDebugger } from "./pineconedebugger";
+// import { CustomPDFLoader } from "./rag/loaders/CustomPDFLoader";
+// import { CustomSplitter } from "./rag/splitters/CustomSplitter";
+import { PineconeManager } from "../rag/vector-stores/PineconeManager";
+// import { CustomRetriever } from "./rag/retrievers/CustomRetriever";
+// import { CustomQAChain } from "./rag/chains/CustomQAChain";
+import { EmbeddingManager } from "../rag/embedding/EmbeddingManager";
+// import { CustomDocument } from "./types/CustomDocument";
+// import dotenv from "dotenv";
+// import { PineconeDebugger } from "./pineconedebugger";
 // import { Ollama } from "@langchain/ollama";
 import { RunnableSequence } from "@langchain/core/runnables";
 import {formatDocumentsAsString } from "langchain/util/document";
@@ -54,6 +54,58 @@ async function callDeepSeekAPI(prompt: string) {
 }
 
 
+export const generateSchedule = async (data:string) => {
+  try{
+      // 3. Initialize Pinecone
+      console.log("starting...")
+      const pinecone = new PineconeManager("rag-index");
+      
+      
+      //3.5 Initialzie Embedders
+      const embeddingsManager = new EmbeddingManager();
+      await pinecone.initializeVectorStore(embeddingsManager.getEmbeddingsModel());
+      console.log("vector db pinecone setup complete")
+      // await pinecone.upsertDocuments(
+      //   docs,
+      //   embeddingsManager.getEmbeddingsModel()
+      // );
+      const vectorStore = pinecone.getVectorStore();
+      const retriever = vectorStore.asRetriever();
+  
+      console.log("got retreiver");
+  
+  
+      const question = "Where did Prudvi Raj Study , give me one word answer?";
+      const chain = RunnableSequence.from([
+        retriever, // Fetch relevant documents
+        formatDocumentsAsString, // Convert docs into a string format for context
+        async (context: string) => {
+          // Predefined question
+  
+          // Construct the prompt with Context, User Data, and Question
+          const prompt = `
+            Context: ${context}
+            
+            User Data: ${data}
+            
+            Question: ${question}
+          `.trim(); // Trim removes extra whitespace
+  
+          // Send the prompt to the DeepSeek API
+          return await callDeepSeekAPI(prompt);
+        },
+      ]);
+    
+      
+      const result = await chain.invoke(question);
+      console.log("Answer:", result);
+
+      return result;
+    
+  }catch(err){
+    console.log("Problem in Schedule generation via RAG");
+  }
+}
 
 
 
@@ -77,7 +129,7 @@ async function main() {
     
     
     //3.5 Initialzie Embedders
-    const embeddingsManager = new EmbeddingsManager();
+    const embeddingsManager = new EmbeddingManager();
     await pinecone.initializeVectorStore(embeddingsManager.getEmbeddingsModel());
     console.log("vector db pinecone setup complete")
     // await pinecone.upsertDocuments(
@@ -108,4 +160,4 @@ async function main() {
   }
 }
 
-main();
+// main();

@@ -1,9 +1,9 @@
 import { createAdjustmentHandler } from '../controllers/adjustment.controller';
-import { createScheduleHandler, getScheduleHandler } from '../controllers/schedule.controller';
+import { createScheduleHandler, generateScheduleHandler, getScheduleHandler } from '../controllers/schedule.controller';
 import {getAllUsersHandler, getCurrentUser} from '../controllers/user.controller'
 
 export const attachPublicRoutes = (app:any) : void =>{
-
+    app.get('/generateSchedule' , generateScheduleHandler);
 }
 
 export const attachPrivateRoutes = (app:any) :void =>{
