@@ -1,4 +1,5 @@
 import { createAdjustmentHandler } from '../controllers/adjustment.controller';
+import { checkOnboardingDataHandler } from '../controllers/onboarding.controller';
 import { createScheduleHandler, generateScheduleHandler, getScheduleHandler } from '../controllers/schedule.controller';
 import {getAllUsersHandler, getCurrentUser} from '../controllers/user.controller'
 
@@ -18,5 +19,8 @@ export const attachPrivateRoutes = (app:any) :void =>{
 
     //create a Adjustment -> We store all these adjustments in Vector DBs inorder to retrive the matched information
     app.post('/createAdjustment',createAdjustmentHandler);
+
+
+    app.get('/checkonboardingdata/:userId', checkOnboardingDataHandler);
 
 }

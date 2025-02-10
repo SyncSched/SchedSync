@@ -15,14 +15,34 @@ datasource db {
 
 
 model User {
-  id        String          @id @default(cuid())
-  email     String          @unique
-  name      String
-  avatarUrl String
-  googleId  String         @unique
-  schedules Schedule[]
-  createdAt DateTime        @default(now())
+  id              String          @id @default(cuid())
+  email           String          @unique
+  name            String
+  avatarUrl       String
+  googleId        String          @unique
+  schedules       Schedule[]
+  onboardingData  OnboardingData? // One-to-one relation
+  createdAt       DateTime        @default(now())
 }
+
+model OnboardingData {
+  id               String   @id @default(cuid())
+  profession       String
+  hobbies         String[]
+  
+  sleepingHours    Int
+  sleepingStart    DateTime
+  sleepingEnd      DateTime
+
+  workingHours     Int
+  workingStart     DateTime
+  workingEnd       DateTime
+
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id]) // One-to-One Relationship
+}
+
+
 
 model Schedule {
   id           String          @id @default(cuid())
