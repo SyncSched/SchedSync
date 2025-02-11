@@ -63,7 +63,16 @@ const Login = () => {
         }
     }, [router]);
 
-  
+    const handleLoginSuccess = async (data: any) => {
+        // Set auth token
+        document.cookie = `authToken=${data.token}; path=/`;
+        
+        // Don't set onboardingComplete cookie here
+        // Let the user go through onboarding
+        
+        router.push('/onboarding');
+    };
+
     return (
         <div className="min-h-screen flex items-stretch">
             {/* Left Panel */}
