@@ -3,7 +3,7 @@ import { createSchedule, getSchedule } from '../services/schedule.service';
 import { BadUserInputError, EntityNotFoundError } from '../errors';
 import { CreateScheduleInput } from '../models/schedule.model';
 import { generateSchedule } from '../workflow';
-import { NE } from '@langchain/core/structured_query';
+import { getOnboardingData } from '../services/onboarding.service';
 
 export const getScheduleHandler = async(req:Request,res:Response,next:NextFunction) : Promise<void> =>{
     try{
@@ -26,18 +26,62 @@ export const getScheduleHandler = async(req:Request,res:Response,next:NextFuncti
 }
 
 export const generateScheduleHandler = async(req:Request , res:Response , next : NextFunction) : Promise<void> =>{
+    const userId = (req.user as {id:string})?.id;
+    if (!userId) {
+        return next(new BadUserInputError({ message: "User ID is missing from request" }));
+    }
 
-    const userData = `
-    Name: Prudvi Raj
-    Hobbies: Reading books, playing chess, cycling
-    Sleep Time: 10:30 PM to 6:00 AM
-    Work: Software Developer at XYZ Company (9:00 AM to 5:00 PM)
-    Preferences: Prefers morning workouts, enjoys a 30-minute meditation session daily, and likes to spend evenings with family.
-    `;
+    // Fetch user onboarding data from the database
+    const onboardingData = await getOnboardingData(userId);
+
+    if (!onboardingData) {
+        return next(new EntityNotFoundError("Onboarding data not found. Please complete onboarding."));
+    }
+    // const onboardingData = {
+    //     id: "clp9z9j6k0001xyz123456abc",
+    //     profession: "Game Developer, Web Developer, Competitive Programmer",
+    //     hobbies: ["Gaming", "Game Development", "Competitive Programming", "Exploring AI"],
+      
+    //     sleepingHours: 6,
+    //     sleepingStart: "2025-02-10T01:30:00.000Z",
+    //     sleepingEnd: "2025-02-10T07:30:00.000Z",
+      
+    //     workingHours: 8,
+    //     workingStart: "2025-02-10T10:00:00.000Z",
+    //     workingEnd: "2025-02-10T18:00:00.000Z",
+      
+    //     userId: "prudviraj123",
+    //     user: {
+    //       id: "prudviraj123"
+    //     }
+    //   };
+      
+      // Convert to a string
+    const userData = JSON.stringify(onboardingData);
+            
 
     console.log(userData,"Sending userdata")
-    const result = await generateSchedule(userData);
-    console.log(result,"this is result");
+    const generatedSchedule  = await generateSchedule(userData);
+    if (!generatedSchedule) {
+        return next(new EntityNotFoundError("Failed to generate schedule"));
+    }
+
+    console.log("Schedule generated successfully:", generatedSchedule);
+
+    const parsedSchedule = typeof generatedSchedule === "string" ? JSON.parse(generatedSchedule) : generatedSchedule;
+
+    const scheduleInput: CreateScheduleInput = {
+        originalData: parsedSchedule, // ✅ Now it's a Task[] instead of string
+        userId,
+    };
+    
+
+    const createdSchedule = await createSchedule(scheduleInput);
+    if (!createdSchedule) {
+        return next(new EntityNotFoundError("Failed to save generated schedule"));
+    }
+
+    res.status(201).json(createdSchedule);
 }
 
 export const createScheduleHandler = async(req:Request , res:Response, next: NextFunction): Promise<void> => {

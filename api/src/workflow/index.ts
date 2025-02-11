@@ -11,7 +11,7 @@ import { EmbeddingManager } from "../rag/embedding/EmbeddingManager";
 import { RunnableSequence } from "@langchain/core/runnables";
 import {formatDocumentsAsString } from "langchain/util/document";
 import axios from "axios";
-
+import { OpenAI } from "openai";
 
 
 
@@ -54,6 +54,27 @@ async function callDeepSeekAPI(prompt: string) {
 }
 
 
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+
+async function callOpenAIAPI(prompt: string) {
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo", 
+      // model: "gpt-4",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.7,
+      max_tokens: 500, // Adjust as needed
+    });
+
+    return response.choices[0].message.content;
+  } catch (error) {
+    console.error("Error calling OpenAI API:", error);
+    throw error;
+  }
+}
+
+
 export const generateSchedule = async (data:string) => {
   try{
       // 3. Initialize Pinecone
@@ -75,7 +96,83 @@ export const generateSchedule = async (data:string) => {
       console.log("got retreiver");
   
   
-      const question = "Where did Prudvi Raj Study , give me one word answer?";
+      const question = `
+      Generate a complete daily schedule based on the provided user data and context. 
+      
+      ### **Schedule Requirements:**
+      1. The schedule must **cover all time slots in the day except sleep time**.
+      2. Activities should be structured logically with appropriate time slots and durations.
+      3. Work hours are fixed (10:00 AM to 6:00 PM UTC) and should be divided into work sessions with breaks.
+      4. Free time should include personal hobbies, meals, and relaxation.
+      5. **NO overlapping time slots.**
+      6. Ensure a balanced distribution of work, breaks, and personal time.
+      
+      ### **Output Format:**
+      The response must be a **valid JSON array** with each entry containing:
+      - "name": The name of the activity.
+      - "time": The start time in **HH:MM** format (24-hour format).
+      - "duration": The duration in **minutes**.
+      
+      ### **Example Output:**
+      [
+        {
+          "name": "Morning Routine",
+          "time": "07:30",
+          "duration": 30
+        },
+        {
+          "name": "Breakfast",
+          "time": "08:00",
+          "duration": 30
+        },
+        {
+          "name": "Competitive Programming",
+          "time": "08:30",
+          "duration": 90
+        },
+        {
+          "name": "Work Block 1",
+          "time": "10:00",
+          "duration": 120
+        },
+        {
+          "name": "Lunch Break",
+          "time": "13:00",
+          "duration": 45
+        },
+        {
+          "name": "Work Block 2",
+          "time": "14:00",
+          "duration": 120
+        },
+        {
+          "name": "Gaming",
+          "time": "18:30",
+          "duration": 60
+        },
+        {
+          "name": "Dinner",
+          "time": "19:30",
+          "duration": 45
+        },
+        {
+          "name": "AI Exploration",
+          "time": "21:00",
+          "duration": 90
+        }
+      ]
+      
+      ### **Strict Output Rules:**
+      1. **Return ONLY the JSON array**. Do NOT include explanations, reasoning, or additional text.
+      2. Ensure valid JSON syntax.
+      3. The schedule must be **fully structured**, covering all available hours except sleep time.
+      
+      **Return only the JSON array and nothing else.**
+      `;
+      
+      
+      
+      
       const chain = RunnableSequence.from([
         retriever, // Fetch relevant documents
         formatDocumentsAsString, // Convert docs into a string format for context
@@ -92,7 +189,8 @@ export const generateSchedule = async (data:string) => {
           `.trim(); // Trim removes extra whitespace
   
           // Send the prompt to the DeepSeek API
-          return await callDeepSeekAPI(prompt);
+          // return await callDeepSeekAPI(prompt);
+          return await callOpenAIAPI(prompt);
         },
       ]);
     
@@ -103,7 +201,7 @@ export const generateSchedule = async (data:string) => {
       return result;
     
   }catch(err){
-    console.log("Problem in Schedule generation via RAG");
+    console.log("Problem in Schedule generation via RAG",err);
   }
 }
 

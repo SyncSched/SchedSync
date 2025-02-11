@@ -16,12 +16,26 @@ interface OnboardingData {
   profession: string;
   hobbies: string[];
   sleepingHours: number;
-  sleepingStart: string;
-  sleepingEnd: string;
+  sleepingStart: Date;
+  sleepingEnd: Date;
   workingHours: number;
-  workingStart: string;
-  workingEnd: string;
+  workingStart: Date;
+  workingEnd: Date;
 }
+
+export const getOnboardingData = async (userId: string): Promise<OnboardingData | null> => {
+  try {
+    const onboardingData = await prisma.onboardingData.findUnique({
+      where: { userId },
+    });
+
+    return onboardingData ? { ...onboardingData, userId } : null;
+  } catch (error) {
+    console.error("Error fetching onboarding data:", error);
+    return null; // Return null in case of errors
+  }
+};
+
 
 export const createOnboardingData = async (data: OnboardingData): Promise<boolean> => {
   try {
