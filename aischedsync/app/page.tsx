@@ -537,13 +537,12 @@ export default function Home() {
           {/* Task List */}
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="text-base md:text-lg font-medium text-[#2C3E50]">Tasks</h2>
+              <h2 className="text-base md:text-lg font-medium text-[#2C3E50] sticky top-0 bg-white z-10">Tasks</h2>
             </div>
 
-            {/* Kanban Columns Container */}
+            {/* Main Kanban Column */}
             <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-              {/* Main Kanban Column */}
-              <div className="flex-1 bg-gray-50 p-3 md:p-4 rounded-lg min-h-[400px] md:min-h-[500px]">
+              <div className="flex-1 bg-gray-50 p-3 md:p-4 rounded-lg min-h-[400px] md:min-h-[500px] overflow-y-auto max-h-[500px] scrollable">
                 {/* Kanban Cards */}
                 <div className="space-y-3 md:space-y-4">
                   {mainTasks.map((task, index) => (
@@ -556,7 +555,7 @@ export default function Home() {
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, 'main', index)}
                       onClick={() => handleTaskClick(task)}
-                      className="bg-white p-3 md:p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                      className="bg-white p-3 md:p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-lg transition-shadow cursor-pointer transform hover:scale-105"
                     >
                       <div className="flex items-start justify-between mb-2">
                         <h3 className="font-medium text-[#2C3E50] text-sm md:text-base">{task.name}</h3>
@@ -664,7 +663,7 @@ export default function Home() {
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   />
                 </div>
-                
+                       
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Duration (minutes)</label>
                   <input
