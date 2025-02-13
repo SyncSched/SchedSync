@@ -1,5 +1,11 @@
 import { Request, Response } from "express";
 import { checkUserOnboarding, createOnboardingData } from "../services/onboarding.service";
+import { User } from "@prisma/client";
+
+// Define the authenticated request type inline
+interface AuthenticatedRequest extends Request {
+  user?: User;
+}
 
 export const checkOnboardingDataHandler = async (req: Request, res: Response) => {
   try {
@@ -18,9 +24,10 @@ export const checkOnboardingDataHandler = async (req: Request, res: Response) =>
   }
 };
 
-export const createOnboardingHandler = async (req: Request, res: Response) => {
+export const createOnboardingHandler = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { userId, profession, hobbies, sleepingHours, sleepingStart, sleepingEnd, workingHours, workingStart, workingEnd } = req.body;
+    const userId = req.user?.id; // Get user ID from req.user
+    const { profession, hobbies, sleepingHours, sleepingStart, sleepingEnd, workingHours, workingStart, workingEnd } = req.body;
 
     // Input validation
     if (!userId) {
