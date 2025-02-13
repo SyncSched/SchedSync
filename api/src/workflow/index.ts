@@ -118,15 +118,16 @@ export const generateSchedule = async (data:string) => {
   
   
       const question = `
-      Generate a complete daily schedule based on the provided user data and context. 
+      Generate a complete daily schedule based on the provided user data, profession, and personal preferences.
       
       ### **Schedule Requirements:**
       1. The schedule must **cover all time slots in the day except sleep time**.
       2. Activities should be structured logically with appropriate time slots and durations.
-      3. Work hours are fixed (10:00 AM to 6:00 PM UTC) and should be divided into work sessions with breaks.
+      3. Work hours should match the user’s profession and can be flexible.
       4. Free time should include personal hobbies, meals, and relaxation.
       5. **NO overlapping time slots.**
       6. Ensure a balanced distribution of work, breaks, and personal time.
+      7. Each schedule should be unique, varying in time slots, activity order, and work session length.
       
       ### **Output Format:**
       The response must be a **valid JSON array** with each entry containing:
@@ -134,65 +135,14 @@ export const generateSchedule = async (data:string) => {
       - "time": The start time in **HH:MM** format (24-hour format).
       - "duration": The duration in **minutes**.
       
-      ### **Example Output:**
-      [
-        {
-          "name": "Morning Routine",
-          "time": "07:30",
-          "duration": 30
-        },
-        {
-          "name": "Breakfast",
-          "time": "08:00",
-          "duration": 30
-        },
-        {
-          "name": "Competitive Programming",
-          "time": "08:30",
-          "duration": 90
-        },
-        {
-          "name": "Work Block 1",
-          "time": "10:00",
-          "duration": 120
-        },
-        {
-          "name": "Lunch Break",
-          "time": "13:00",
-          "duration": 45
-        },
-        {
-          "name": "Work Block 2",
-          "time": "14:00",
-          "duration": 120
-        },
-        {
-          "name": "Gaming",
-          "time": "18:30",
-          "duration": 60
-        },
-        {
-          "name": "Dinner",
-          "time": "19:30",
-          "duration": 45
-        },
-        {
-          "name": "AI Exploration",
-          "time": "21:00",
-          "duration": 90
-        }
-      ]
-      
       ### **Strict Output Rules:**
       1. **Return ONLY the JSON array**. Do NOT include explanations, reasoning, or additional text.
       2. Ensure valid JSON syntax.
       3. The schedule must be **fully structured**, covering all available hours except sleep time.
+      4. Each generated schedule must be unique and adapted to the user's profession and personal routines.
       
       **Return only the JSON array and nothing else.**
       `;
-      
-      
-      
       
       const chain = RunnableSequence.from([
         retriever, // Fetch relevant documents
