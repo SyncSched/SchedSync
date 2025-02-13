@@ -125,7 +125,7 @@ export interface Schedule {
     if (!res.ok) {
       // If not found (or error), create today's schedule
       const createRes = await fetch('http://localhost:3000/generateSchedule', {
-        method: 'POST',
+        method: 'GET',
         headers: { 'Content-Type': 'application/json' , 'Authorization' : `Bearer ${getStoredAuthToken()}` }
         // Include any necessary body data if required by your API.
       });

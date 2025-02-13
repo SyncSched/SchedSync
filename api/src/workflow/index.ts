@@ -12,6 +12,7 @@ import { RunnableSequence } from "@langchain/core/runnables";
 import {formatDocumentsAsString } from "langchain/util/document";
 import axios from "axios";
 import { OpenAI } from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 
 
@@ -73,6 +74,26 @@ async function callOpenAIAPI(prompt: string) {
     throw error;
   }
 }
+
+
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY!);
+
+async function callGeminiAPI(prompt: string) {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Use Gemini 2.0 Flash
+
+    const response = await model.generateContent(prompt);
+    const result = await response.response;
+    
+    return result.text(); // Extract the generated text
+  } catch (error) {
+    console.error("Error calling Gemini API:", error);
+    throw error;
+  }
+}
+
+
 
 
 export const generateSchedule = async (data:string) => {
@@ -190,7 +211,8 @@ export const generateSchedule = async (data:string) => {
   
           // Send the prompt to the DeepSeek API
           // return await callDeepSeekAPI(prompt);
-          return await callOpenAIAPI(prompt);
+          // return await callOpenAIAPI(prompt);
+          return await callGeminiAPI(prompt);
         },
       ]);
     

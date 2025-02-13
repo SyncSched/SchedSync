@@ -34,6 +34,7 @@ export const generateScheduleHandler = async(req:AuthenticatedRequest , res:Resp
 
     // Fetch user onboarding data from the database
     const onboardingData = await getOnboardingData(userId);
+    console.log("users ONBOARDING DATA" , onboardingData);
 
     if (!onboardingData) {
         return next(new EntityNotFoundError("Onboarding data not found. Please complete onboarding."));
@@ -50,8 +51,19 @@ export const generateScheduleHandler = async(req:AuthenticatedRequest , res:Resp
 
     console.log("Schedule generated successfully:", generatedSchedule);
 
-    const parsedSchedule = typeof generatedSchedule === "string" ? JSON.parse(generatedSchedule) : generatedSchedule;
+    let cleanedSchedule = generatedSchedule
+    .trim() // Remove leading/trailing spaces
+    .replace(/^```json/, "") // Remove starting ```json if present
+    .replace(/```$/, ""); // Remove ending ``` if present
 
+    let parsedSchedule;
+    try {
+        parsedSchedule = JSON.parse(cleanedSchedule);
+    } catch (error) {
+      console.error("Error parsing generated schedule:", error);
+      return next(new BadUserInputError({ message: "Invalid schedule format received" }));
+    }
+  
     const scheduleInput: CreateScheduleInput = {
         originalData: parsedSchedule, // ✅ Now it's a Task[] instead of string
         userId,

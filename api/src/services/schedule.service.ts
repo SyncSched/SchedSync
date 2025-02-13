@@ -71,7 +71,7 @@ export const getSchedule = async (
   });
   
   if (!schedule) {
-    throw new Error("Not Created");
+    throw new Error("No Schedule found for today , so we are generating the Schedule for today");
   }
 
   let adjustments = await prisma.adjustment.findMany({
