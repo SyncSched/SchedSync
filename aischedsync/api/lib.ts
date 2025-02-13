@@ -112,30 +112,52 @@ export interface Schedule {
    * Fetches the schedule for today.
    * If no schedule exists, it calls the schedule creation endpoint.
    */
+  let isGeneratingSchedule = false; // Prevent duplicate schedule generation
+
   export const getTodaySchedule = async (): Promise<Schedule> => {
-    // Try to get today's schedule
-    const res = await fetch('http://localhost:3000/getSchedule',{
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization' : `Bearer ${getStoredAuthToken()}`
-      },
-      body: JSON.stringify({ date: new Date().toISOString() })
-    });
-    if (!res.ok) {
-      // If not found (or error), create today's schedule
-      const createRes = await fetch('http://localhost:3000/generateSchedule', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' , 'Authorization' : `Bearer ${getStoredAuthToken()}` }
-        // Include any necessary body data if required by your API.
+    try {
+      const res = await fetch('http://localhost:3000/getSchedule', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getStoredAuthToken()}`
+        },
+        body: JSON.stringify({ date: new Date().toISOString() })
       });
-      if (!createRes.ok) {
-        throw new Error("Failed to create today's schedule");
+  
+      if (res.ok) {
+        return res.json();
       }
-      return createRes.json();
+  
+      // If not found, try generating a new schedulee
+      if (!isGeneratingSchedule) {
+        isGeneratingSchedule = true; // Lock to prevent duplicate calls
+  
+        const createRes = await fetch('http://localhost:3000/generateSchedule', {
+          method: 'GET',
+          headers: { 
+            'Content-Type': 'application/json', 
+            'Authorization': `Bearer ${getStoredAuthToken()}`
+          }
+        });
+  
+        isGeneratingSchedule = false; // Unlock after response
+  
+        if (!createRes.ok) {
+          throw new Error("Failed to create today's schedule");
+        }
+        return createRes.json();
+      } else {
+        console.warn("Schedule generation already in progress. Skipping duplicate request.");
+        throw new Error("Duplicate schedule generation request blocked.");
+      }
+    } catch (error) {
+      isGeneratingSchedule = false; // Ensure it's unlocked in case of errors
+      console.error("Error in getTodaySchedule:", error);
+      throw error;
     }
-    return res.json();
   };
+  
   
   /**
    * Sends a createAdjustment API call with the updated task data.
