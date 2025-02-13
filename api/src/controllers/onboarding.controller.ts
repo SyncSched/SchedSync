@@ -1,11 +1,8 @@
 import { Request, Response } from "express";
 import { checkUserOnboarding, createOnboardingData } from "../services/onboarding.service";
-import { User } from "@prisma/client";
-
+import { AuthenticatedRequest } from "../types/request";
 // Define the authenticated request type inline
-interface AuthenticatedRequest extends Request {
-  user?: User;
-}
+
 
 export const checkOnboardingDataHandler = async (req: Request, res: Response) => {
   try {

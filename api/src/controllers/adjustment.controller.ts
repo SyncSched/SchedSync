@@ -4,14 +4,15 @@ import { createTask } from "../services/task.service";
 import { CreateAdjustmentInput } from "../models/adjustment.model";
 import { BadUserInputError } from "../errors";
 import { Task } from "../models/schedule.model";
+import { AuthenticatedRequest } from "../types/request";
 
 export const createAdjustmentHandler = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const userId = (req.user as { id: string })?.id;  //This is a bad code -> bypassing TS , Remove this bug
+    const userId = req.user?.id;  //This is a bad code -> bypassing TS , Remove this bug
     if (!userId) {
       return next(new BadUserInputError({ message: "User ID is missing or not authenticated" }));
     }

@@ -4,10 +4,11 @@ import { BadUserInputError, EntityNotFoundError } from '../errors';
 import { CreateScheduleInput } from '../models/schedule.model';
 import { generateSchedule } from '../workflow';
 import { getOnboardingData } from '../services/onboarding.service';
+import { AuthenticatedRequest } from '../types/request';
 
-export const getScheduleHandler = async(req:Request,res:Response,next:NextFunction) : Promise<void> =>{
+export const getScheduleHandler = async(req:AuthenticatedRequest,res:Response,next:NextFunction) : Promise<void> =>{
     try{
-        const userId = (req.user as {id:string})?.id;
+        const userId = req.user?.id;
         const date = req.body.date;
 
         if(!userId || !date){
@@ -25,8 +26,8 @@ export const getScheduleHandler = async(req:Request,res:Response,next:NextFuncti
     }
 }
 
-export const generateScheduleHandler = async(req:Request , res:Response , next : NextFunction) : Promise<void> =>{
-    const userId = (req.user as {id:string})?.id;
+export const generateScheduleHandler = async(req:AuthenticatedRequest , res:Response , next : NextFunction) : Promise<void> =>{
+    const userId = req.user?.id;
     if (!userId) {
         return next(new BadUserInputError({ message: "User ID is missing from request" }));
     }
@@ -37,24 +38,6 @@ export const generateScheduleHandler = async(req:Request , res:Response , next :
     if (!onboardingData) {
         return next(new EntityNotFoundError("Onboarding data not found. Please complete onboarding."));
     }
-    // const onboardingData = {
-    //     id: "clp9z9j6k0001xyz123456abc",
-    //     profession: "Game Developer, Web Developer, Competitive Programmer",
-    //     hobbies: ["Gaming", "Game Development", "Competitive Programming", "Exploring AI"],
-      
-    //     sleepingHours: 6,
-    //     sleepingStart: "2025-02-10T01:30:00.000Z",
-    //     sleepingEnd: "2025-02-10T07:30:00.000Z",
-      
-    //     workingHours: 8,
-    //     workingStart: "2025-02-10T10:00:00.000Z",
-    //     workingEnd: "2025-02-10T18:00:00.000Z",
-      
-    //     userId: "prudviraj123",
-    //     user: {
-    //       id: "prudviraj123"
-    //     }
-    //   };
       
       // Convert to a string
     const userData = JSON.stringify(onboardingData);
@@ -84,9 +67,9 @@ export const generateScheduleHandler = async(req:Request , res:Response , next :
     res.status(201).json(createdSchedule);
 }
 
-export const createScheduleHandler = async(req:Request , res:Response, next: NextFunction): Promise<void> => {
+export const createScheduleHandler = async(req:AuthenticatedRequest , res:Response, next: NextFunction): Promise<void> => {
     try {
-        const userId = (req.user as { id: string })?.id; //This is a bad code -> bypassing TS , Remove this bug
+        const userId = req.user?.id; //This is a bad code -> bypassing TS , Remove this bug
         // const userId = req.user?.id;
         const clientData = req.body;
 

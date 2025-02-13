@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { getAllUsers } from '../services/user.service';
+import { AuthenticatedRequest } from '../types/request';
   
   export const getAllUsersHandler = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -11,6 +12,6 @@ import { getAllUsers } from '../services/user.service';
     }
   };
 
-  export const getCurrentUser = (req:Request,res:Response) : void =>{
+  export const getCurrentUser = (req:AuthenticatedRequest,res:Response) : void =>{
     res.json({currentUser:req.user});
   };
