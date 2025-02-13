@@ -6,7 +6,8 @@ import ProfessionStep from './components/ProfessionStep';
 import HobbiesStep from './components/HobbiesStep';
 import SleepTimeStep from './components/SleepTimeStep';
 import WorkingHoursStep from './components/WorkingHoursStep';
-import { createOnboarding , getStoredAuthToken, OnboardingInput } from '@/api/lib';
+import WorkTimeStep from './components/WorkTimeStep';
+import { createOnboarding , OnboardingInput } from '@/api/lib';
 
 const OnboardingPage = () => {
   const router = useRouter();
@@ -88,14 +89,30 @@ const OnboardingPage = () => {
               )}
               {currentStep === 3 && (
                 <SleepTimeStep 
-                  value={formData.sleepingHours}
-                  onChange={(value) => updateFormData('sleepingHours', value)}
+                  value={{
+                    sleepingHours: formData.sleepingHours,
+                    sleepingStart: formData.sleepingStart,
+                    sleepingEnd: formData.sleepingEnd
+                  }}
+                  onChange={(value) => {
+                    updateFormData('sleepingHours', value.sleepingHours);
+                    updateFormData('sleepingStart', value.sleepingStart);
+                    updateFormData('sleepingEnd', value.sleepingEnd);
+                  }}
                 />
               )}
               {currentStep === 4 && (
-                <WorkingHoursStep 
-                  value={formData.workingHours}
-                  onChange={(value) => updateFormData('workingHours', value)}
+                <WorkTimeStep 
+                  value={{
+                    workingHours: formData.workingHours,
+                    workingStart: formData.workingStart,
+                    workingEnd: formData.workingEnd
+                  }}
+                  onChange={(value) => {
+                    updateFormData('workingHours', value.workingHours);
+                    updateFormData('workingStart', value.workingStart);
+                    updateFormData('workingEnd', value.workingEnd);
+                  }}
                 />
               )}
 

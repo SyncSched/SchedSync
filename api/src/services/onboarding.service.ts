@@ -36,9 +36,18 @@ export const getOnboardingData = async (userId: string): Promise<OnboardingData 
   }
 };
 
-
 export const createOnboardingData = async (data: OnboardingData): Promise<boolean> => {
   try {
+    // Check if the user exists
+    const userExists = await prisma.user.findUnique({
+      where: { id: data.userId },
+    });
+
+    if (!userExists) {
+      console.error(`User with ID ${data.userId} does not exist`);
+      return false; // Indicate failure because user does not exist
+    }
+
     // Check if onboarding data already exists for the user
     const existingOnboardingData = await prisma.user.findUnique({
       where: { id: data.userId },
@@ -51,21 +60,17 @@ export const createOnboardingData = async (data: OnboardingData): Promise<boolea
     }
 
     // Create the onboarding data
-    await prisma.user.update({
-      where: { id: data.userId },
+    await prisma.onboardingData.create({
       data: {
-        onboardingData: {
-          create: {
-            profession: data.profession,
-            hobbies: data.hobbies,
-            sleepingHours: data.sleepingHours,
-            sleepingStart: data.sleepingStart,
-            sleepingEnd: data.sleepingEnd,
-            workingHours: data.workingHours,
-            workingStart: data.workingStart,
-            workingEnd: data.workingEnd,
-          },
-        },
+        userId: data.userId,
+        profession: data.profession,
+        hobbies: data.hobbies,
+        sleepingHours: data.sleepingHours,
+        sleepingStart: data.sleepingStart,
+        sleepingEnd: data.sleepingEnd,
+        workingHours: data.workingHours,
+        workingStart: data.workingStart,
+        workingEnd: data.workingEnd,
       },
     });
 
