@@ -25,7 +25,6 @@ export const createSchedule = async (
     throw new Error(`Validation error: ${parsedInput.error.issues.map(issue => issue.message).join(", ")}`);
   }
 
-  console.log(input , typeof(originalData))
 
   return prisma.schedule.create({
     data: {
@@ -44,10 +43,6 @@ export const getSchedule = async (
   date: string,
   userId: string
 ): Promise<Partial<Schedule>> => {
-
-  console.log("Received date:", date , typeof(date));
-  console.log("Parsed date:", Date.parse(date));
-  console.log("Converted to Date object:", new Date(date));
   
   if (!date || isNaN(Date.parse(date))) {
     throw new Error("Invalid date format received");
@@ -84,7 +79,6 @@ export const getSchedule = async (
       scheduleId:schedule.id,
     },
   })
-  console.log(adjustments);
   const parsedAdjustments = adjustments.map(adjustment =>({
     ...adjustment,
     details:parseDetails(adjustment.details)

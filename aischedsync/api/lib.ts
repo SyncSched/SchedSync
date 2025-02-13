@@ -156,7 +156,6 @@ export interface Schedule {
    * Sends a createOnboarding API call with the onboarding data.
    */
   export const createOnboarding = async (onboardingData: OnboardingInput): Promise<Onboarding> => {
-    console.log("first");
     try {
       const res = await fetch('http://localhost:3000/createOnboarding', {
         method: 'POST',
@@ -172,7 +171,6 @@ export interface Schedule {
         throw new Error('Failed to save onboarding data');
       }
   
-      console.log("second");
       return res.json();
     } catch (error) {
       console.error('Error during createOnboarding:', error);
@@ -184,7 +182,6 @@ export interface Schedule {
    * Retrieves the current logged-in user.
    */
   export const getCurrentUser = async (): Promise<UserInfo> => {
-    console.log('Getting stored auth token:', getStoredAuthToken());
     const res = await fetch('http://localhost:3000/currentUser', {
       headers: {
         'Authorization': `Bearer ${getStoredAuthToken()}`

@@ -43,7 +43,6 @@ export const generateScheduleHandler = async(req:AuthenticatedRequest , res:Resp
     const userData = JSON.stringify(onboardingData);
             
 
-    console.log(userData,"Sending userdata")
     const generatedSchedule  = await generateSchedule(userData);
     if (!generatedSchedule) {
         return next(new EntityNotFoundError("Failed to generate schedule"));
