@@ -15,6 +15,8 @@ export interface UserInfo{
     email: string;
     name: string ;
     avatarUrl: string;
+    exp: number;
+    iat: number;
 }
 
 export interface Schedule {
@@ -31,6 +33,7 @@ export interface Schedule {
     name: string;
     time: string;    // Time in "HH:MM" format
     duration: number; // Duration in minutes
+    scheduleId: string;
   }
 
   export interface Adjustment {
@@ -82,7 +85,7 @@ export interface Schedule {
    * If no schedule exists, it calls the schedule creation endpoint.
    */
   export const getTodaySchedule = async (): Promise<Schedule> => {
-    // Try to get today’s schedule
+    // Try to get today's schedule
     const res = await fetch('http://localhost:3000/getSchedule',{
       method: 'POST',
       headers: {
@@ -92,14 +95,14 @@ export interface Schedule {
       body: JSON.stringify({ date: new Date().toISOString() })
     });
     if (!res.ok) {
-      // If not found (or error), create today’s schedule
-      const createRes = await fetch('http://localhost:3000/api/schedule', {
+      // If not found (or error), create today's schedule
+      const createRes = await fetch('http://localhost:3000/generateSchedule', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' , 'Authorization' : `Bearer ${getStoredAuthToken()}` }
         // Include any necessary body data if required by your API.
       });
       if (!createRes.ok) {
-        throw new Error('Failed to create today’s schedule');
+        throw new Error("Failed to create today's schedule");
       }
       return createRes.json();
     }
@@ -125,16 +128,21 @@ export interface Schedule {
    * Retrieves the current logged-in user.
    */
   export const getCurrentUser = async (): Promise<UserInfo> => {
-    console.log(getStoredAuthToken());
-    const res = await fetch('http://localhost:3000/currentUser',{
-        headers:{
-            'Authorization' : `Bearer ${getStoredAuthToken()}`
-        }
+    console.log('Getting stored auth token:', getStoredAuthToken());
+    const res = await fetch('http://localhost:3000/currentUser', {
+      headers: {
+        'Authorization': `Bearer ${getStoredAuthToken()}`
+      }
     });
+    
     if (!res.ok) {
+      console.error('Failed to fetch user:', res.status, res.statusText);
       throw new Error('Failed to fetch current user');
     }
-    return res.json();
+    
+    const data = await res.json();
+    // Return just the currentUser object instead of the whole response
+    return data.currentUser;
   };
   
 

@@ -2,34 +2,13 @@
 
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { getTodaySchedule, createAdjustment, getCurrentUser } from '../api/lib'
+import { getTodaySchedule, createAdjustment, getCurrentUser, type UserInfo, type Task } from '../api/lib'
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [mainTasks, setMainTasks] = useState([
-    {
-      id: 1,
-      title: "Design System Update",
-      description: "Update the design system with new color palette",
-      tag: "Design",
-      dueDate: "Feb 1"
-    },
-    {
-      id: 2,
-      title: "User Authentication",
-      description: "Implement OAuth2 for user authentication",
-      tag: "Development",
-      dueDate: "Feb 3"
-    },
-    {
-      id: 3,
-      title: "Dashboard Analytics",
-      description: "Add analytics charts to the dashboard",
-      tag: "Feature",
-      dueDate: "Feb 5"
-    }
-  ]);
+  const [mainTasks, setMainTasks] = useState<Task[]>([]);
 
   const [quickTasks, setQuickTasks] = useState([
     {
@@ -44,34 +23,61 @@ export default function Home() {
     }
   ]);
 
-  // On mount, fetch today’s schedule and current user info
+  const [user, setUser] = useState<UserInfo | null>(null);
+  const { isAuthenticated, logout } = useAuth();
+  const [showProfileModal, setShowProfileModal] = useState(false);
+
+  // Add these state declarations at the top
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [showDeleteWarning, setShowDeleteWarning] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
+
+  // Add these new state variables at the top with other state declarations
+  const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
+  const [newTask, setNewTask] = useState({
+    name: '',
+    time: '',
+    duration: 30
+  });
+
+  // On mount, fetch today's schedule and current user info
   useEffect(() => {
     const fetchData = async () => {
       try {
         const schedule = await getTodaySchedule();
-        // Update tasks if the API returns schedule data
-        if (schedule) {
-          schedule.mainTasks && setMainTasks(schedule.mainTasks);
-          schedule.quickTasks && setQuickTasks(schedule.quickTasks);
+        console.log('Fetched schedule:', schedule);
+        // Update tasks with the originalData from schedule
+        if (schedule && schedule.originalData) {
+          setMainTasks(schedule.originalData);
         }
       } catch (error) {
         console.error('Error fetching schedule:', error);
       }
     };
 
-    const fetchCurrentUser = async () => {
-      try {
-        const user = await getCurrentUser();
-        console.log('Current user:', user);
-        // You might want to update a user state here to display profile info.
-      } catch (error) {
-        console.error('Error fetching current user:', error);
+    const fetchUser = async () => {
+      if (isAuthenticated) {
+        try {
+          const userData = await getCurrentUser();
+          console.log('Fetched user data:', userData);
+          setUser(userData);
+        } catch (error) {
+          console.error('Failed to fetch user data:', error);
+        }
       }
     };
 
     fetchData();
-    fetchCurrentUser();
-  }, []);
+    fetchUser();
+  }, [isAuthenticated]);
+
+  // Add a separate useEffect to log user state changes
+  useEffect(() => {
+    console.log('User state updated:', user);
+  }, [user]);
 
   // Called when a drag is started
   const handleDragStart = (e: React.DragEvent, columnType: 'main' | 'quick', index: number) => {
@@ -128,6 +134,174 @@ export default function Home() {
       } catch (error) {
         console.error('Error creating adjustment:', error);
       }
+    }
+  };
+
+  // Add these helper functions
+  const showSuccessToast = (message: string) => {
+    setToastMessage(message);
+    setToastType('success');
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  };
+
+  const showErrorToast = (message: string) => {
+    setToastMessage(message);
+    setToastType('error');
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  };
+
+  // Add the handleTaskUpdate function
+  const handleTaskUpdate = async (updatedTask: Task) => {
+    try {
+      if (!selectedTask) return;
+
+      // Create array of adjustments needed
+      const adjustments: CreateAdjustmentInput[] = [];
+
+      // Check for name changes
+      if (selectedTask.name !== updatedTask.name) {
+        adjustments.push({
+          userId: user?.id || '',
+          scheduleId: updatedTask.scheduleId,
+          task_id: updatedTask.id,
+          change_type: 'name_adjustment',
+          details: {
+            name: updatedTask.name,
+            time: updatedTask.time,
+            duration: updatedTask.duration
+          }
+        });
+      }
+
+      // Check for time changes
+      if (selectedTask.time !== updatedTask.time) {
+        adjustments.push({
+          userId: user?.id || '',
+          scheduleId: updatedTask.scheduleId,
+          task_id: updatedTask.id,
+          change_type: 'time_adjustment',
+          details: {
+            from_time: selectedTask.time,
+            to_time: updatedTask.time
+          }
+        });
+      }
+
+      // Check for duration changes
+      if (selectedTask.duration !== updatedTask.duration) {
+        adjustments.push({
+          userId: user?.id || '',
+          scheduleId: updatedTask.scheduleId,
+          task_id: updatedTask.id,
+          change_type: 'duration_adjustment',
+          details: {
+            from_duration: selectedTask.duration,
+            to_duration: updatedTask.duration
+          }
+        });
+      }
+
+      // Apply all adjustments
+      for (const adjustment of adjustments) {
+        await createAdjustment(adjustment);
+      }
+
+      // Update local state
+      const newTasks = mainTasks.map(task => 
+        task.id === updatedTask.id ? updatedTask : task
+      );
+      setMainTasks(newTasks);
+      setIsEditModalOpen(false);
+      showSuccessToast('Task updated successfully!');
+    } catch (error) {
+      showErrorToast('Failed to update task');
+      console.error('Error updating task:', error);
+    }
+  };
+
+  // Add the handleTaskDelete function
+  const handleTaskDelete = async () => {
+    if (!selectedTask) return;
+    
+    try {
+      const adjustment: CreateAdjustmentInput = {
+        userId: user?.id || '',
+        scheduleId: selectedTask.scheduleId,
+        task_id: selectedTask.id,
+        change_type: 'task_removed',
+        details: {
+          name: selectedTask.name,
+          time: selectedTask.time,
+          duration: selectedTask.duration
+        }
+      };
+      
+      await createAdjustment(adjustment);
+      
+      // Update local state
+      const newTasks = mainTasks.filter(task => task.id !== selectedTask.id);
+      setMainTasks(newTasks);
+      setIsEditModalOpen(false);
+      setShowDeleteWarning(false);
+      showSuccessToast('Task deleted successfully!');
+    } catch (error) {
+      showErrorToast('Failed to delete task');
+      console.error('Error deleting task:', error);
+    }
+  };
+
+  // Modify the task card click handler
+  const handleTaskClick = (task: Task) => {
+    setSelectedTask(task);
+    setIsEditModalOpen(true);
+  };
+
+  // Add this new function before the return statement
+  const handleAddTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      // Get the scheduleId from the first task in mainTasks, or use a default
+      const scheduleId = mainTasks[0]?.scheduleId || '';
+      
+      const adjustment: CreateAdjustmentInput = {
+        userId: user?.id || '',
+        scheduleId: scheduleId,
+        task_id: `temp-${Date.now()}`, // Temporary ID that will be replaced by the backend
+        change_type: 'task_added',
+        details: {
+          name: newTask.name,
+          time: newTask.time,
+          duration: newTask.duration
+        }
+      };
+
+      await createAdjustment(adjustment);
+
+      // Add the new task to local state
+      const newTaskObject: Task = {
+        id: adjustment.task_id,
+        name: newTask.name,
+        time: newTask.time,
+        duration: newTask.duration,
+        scheduleId: scheduleId
+      };
+
+      setMainTasks([...mainTasks, newTaskObject]);
+      setIsAddTaskModalOpen(false);
+      showSuccessToast('Task added successfully!');
+      
+      // Reset the form
+      setNewTask({
+        name: '',
+        time: '',
+        duration: 30
+      });
+    } catch (error) {
+      console.error('Error adding task:', error);
+      showErrorToast('Failed to add task');
     }
   };
 
@@ -208,12 +382,67 @@ export default function Home() {
               <span>Settings</span>
             </button>
             
-            <button className="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-              </svg>
-              <span>Profile</span>
-            </button>
+            <div className="relative">
+              <button 
+                className="w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden"
+                onClick={() => {
+                  console.log('Current user state:', user);
+                  setShowProfileModal(!showProfileModal);
+                }}
+              >
+                {user?.avatarUrl ? (
+                  <Image 
+                    src={user.avatarUrl}
+                    width={40}
+                    height={40}
+                    alt={user.name || 'Profile'} 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <Image 
+                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'Anonymous')}&background=0D8ABC&color=fff`}
+                    width={40}
+                    height={40}
+                    alt={user?.name || 'Profile'} 
+                    className="w-full h-full object-cover"
+                  />
+                )}
+              </button>
+
+              {showProfileModal && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-30" 
+                    onClick={() => setShowProfileModal(false)}
+                  />
+                  
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-40">
+                    <div className="p-3 border-b border-gray-200">
+                      <p className="font-medium text-sm text-gray-900">
+                        {user?.name || 'Anonymous User'}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {user?.email || 'No email available'}
+                      </p>
+                    </div>
+                    <div className="p-2">
+                      <button
+                        onClick={() => {
+                          logout();
+                          setShowProfileModal(false);
+                        }}
+                        className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md flex items-center space-x-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        <span>Logout</span>
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </aside>
@@ -241,53 +470,114 @@ export default function Home() {
                 </svg>
               </button>
               
-              <button className="w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden">
-                <img 
-                  src="https://ui-avatars.com/api/?name=John+Doe&background=0D8ABC&color=fff" 
-                  alt="Profile" 
-                  className="w-full h-full object-cover"
-                />
-              </button>
+              <div className="relative">
+                <button 
+                  className="w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden"
+                  onClick={() => {
+                    console.log('Current user state:', user);
+                    setShowProfileModal(!showProfileModal);
+                  }}
+                >
+                  {user?.avatarUrl ? (
+                    <Image 
+                      src={user.avatarUrl}
+                      width={40}
+                      height={40}
+                      alt={user.name || 'Profile'} 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Image 
+                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'Anonymous')}&background=0D8ABC&color=fff`}
+                      width={40}
+                      height={40}
+                      alt={user?.name || 'Profile'} 
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </button>
+
+                {showProfileModal && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-30" 
+                      onClick={() => setShowProfileModal(false)}
+                    />
+                    
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-40">
+                      <div className="p-3 border-b border-gray-200">
+                        <p className="font-medium text-sm text-gray-900">
+                          {user?.name || 'Anonymous User'}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {user?.email || 'No email available'}
+                        </p>
+                      </div>
+                      <div className="p-2">
+                        <button
+                          onClick={() => {
+                            logout();
+                            setShowProfileModal(false);
+                          }}
+                          className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md flex items-center space-x-2"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          </svg>
+                          <span>Logout</span>
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
           {/* Task List */}
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="text-base md:text-lg font-medium text-[#2C3E50]">Tasks</h2>
+              <h2 className="text-base md:text-lg font-medium text-[#2C3E50] sticky top-0 bg-white z-10">Tasks</h2>
             </div>
 
-            {/* Kanban Columns Container */}
+            {/* Main Kanban Column */}
             <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-              {/* Main Kanban Column */}
-              <div className="flex-1 bg-gray-50 p-3 md:p-4 rounded-lg min-h-[400px] md:min-h-[500px]">
+              <div className="flex-1 bg-gray-50 p-3 md:p-4 rounded-lg min-h-[400px] md:min-h-[500px] overflow-y-auto max-h-[500px] scrollable">
                 {/* Kanban Cards */}
                 <div className="space-y-3 md:space-y-4">
-                  {mainTasks.map((card, index) => (
+                  {mainTasks.map((task, index) => (
                     <div 
-                      key={card.id} 
+                      key={task.id} 
                       draggable
                       data-draggable="true"
                       onDragStart={(e) => handleDragStart(e, 'main', index)}
                       onDragOver={handleDragOver}
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, 'main', index)}
-                      className="bg-white p-3 md:p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-move"
+                      onClick={() => handleTaskClick(task)}
+                      className="bg-white p-3 md:p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-lg transition-shadow cursor-pointer transform hover:scale-105"
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <h3 className="font-medium text-[#2C3E50] text-sm md:text-base">{card.title}</h3>
-                        <button className="text-[#95A5A6] hover:text-[#7F8C8D]">
+                        <h3 className="font-medium text-[#2C3E50] text-sm md:text-base">{task.name}</h3>
+                        <button className="text-[#95A5A6] hover:text-[#7F8C8D]" onClick={() => handleTaskClick(task)}>
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
                           </svg>
                         </button>
                       </div>
-                      <p className="text-[#7F8C8D] text-xs md:text-sm mb-3">{card.description}</p>
                       <div className="flex items-center justify-between">
-                        <span className="px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs">
-                          {card.tag}
-                        </span>
-                        <span className="text-xs text-[#95A5A6]">Due {card.dueDate}</span>
+                        <div className="flex items-center space-x-2">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                          <span className="text-xs text-gray-500">{task.time}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                          <span className="text-xs text-gray-500">{task.duration} min</span>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -316,11 +606,207 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
+                <button 
+                  onClick={() => setIsAddTaskModalOpen(true)}
+                  className="bg-blue-500 mt-3 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors"
+                >
+                  Add Task
+                </button>
               </div>
             </div>
           </div>
         </div>
       </main>
+
+      {/* Edit Modal */}
+      {isEditModalOpen && selectedTask && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Edit Task</h3>
+              <button 
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              handleTaskUpdate({
+                ...selectedTask,
+                name: (e.currentTarget.elements.namedItem('name') as HTMLInputElement).value,
+                time: (e.currentTarget.elements.namedItem('time') as HTMLInputElement).value,
+                duration: parseInt((e.currentTarget.elements.namedItem('duration') as HTMLInputElement).value)
+              });
+            }}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Task Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    defaultValue={selectedTask.name}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Time</label>
+                  <input
+                    type="time"
+                    name="time"
+                    defaultValue={selectedTask.time}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+                       
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Duration (minutes)</label>
+                  <input
+                    type="number"
+                    name="duration"
+                    defaultValue={selectedTask.duration}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              
+              <div className="mt-6 flex justify-between">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteWarning(true)}
+                  className="inline-flex items-center px-4 py-2 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                >
+                  Delete
+                </button>
+                
+                <button
+                  type="submit"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Warning Dialog */}
+      {showDeleteWarning && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-sm mx-4">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Delete Task</h3>
+            <p className="text-sm text-gray-500 mb-6">
+              Are you sure you want to delete this task? This action cannot be undone.
+            </p>
+            
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setShowDeleteWarning(false)}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              
+              <button
+                onClick={handleTaskDelete}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {showToast && (
+        <div className={`fixed bottom-4 right-4 px-4 py-2 rounded-lg text-white ${
+          toastType === 'success' ? 'bg-green-500' : 'bg-red-500'
+        } transition-opacity duration-300`}>
+          {toastMessage}
+        </div>
+      )}
+
+      {/* Add Task Modal */}
+      {isAddTaskModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Add New Task</h3>
+              <button 
+                onClick={() => setIsAddTaskModalOpen(false)}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <form onSubmit={handleAddTask}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Task Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={newTask.name}
+                    onChange={(e) => setNewTask({...newTask, name: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Enter task name"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Time</label>
+                  <input
+                    type="time"
+                    required
+                    value={newTask.time}
+                    onChange={(e) => setNewTask({...newTask, time: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Duration (minutes)</label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    value={newTask.duration}
+                    onChange={(e) => setNewTask({...newTask, duration: parseInt(e.target.value)})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setIsAddTaskModalOpen(false)}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                
+                <button
+                  type="submit"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+                >
+                  Add Task
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
