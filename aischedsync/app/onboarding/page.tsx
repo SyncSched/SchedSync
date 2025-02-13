@@ -1,21 +1,26 @@
 'use client';
-import { useState, useEffect } from 'react';
-import Image from 'next/image';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import OnboardingProgress from './components/OnboardingProgress';
 import ProfessionStep from './components/ProfessionStep';
 import HobbiesStep from './components/HobbiesStep';
 import SleepTimeStep from './components/SleepTimeStep';
 import WorkingHoursStep from './components/WorkingHoursStep';
+import { createOnboarding , getStoredAuthToken, OnboardingInput } from '@/api/lib';
 
 const OnboardingPage = () => {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<OnboardingInput>({
     profession: '',
     hobbies: [],
-    sleepTime: '',
-    workingHours: '',
+    sleepingHours: 0,
+    sleepingStart: new Date(),
+    sleepingEnd: new Date(),
+    workingHours: 0,
+    workingStart: new Date(),
+    workingEnd: new Date(),
+    userId: 'user-id-placeholder', // Replace with actual user ID
   });
 
   const handleNext = async () => {
@@ -23,18 +28,11 @@ const OnboardingPage = () => {
       setCurrentStep(prev => prev + 1);
     } else {
       try {
-
-        console.log(formData,"This is form data")
+        console.log(formData, "This is form data");
         // Save onboarding data
-        const response = await fetch('/api/onboarding', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData),
-        });
+        const onboarding = await createOnboarding(formData); // Replace 'your-auth-token' with actual token retrieval logic
 
-        if (response.ok) {
+        if (onboarding) {
           // Set onboarding completion cookie
           document.cookie = 'onboardingComplete=true; path=/';
           router.push('/');
@@ -90,8 +88,8 @@ const OnboardingPage = () => {
               )}
               {currentStep === 3 && (
                 <SleepTimeStep 
-                  value={formData.sleepTime}
-                  onChange={(value) => updateFormData('sleepTime', value)}
+                  value={formData.sleepingHours}
+                  onChange={(value) => updateFormData('sleepingHours', value)}
                 />
               )}
               {currentStep === 4 && (
@@ -129,4 +127,4 @@ const OnboardingPage = () => {
   );
 };
 
-export default OnboardingPage; 
+export default OnboardingPage;

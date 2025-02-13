@@ -80,6 +80,34 @@ export interface Schedule {
     change_type: ChangeType;
     details: TimeAdjustmentDetails | DurationAdjustmentDetails | TaskAddedDetails | TaskRemovedDetails;
   }
+
+  // Define the OnboardingInput and Onboarding interfaces
+  export interface OnboardingInput {
+    profession: string;
+    hobbies: string[];
+    sleepingHours: number;
+    sleepingStart: Date;
+    sleepingEnd: Date;
+    workingHours: number;
+    workingStart: Date;
+    workingEnd: Date;
+    userId: string;
+  }
+  
+  export interface Onboarding {
+    id: string;
+    profession: string;
+    hobbies: string[];
+    sleepingHours: number;
+    sleepingStart: Date;
+    sleepingEnd: Date;
+    workingHours: number;
+    workingStart: Date;
+    workingEnd: Date;
+    userId: string;
+    createdAt: Date;
+  }
+  
   /**
    * Fetches the schedule for today.
    * If no schedule exists, it calls the schedule creation endpoint.
@@ -124,6 +152,34 @@ export interface Schedule {
     return res.json();
   };
   
+  /**
+   * Sends a createOnboarding API call with the onboarding data.
+   */
+  export const createOnboarding = async (onboardingData: OnboardingInput): Promise<Onboarding> => {
+    console.log("first");
+    try {
+      const res = await fetch('http://localhost:3000/createOnboarding', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getStoredAuthToken()}`
+        },
+        body: JSON.stringify(onboardingData)
+      });
+  
+      if (!res.ok) {
+        console.error('Failed to save onboarding data:', res.status, res.statusText);
+        throw new Error('Failed to save onboarding data');
+      }
+  
+      console.log("second");
+      return res.json();
+    } catch (error) {
+      console.error('Error during createOnboarding:', error);
+      throw error;
+    }
+  };
+
   /**
    * Retrieves the current logged-in user.
    */
