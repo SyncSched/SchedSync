@@ -5,6 +5,45 @@ import { useState, useEffect } from "react";
 import { getTodaySchedule, createAdjustment, getCurrentUser, type UserInfo, type Task } from '../api/lib'
 import { useAuth } from '@/contexts/AuthContext';
 
+// Add these utility functions after the imports and before the Home component
+const parseTimeString = (timeStr: string): Date => {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  const date = new Date();
+  date.setHours(hours, minutes, 0, 0);
+  return date;
+};
+
+const formatTimeString = (date: Date): string => {
+  return date.toTimeString().substring(0, 5);
+};
+
+const addMinutesToTime = (timeStr: string, minutes: number): string => {
+  const date = parseTimeString(timeStr);
+  date.setMinutes(date.getMinutes() + minutes);
+  return formatTimeString(date);
+};
+
+const getTimeDifferenceInMinutes = (time1: string, time2: string): number => {
+  const date1 = parseTimeString(time1);
+  const date2 = parseTimeString(time2);
+  return Math.round((date2.getTime() - date1.getTime()) / (1000 * 60));
+};
+
+const hasTimeOverlap = (task1: Task, task2: Task): boolean => {
+  const start1 = parseTimeString(task1.time);
+  const end1 = parseTimeString(addMinutesToTime(task1.time, task1.duration));
+  const start2 = parseTimeString(task2.time);
+  const end2 = parseTimeString(addMinutesToTime(task2.time, task2.duration));
+  
+  return (start1 < end2 && end1 > start2);
+};
+
+// Add this type definition if not already present
+interface TaskAdjustment {
+  task: Task;
+  timeShift: number;
+}
+
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -102,6 +141,83 @@ export default function Home() {
     }
   };
 
+  // Add this function inside the Home component, before the handleDrop function
+  const recalculateTaskTimes = (
+    tasks: Task[],
+    sourceIndex: number,
+    targetIndex: number
+  ): Task[] => {
+    if (sourceIndex === targetIndex) return [...tasks];
+    
+    const updatedTasks = [...tasks];
+    const movedTask = { ...tasks[sourceIndex] };
+    const isMovingUp = targetIndex < sourceIndex;
+    
+    // Determine the range of tasks affected
+    const startIndex = Math.min(sourceIndex, targetIndex);
+    const endIndex = Math.max(sourceIndex, targetIndex);
+    
+    // Store the original start time of the first task and end time of last task in range
+    const originalStartTime = tasks[startIndex].time;
+    const lastTask = tasks[endIndex];
+    const originalEndTime = addMinutesToTime(lastTask.time, lastTask.duration);
+    
+    if (isMovingUp) {
+      // Moving task earlier in schedule
+      let currentTime = originalStartTime; // Always start with original start time
+      
+      // Place moved task at target position
+      movedTask.time = currentTime;
+      currentTime = addMinutesToTime(currentTime, movedTask.duration);
+      
+      // Shift affected tasks after moved task
+      for (let i = targetIndex; i < sourceIndex; i++) {
+        const nextTask = { ...tasks[i] };
+        nextTask.time = currentTime;
+        currentTime = addMinutesToTime(currentTime, nextTask.duration);
+        updatedTasks[i + 1] = nextTask;
+      }
+      
+      updatedTasks[targetIndex] = movedTask;
+    } else {
+      // Moving task later in schedule
+      let currentTime = originalStartTime; // Always start with original start time
+      
+      // Shift affected tasks up first
+      for (let i = startIndex; i < targetIndex; i++) {
+        const task = { ...tasks[i + 1] };
+        task.time = currentTime;
+        currentTime = addMinutesToTime(currentTime, task.duration);
+        updatedTasks[i] = task;
+      }
+      
+      // Place moved task at target position
+      movedTask.time = currentTime;
+      updatedTasks[targetIndex] = movedTask;
+    }
+
+    // Verify and adjust to maintain the original time window
+    const newLastTask = updatedTasks[endIndex];
+    const newEndTime = addMinutesToTime(newLastTask.time, newLastTask.duration);
+    
+    if (newEndTime !== originalEndTime) {
+      // If there's any drift, adjust all tasks proportionally
+      const timeDiff = getTimeDifferenceInMinutes(originalEndTime, newEndTime);
+      if (timeDiff !== 0) {
+        const tasksToAdjust = endIndex - startIndex + 1;
+        const adjustmentPerTask = Math.floor(timeDiff / tasksToAdjust);
+        
+        let currentTime = originalStartTime;
+        for (let i = startIndex; i <= endIndex; i++) {
+          updatedTasks[i].time = currentTime;
+          currentTime = addMinutesToTime(currentTime, updatedTasks[i].duration);
+        }
+      }
+    }
+
+    return updatedTasks;
+  };
+
   // When a drop occurs, update the order and call createAdjustment
   const handleDrop = async (e: React.DragEvent, targetColumnType: 'main' | 'quick', targetIndex: number) => {
     e.preventDefault();
@@ -117,22 +233,35 @@ export default function Home() {
     if (sourceColumnType === targetColumnType) {
       try {
         if (sourceColumnType === 'main') {
-          const newTasks = [...mainTasks];
-          const [movedTask] = newTasks.splice(sourceIndex, 1);
-          newTasks.splice(targetIndex, 0, movedTask);
-          setMainTasks(newTasks);
-          // Call createAdjustment with the new mainTasks order
-          await createAdjustment({ mainTasks: newTasks });
+          // Recalculate times - all arrangements are valid
+          const updatedTasks = recalculateTaskTimes(mainTasks, sourceIndex, targetIndex);
+          
+          // Create adjustment to persist the changes
+          await createAdjustment({
+            userId: user?.id || '',
+            scheduleId: updatedTasks[0]?.scheduleId || '',
+            change_type: 'reorder_adjustment',
+            details: {
+              tasks: updatedTasks.map(task => ({
+                id: task.id,
+                time: task.time,
+                duration: task.duration
+              }))
+            }
+          });
+
+          setMainTasks(updatedTasks);
+          showSuccessToast('Schedule updated successfully');
         } else {
+          // Handle quick tasks reordering
           const newTasks = [...quickTasks];
           const [movedTask] = newTasks.splice(sourceIndex, 1);
           newTasks.splice(targetIndex, 0, movedTask);
           setQuickTasks(newTasks);
-          // Call createAdjustment with the new quickTasks order
-          await createAdjustment({ quickTasks: newTasks });
         }
       } catch (error) {
-        console.error('Error creating adjustment:', error);
+        console.error('Error updating task order:', error);
+        showErrorToast('Failed to update schedule');
       }
     }
   };
