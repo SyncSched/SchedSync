@@ -162,17 +162,17 @@ export interface Schedule {
   /**
    * Sends a createAdjustment API call with the updated task data.
    */
-  export const createAdjustment = async (adjustmentData: CreateAdjustmentInput): Promise<Adjustment> => {
-    const res = await fetch('http://localhost:3000/createAdjustment', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' , 'Authorization' : `Bearer ${getStoredAuthToken()}` },
-      body: JSON.stringify(adjustmentData)
-    });
-    if (!res.ok) {
-      throw new Error('Failed to save adjustment');
-    }
-    return res.json();
-  };
+  // export const createAdjustment = async (adjustmentData: CreateAdjustmentInput): Promise<Adjustment> => {
+  //   const res = await fetch('http://localhost:3000/createAdjustment', {
+  //     method: 'POST',
+  //     headers: { 'Content-Type': 'application/json' , 'Authorization' : `Bearer ${getStoredAuthToken()}` },
+  //     body: JSON.stringify(adjustmentData)
+  //   });
+  //   if (!res.ok) {
+  //     throw new Error('Failed to save adjustment');
+  //   }
+  //   return res.json();
+  // };
   
   /**
    * Sends a createOnboarding API call with the onboarding data.
@@ -222,3 +222,28 @@ export interface Schedule {
   
 
   export const getStoredAuthToken = () => localStorage.getItem('authToken');
+
+/**
+ * Updates the schedule with new tasks
+ */
+export const updateSchedule = async (scheduleId: string, tasks: Task[]): Promise<Schedule> => {
+  try {
+    const res = await fetch(`http://localhost:3000/schedule/${scheduleId}/update`, {
+      method: 'PUT',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getStoredAuthToken()}`
+      },
+      body: JSON.stringify({ originalData: tasks })
+    });
+
+    if (!res.ok) {
+      throw new Error('Failed to update schedule tasks');
+    }
+
+    return res.json();
+  } catch (error) {
+    console.error('Error updating schedule:', error);
+    throw error;
+  }
+};

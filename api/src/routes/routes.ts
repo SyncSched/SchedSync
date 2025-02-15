@@ -1,6 +1,6 @@
 import { createAdjustmentHandler } from '../controllers/adjustment.controller';
 import { checkOnboardingDataHandler, createOnboardingHandler } from '../controllers/onboarding.controller';
-import { createScheduleHandler, generateScheduleHandler, getScheduleHandler } from '../controllers/schedule.controller';
+import { createScheduleHandler, generateScheduleHandler, getScheduleHandler , updateScheduleHandler } from '../controllers/schedule.controller';
 import {getAllUsersHandler, getCurrentUser} from '../controllers/user.controller'
 
 export const attachPublicRoutes = (app:any) : void =>{
@@ -16,6 +16,7 @@ export const attachPrivateRoutes = (app:any) :void =>{
     //create a Schedule  -> Here we call AI to schedule that day , call only once per day , whenever person opens the website
     app.get('/generateSchedule' , generateScheduleHandler);
     app.post('/createSchedule',createScheduleHandler);
+    
 
     //create a Adjustment -> We store all these adjustments in Vector DBs inorder to retrive the matched information
     app.post('/createAdjustment',createAdjustmentHandler);
@@ -23,5 +24,7 @@ export const attachPrivateRoutes = (app:any) :void =>{
     app.post('/createOnboarding', createOnboardingHandler);
 
     app.get('/checkonboardingdata/:userId', checkOnboardingDataHandler);
+
+    app.put('/schedule/:id/update', updateScheduleHandler);
 
 }

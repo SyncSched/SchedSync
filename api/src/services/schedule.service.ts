@@ -136,3 +136,36 @@ const applyAdjustments = (tasks: Task[], adjustments: Adjustment[]): Task[] => {
 
   return  updatedTasks;
 };
+
+export const updateSchedule = async (
+  scheduleId: string,
+  data: { originalData: Task[] }
+): Promise<ScheduleWithRelations> => {
+  if (!scheduleId) {
+    throw new Error('Schedule ID is required');
+  }
+
+  const schedule = await prisma.schedule.findUnique({
+    where: { id: scheduleId },
+  });
+
+  if (!schedule) {
+    throw new Error('Schedule not found');
+  }
+
+  // Remove scheduleId from each task before creating
+  const tasksWithoutScheduleId = data.originalData.map(({ scheduleId: _, ...task }) => task);
+
+  return prisma.schedule.update({
+    where: { id: scheduleId },
+    data: {
+      originalData: {
+        deleteMany: {},  // Delete existing tasks
+        createMany: {    // Create new tasks
+          data: tasksWithoutScheduleId
+        }
+      }
+    },
+    include: { user: true, adjustments: true, originalData: true }
+  });
+};

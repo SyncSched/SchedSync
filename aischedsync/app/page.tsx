@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { getTodaySchedule, createAdjustment, getCurrentUser, type UserInfo, type Task } from '../api/lib'
+import { getTodaySchedule, updateSchedule, getCurrentUser, type UserInfo, type Task } from '../api/lib'
 import { useAuth } from '@/contexts/AuthContext';
 
 // Add these utility functions after the imports and before the Home component
@@ -233,22 +233,11 @@ export default function Home() {
     if (sourceColumnType === targetColumnType) {
       try {
         if (sourceColumnType === 'main') {
-          // Recalculate times - all arrangements are valid
+          // Recalculate times
           const updatedTasks = recalculateTaskTimes(mainTasks, sourceIndex, targetIndex);
           
-          // Create adjustment to persist the changes
-          await createAdjustment({
-            userId: user?.id || '',
-            scheduleId: updatedTasks[0]?.scheduleId || '',
-            change_type: 'reorder_adjustment',
-            details: {
-              tasks: updatedTasks.map(task => ({
-                id: task.id,
-                time: task.time,
-                duration: task.duration
-              }))
-            }
-          });
+          // Update schedule with reordered tasks
+          await updateSchedule(updatedTasks[0].scheduleId, updatedTasks);
 
           setMainTasks(updatedTasks);
           showSuccessToast('Schedule updated successfully');
@@ -286,62 +275,16 @@ export default function Home() {
     try {
       if (!selectedTask) return;
 
-      // Create array of adjustments needed
-      const adjustments: CreateAdjustmentInput[] = [];
-
-      // Check for name changes
-      if (selectedTask.name !== updatedTask.name) {
-        adjustments.push({
-          userId: user?.id || '',
-          scheduleId: updatedTask.scheduleId,
-          task_id: updatedTask.id,
-          change_type: 'name_adjustment',
-          details: {
-            name: updatedTask.name,
-            time: updatedTask.time,
-            duration: updatedTask.duration
-          }
-        });
-      }
-
-      // Check for time changes
-      if (selectedTask.time !== updatedTask.time) {
-        adjustments.push({
-          userId: user?.id || '',
-          scheduleId: updatedTask.scheduleId,
-          task_id: updatedTask.id,
-          change_type: 'time_adjustment',
-          details: {
-            from_time: selectedTask.time,
-            to_time: updatedTask.time
-          }
-        });
-      }
-
-      // Check for duration changes
-      if (selectedTask.duration !== updatedTask.duration) {
-        adjustments.push({
-          userId: user?.id || '',
-          scheduleId: updatedTask.scheduleId,
-          task_id: updatedTask.id,
-          change_type: 'duration_adjustment',
-          details: {
-            from_duration: selectedTask.duration,
-            to_duration: updatedTask.duration
-          }
-        });
-      }
-
-      // Apply all adjustments
-      for (const adjustment of adjustments) {
-        await createAdjustment(adjustment);
-      }
-
-      // Update local state
-      const newTasks = mainTasks.map(task => 
+      // Update the task in the local array
+      const updatedTasks = mainTasks.map(task => 
         task.id === updatedTask.id ? updatedTask : task
       );
-      setMainTasks(newTasks);
+
+      // Call updateSchedule with all tasks
+      await updateSchedule(updatedTask.scheduleId, updatedTasks);
+
+      // Update local state
+      setMainTasks(updatedTasks);
       setIsEditModalOpen(false);
       showSuccessToast('Task updated successfully!');
     } catch (error) {
@@ -355,23 +298,14 @@ export default function Home() {
     if (!selectedTask) return;
     
     try {
-      const adjustment: CreateAdjustmentInput = {
-        userId: user?.id || '',
-        scheduleId: selectedTask.scheduleId,
-        task_id: selectedTask.id,
-        change_type: 'task_removed',
-        details: {
-          name: selectedTask.name,
-          time: selectedTask.time,
-          duration: selectedTask.duration
-        }
-      };
+      // Filter out the deleted task
+      const updatedTasks = mainTasks.filter(task => task.id !== selectedTask.id);
       
-      await createAdjustment(adjustment);
+      // Update the schedule with the filtered tasks
+      await updateSchedule(selectedTask.scheduleId, updatedTasks);
       
       // Update local state
-      const newTasks = mainTasks.filter(task => task.id !== selectedTask.id);
-      setMainTasks(newTasks);
+      setMainTasks(updatedTasks);
       setIsEditModalOpen(false);
       setShowDeleteWarning(false);
       showSuccessToast('Task deleted successfully!');
@@ -392,33 +326,25 @@ export default function Home() {
     e.preventDefault();
     
     try {
-      // Get the scheduleId from the first task in mainTasks, or use a default
       const scheduleId = mainTasks[0]?.scheduleId || '';
       
-      const adjustment: CreateAdjustmentInput = {
-        userId: user?.id || '',
-        scheduleId: scheduleId,
-        task_id: `temp-${Date.now()}`, // Temporary ID that will be replaced by the backend
-        change_type: 'task_added',
-        details: {
-          name: newTask.name,
-          time: newTask.time,
-          duration: newTask.duration
-        }
-      };
-
-      await createAdjustment(adjustment);
-
-      // Add the new task to local state
+      // Create new task object
       const newTaskObject: Task = {
-        id: adjustment.task_id,
+        id: `temp-${Date.now()}`, // Temporary ID that will be replaced by the backend
         name: newTask.name,
         time: newTask.time,
         duration: newTask.duration,
         scheduleId: scheduleId
       };
 
-      setMainTasks([...mainTasks, newTaskObject]);
+      // Add new task to existing tasks
+      const updatedTasks = [...mainTasks, newTaskObject];
+
+      // Update schedule with all tasks including the new one
+      await updateSchedule(scheduleId, updatedTasks);
+
+      // Update local state
+      setMainTasks(updatedTasks);
       setIsAddTaskModalOpen(false);
       showSuccessToast('Task added successfully!');
       

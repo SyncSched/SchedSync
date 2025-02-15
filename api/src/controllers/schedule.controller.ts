@@ -1,10 +1,14 @@
 import { Request, Response , NextFunction } from 'express';
-import { createSchedule, getSchedule } from '../services/schedule.service';
+import { createSchedule, getSchedule, updateSchedule } from '../services/schedule.service';
 import { BadUserInputError, EntityNotFoundError } from '../errors';
 import { CreateScheduleInput } from '../models/schedule.model';
 import { generateSchedule } from '../workflow';
 import { getOnboardingData } from '../services/onboarding.service';
 import { AuthenticatedRequest } from '../types/request';
+import { PrismaClient } from '@prisma/client';
+
+
+const prisma = new PrismaClient();
 
 export const getScheduleHandler = async(req:AuthenticatedRequest,res:Response,next:NextFunction) : Promise<void> =>{
     try{
@@ -101,6 +105,40 @@ export const createScheduleHandler = async(req:AuthenticatedRequest , res:Respon
         res.status(201).json(createdSchedule);
     } catch (error) {
         next(error); 
+    }
+};
+
+export const updateScheduleHandler = async(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const scheduleId = req.params.id;
+        const userId = req.user?.id;
+        const { originalData } = req.body;
+
+        if (!scheduleId || !userId || !originalData) {
+            return next(new BadUserInputError({ message: "Schedule ID, user ID, or schedule data is missing" }));
+        }
+
+        // Verify schedule belongs to user
+        const schedule = await prisma.schedule.findFirst({
+            where: {
+                id: scheduleId,
+                userId: userId
+            }
+        });
+
+        if (!schedule) {
+            return next(new EntityNotFoundError("Schedule not found or unauthorized"));
+        }
+
+        const updatedSchedule = await updateSchedule(scheduleId, { originalData });
+
+        if (!updatedSchedule) {
+            return next(new EntityNotFoundError("Failed to update schedule"));
+        }
+
+        res.status(200).json(updatedSchedule);
+    } catch (error) {
+        next(error);
     }
 };
 
