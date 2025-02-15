@@ -10,6 +10,7 @@ import { authMiddleware } from './middleware/authMiddleware';
 import { RouteNotFoundError } from './errors';
 import { handleError } from './middleware/error';
 import './utils/passportConfig'
+import { initScheduleCron } from './cron/scheduleCron'
 
 const app = express();
 app.use(
@@ -68,6 +69,8 @@ attachPrivateRoutes(app);
 app.use((req, _res, next) => next(new RouteNotFoundError(req.originalUrl)));
 app.use(handleError);
 
+// Initialize cron jobs
+initScheduleCron();
 
 const PORT = 3000;
 app.listen(PORT, () => {

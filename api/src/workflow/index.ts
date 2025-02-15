@@ -9,14 +9,11 @@ import { EmbeddingManager } from "../rag/embedding/EmbeddingManager";
 // import { PineconeDebugger } from "./pineconedebugger";
 // import { Ollama } from "@langchain/ollama";
 import { RunnableSequence } from "@langchain/core/runnables";
-import {formatDocumentsAsString } from "langchain/util/document";
+import { formatDocumentsAsString } from "langchain/util/document";
 import axios from "axios";
 import { OpenAI } from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-
-
-
-
+import { Document } from "langchain/document";
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 const DEEPSEEK_API_URL = "https://cloud.olakrutrim.com/v1/chat/completions"; // Example URL, check their docs
@@ -94,6 +91,49 @@ async function callGeminiAPI(prompt: string) {
 }
 
 
+export const storeDailySchedules = async (userId: string, scheduleData: string) => {
+  try {
+    const pinecone = new PineconeManager("rag-index");
+    const embeddingsManager = new EmbeddingManager();
+    await pinecone.initializeVectorStore(embeddingsManager.getEmbeddingsModel());
+    
+    // Check if schedule exists for today
+    const vectorStore = pinecone.getVectorStore();
+    const today = new Date().toISOString().split('T')[0];
+    const existingSchedules = await vectorStore.similaritySearch(
+      `userId:${userId} date:${today}`,
+      1
+    );
+
+    if (existingSchedules.length > 0) {
+      console.log(`Schedule already exists for user ${userId} on ${today}`);
+      return false;
+    }
+
+    // Create a new document with metadata including source
+    const doc = new Document({
+      pageContent: scheduleData,
+      metadata: {
+        userId: userId,
+        date: today,
+        type: 'daily_schedule',
+        source: 'user_schedule' // Added required source property
+      }
+    });
+
+    // Store the document
+    await pinecone.upsertDocuments(
+      [doc],
+      embeddingsManager.getEmbeddingsModel()
+    );
+
+    console.log(`Successfully stored schedule for user ${userId} on ${today}`);
+    return true;
+  } catch (error) {
+    console.error("Error storing daily schedule:", error);
+    throw error;
+  }
+};
 
 
 export const generateSchedule = async (data:string) => {

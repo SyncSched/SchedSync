@@ -169,3 +169,47 @@ export const updateSchedule = async (
     include: { user: true, adjustments: true, originalData: true }
   });
 };
+
+
+export const getTodaySchedules = async () => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  try {
+    const schedules = await prisma.schedule.findMany({
+      where: {
+        createdAt: {
+          gte: today,
+          lt: tomorrow
+        }
+      },
+      include: {
+        user: true, // Include user information
+        originalData: true, // Include tasks
+        adjustments: true // Include adjustments to handle any modifications
+      }
+    });
+    
+    // Apply any adjustments to the schedules if needed
+    const updatedSchedules = schedules.map(schedule => {
+      // const parsedAdjustments = schedule.adjustments.map(adjustment => ({
+      //   ...adjustment,
+      //   details: parseDetails(adjustment.details)
+      // }));
+      
+      // const updatedTasks = applyAdjustments(schedule.originalData, parsedAdjustments);
+      return {
+        ...schedule,
+        // originalData: updatedTasks
+      };
+    });
+
+    return updatedSchedules;
+  } catch (error) {
+    console.error('Error fetching today schedules:', error);
+    throw error;
+  }
+};
