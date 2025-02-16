@@ -1,5 +1,4 @@
 import { User } from "./user.model";
-import { Adjustment } from "./adjustment.model";
 
 // Basic task structure
 export interface Task {
@@ -17,12 +16,11 @@ export interface Task {
     userId: string;
     user: User;
     originalData: Task[];
-    adjustments: Adjustment[];
     createdAt: Date;
   }
   
   // Input types for creating/updating
-  export type CreateScheduleInput = Omit<Schedule, 'id' | 'createdAt' | 'adjustments' | 'user'> 
+  export type CreateScheduleInput = Omit<Schedule, 'id' | 'createdAt' | 'user'> 
 
 
   export type UpdateScheduleInput = Partial<CreateScheduleInput>;
@@ -32,4 +30,4 @@ export interface Task {
   export type UpdateTaskInput = Partial<CreateTaskInput>;
   
   // Utility type to represent a schedule without relations
-  export type ScheduleWithoutRelations = Omit<Schedule, 'user' | 'adjustments'>;
+  export type ScheduleWithoutRelations = Omit<Schedule, 'user'>;

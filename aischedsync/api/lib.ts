@@ -24,7 +24,6 @@ export interface Schedule {
     userId: string;
     user: User;
     originalData: Task[];
-    adjustments: Adjustment[];
     createdAt: Date;
   }
 
@@ -36,50 +35,6 @@ export interface Schedule {
     scheduleId: string;
   }
 
-  export interface Adjustment {
-    id: string;
-    scheduleId: string;
-    userId: string;
-    task_id: string;
-    change_type: ChangeType;
-    details: TimeAdjustmentDetails | DurationAdjustmentDetails | TaskAddedDetails | TaskRemovedDetails;
-    adjustedAt: Date;
-}
-
-
-  export type ChangeType = 'time_adjustment' | 'duration_adjustment' | 'task_added' | 'task_removed';
-
-
-
-  export type TimeAdjustmentDetails = {
-    from_time: string;
-    to_time: string;
-  };
-  
-  export type DurationAdjustmentDetails = {
-    from_duration: number;
-    to_duration: number;
-  };
-  
-  export type TaskAddedDetails = {
-    name: string;
-    time: string;
-    duration: number;
-  };
-  
-  export type TaskRemovedDetails = {
-    name: string;
-    time: string;
-    duration: number;
-  };
-
-  export type CreateAdjustmentInput = {
-    userId: string;
-    scheduleId: string;
-    task_id: string;
-    change_type: ChangeType;
-    details: TimeAdjustmentDetails | DurationAdjustmentDetails | TaskAddedDetails | TaskRemovedDetails;
-  }
 
   // Define the OnboardingInput and Onboarding interfaces
   export interface OnboardingInput {
