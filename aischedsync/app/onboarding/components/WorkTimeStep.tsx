@@ -7,10 +7,14 @@ import TimeInput from '@/app/components/ui/TimeInput';
 interface WorkTimeStepProps {
   value: {
     workingHours: number;
-    workingStart: Date;
-    workingEnd: Date;
+    workingStart: string;
+    workingEnd: string;
   };
-  onChange: (value: any) => void;
+  onChange: (value: {
+    workingHours: number;
+    workingStart: string;
+    workingEnd: string;
+  }) => void;
 }
 
 const WorkTimeStep: React.FC<WorkTimeStepProps> = ({ value, onChange }) => {
@@ -21,12 +25,18 @@ const WorkTimeStep: React.FC<WorkTimeStepProps> = ({ value, onChange }) => {
     newDate.setHours(date.getHours(), date.getMinutes(), 0, 0);
     return newDate;
   };
+  const convertStringTimeToDate = (timeStr: string): Date => {
+    const date = new Date();
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    date.setHours(hours, minutes, 0, 0);
+    return date;
+  };
 
   const handleHoursChange = (hours: number) => {
     setSelectedHours(hours);
     
     // Use current start time or create new one
-    const startTime = createLocalDateTime(value.workingStart);
+    const startTime = createLocalDateTime(convertStringTimeToDate(value.workingStart));
     
     // Calculate end time
     const endTime = new Date(startTime);
@@ -34,8 +44,16 @@ const WorkTimeStep: React.FC<WorkTimeStepProps> = ({ value, onChange }) => {
     
     onChange({
       workingHours: hours,
-      workingStart: startTime,
-      workingEnd: endTime
+      workingStart: startTime.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }),
+      workingEnd: endTime.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }),
     });
   };
 
@@ -46,8 +64,16 @@ const WorkTimeStep: React.FC<WorkTimeStepProps> = ({ value, onChange }) => {
     
     onChange({
       workingHours: selectedHours,
-      workingStart: startTime,
-      workingEnd: endTime
+      workingStart: startTime.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }),
+      workingEnd: endTime.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }),
     });
   };
 
@@ -133,7 +159,7 @@ const WorkTimeStep: React.FC<WorkTimeStepProps> = ({ value, onChange }) => {
             </label>
             <div className="space-y-4">
               <TimeInput
-                value={value.workingStart}
+                value={convertStringTimeToDate(value.workingStart)}
                 onChange={handleStartTimeChange}
                 className="w-full"
               />
@@ -166,7 +192,7 @@ const WorkTimeStep: React.FC<WorkTimeStepProps> = ({ value, onChange }) => {
               </span>
             </div>
             <div className="text-base  sm:text-lg font-bold text-indigo-600">
-              {formatTime(value.workingEnd)}
+              {formatTime(convertStringTimeToDate(value.workingEnd))}
             </div>
           </div>
           

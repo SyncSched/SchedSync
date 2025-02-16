@@ -15,7 +15,7 @@ const ProfessionStep = ({ value, onChange }: { value: string; onChange: (value: 
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900">What's your profession?</h1>
+        <h1 className="text-2xl font-bold text-gray-900">What`s your profession?</h1>
         <p className="mt-2 text-gray-600">This helps us personalize your experience</p>
       </div>
 

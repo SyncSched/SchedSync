@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Moon, Sun, Info } from 'lucide-react';
-import TimePicker from 'react-time-picker';
 import CustomTooltip from './CustomTooltip';
 import TimeInput from '@/app/components/ui/TimeInput';
 
 interface SleepTimeStepProps {
   value: {
     sleepingHours: number;
-    sleepingStart: Date;
-    sleepingEnd: Date;
+    sleepingStart: string;
+    sleepingEnd: string;
   };
-  onChange: (value: any) => void;
+  onChange: (value: {
+    sleepingHours: number;
+    sleepingStart: string;
+    sleepingEnd: string;
+  }) => void;
 }
 
 const SleepTimeStep: React.FC<SleepTimeStepProps> = ({ value, onChange }) => {
@@ -23,6 +26,20 @@ const SleepTimeStep: React.FC<SleepTimeStepProps> = ({ value, onChange }) => {
     return newDate;
   };
 
+  const parseTimeString = (timeStr: string): Date => {
+    const newDate = new Date();
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    newDate.setHours(hours, minutes, 0, 0);
+    return newDate;
+  };
+
+  const convertStringTimeToDate = (timeStr: string): Date => {
+    const date = new Date();
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    date.setHours(hours, minutes, 0, 0);
+    return date;
+  };
+
   const handleHoursChange = (hours: number) => {
     console.log('Clicked Hours:', hours); // Log clicked hours
   
@@ -30,8 +47,9 @@ const SleepTimeStep: React.FC<SleepTimeStepProps> = ({ value, onChange }) => {
     console.log('Updated selectedHours State (after set):', selectedHours); // Log state (may show stale due to async state update)
   
     // Use current bedtime or create new one
-    const startTime = createLocalDateTime(value.sleepingStart);
-    console.log('Sleeping Start Time:', startTime); // Log sleeping start time
+    const dateObj = parseTimeString(value.sleepingStart);
+    const startTime = createLocalDateTime(dateObj);
+    console.log('Sleeping Start Time:', startTime);
   
     // Calculate wake time
     const endTime = new Date(startTime);
@@ -53,8 +71,16 @@ const SleepTimeStep: React.FC<SleepTimeStepProps> = ({ value, onChange }) => {
   
     onChange({
       sleepingHours: hours,
-      sleepingStart: startTime,
-      sleepingEnd: endTime
+      sleepingStart: startTime.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }),
+      sleepingEnd: endTime.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      })
     });
   };
   
@@ -75,8 +101,16 @@ const SleepTimeStep: React.FC<SleepTimeStepProps> = ({ value, onChange }) => {
 
     onChange({
       sleepingHours: selectedHours,
-      sleepingStart: startTime,
-      sleepingEnd: endTime
+      sleepingStart: startTime.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }),
+      sleepingEnd: endTime.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      })
     });
   };
 
@@ -169,7 +203,7 @@ const SleepTimeStep: React.FC<SleepTimeStepProps> = ({ value, onChange }) => {
             </label>
             <div className="space-y-4">
               <TimeInput
-                value={value.sleepingStart}
+                value={convertStringTimeToDate(value.sleepingStart)}
                 onChange={handleStartTimeChange}
                 className="w-full"
               />
@@ -202,7 +236,7 @@ const SleepTimeStep: React.FC<SleepTimeStepProps> = ({ value, onChange }) => {
               </span>
             </div>
             <div className="text-base sm:text-lg font-bold text-indigo-600">
-              {formatTime(value.sleepingEnd)}
+              {formatTime(convertStringTimeToDate(value.sleepingEnd))}
             </div>
           </div>
         </div>

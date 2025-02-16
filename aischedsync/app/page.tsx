@@ -29,23 +29,8 @@ const getTimeDifferenceInMinutes = (time1: string, time2: string): number => {
   return Math.round((date2.getTime() - date1.getTime()) / (1000 * 60));
 };
 
-const hasTimeOverlap = (task1: Task, task2: Task): boolean => {
-  const start1 = parseTimeString(task1.time);
-  const end1 = parseTimeString(addMinutesToTime(task1.time, task1.duration));
-  const start2 = parseTimeString(task2.time);
-  const end2 = parseTimeString(addMinutesToTime(task2.time, task2.duration));
-  
-  return (start1 < end2 && end1 > start2);
-};
-
-// Add this type definition if not already present
-interface TaskAdjustment {
-  task: Task;
-  timeShift: number;
-}
 
 export default function Home() {
-  const [searchQuery, setSearchQuery] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [mainTasks, setMainTasks] = useState<Task[]>([]);
 
@@ -203,10 +188,7 @@ export default function Home() {
     if (newEndTime !== originalEndTime) {
       // If there's any drift, adjust all tasks proportionally
       const timeDiff = getTimeDifferenceInMinutes(originalEndTime, newEndTime);
-      if (timeDiff !== 0) {
-        const tasksToAdjust = endIndex - startIndex + 1;
-        const adjustmentPerTask = Math.floor(timeDiff / tasksToAdjust);
-        
+      if (timeDiff !== 0) {        
         let currentTime = originalStartTime;
         for (let i = startIndex; i <= endIndex; i++) {
           updatedTasks[i].time = currentTime;

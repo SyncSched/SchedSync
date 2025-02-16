@@ -40,12 +40,11 @@ const Login = () => {
     }, []);
 
     const loginWithGoogle = () => {
-        const scope = "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email";
-        const redirectUri = "http://localhost:3000/auth/google/callback";
-        const clientId = "535450891467-v9pu6251j703u36r8l5gsogdrrnkf04a.apps.googleusercontent.com";
+        const scope = `https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email`;
+        const redirectUri = `http://localhost:3000/auth/google/callback`;
+        const clientId = `535450891467-v9pu6251j703u36r8l5gsogdrrnkf04a.apps.googleusercontent.com`;
         const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
         
-        // Redirect to the Google authentication endpoint
         window.open(url, "_self");
     };
 
@@ -58,16 +57,6 @@ const Login = () => {
             router.push('/');
         }
     }, [router]);
-
-    // const handleLoginSuccess = async (data: any) => {
-    //     // Set auth token
-    //     document.cookie = `authToken=${data.token}; path=/`;
-        
-    //     // Don't set onboardingComplete cookie here
-    //     // Let the user go through onboarding
-        
-    //     router.push('/onboarding');
-    // };
 
     return (
         <div className="min-h-screen flex items-stretch">
@@ -108,7 +97,7 @@ const Login = () => {
 
                     {/* Quote Slider */}
                     <div className="mt-12 relative p-6 rounded-2xl bg-gradient-to-r from-gray-50/50 to-blue-50/50 backdrop-blur-sm">
-                        <div className="absolute top-2 left-4 text-4xl text-blue-200 font-serif">"</div>
+                        <div className="absolute top-2 left-4 text-4xl text-blue-200 font-serif">&ldquo;</div>
                         <div className="min-h-[100px] flex items-center justify-center">
                             <div 
                                 className="text-center transition-opacity duration-500"
@@ -122,7 +111,7 @@ const Login = () => {
                                 </p>
                             </div>
                         </div>
-                        <div className="absolute bottom-2 right-4 text-4xl text-blue-200 font-serif rotate-180">"</div>
+                        <div className="absolute bottom-2 right-4 text-4xl text-blue-200 font-serif rotate-180">&rdquo;</div>
                     </div>
 
                     {/* Quote Navigation Dots */}

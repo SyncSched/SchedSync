@@ -25,7 +25,7 @@ const TimeInput: React.FC<TimeInputProps> = ({ value, onChange, className }) => 
     const newDate = new Date();
     
     // Convert to 24-hour format
-    let hours24 = period === 'PM' ? 
+    const hours24 = period === 'PM' ? 
       (hour === 12 ? 12 : hour + 12) : 
       (hour === 12 ? 0 : hour);
     

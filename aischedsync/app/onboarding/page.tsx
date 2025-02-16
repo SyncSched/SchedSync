@@ -5,22 +5,23 @@ import OnboardingProgress from './components/OnboardingProgress';
 import ProfessionStep from './components/ProfessionStep';
 import HobbiesStep from './components/HobbiesStep';
 import SleepTimeStep from './components/SleepTimeStep';
-import WorkingHoursStep from './components/WorkingHoursStep';
 import WorkTimeStep from './components/WorkTimeStep';
 import { createOnboarding , OnboardingInput } from '@/api/lib';
 
 const OnboardingPage = () => {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
+  type FormField = keyof OnboardingInput;
+  type FormValue = OnboardingInput[FormField];
   const [formData, setFormData] = useState<OnboardingInput>({
     profession: '',
     hobbies: [],
     sleepingHours: 0,
-    sleepingStart: new Date(),
-    sleepingEnd: new Date(),
+    sleepingStart: new Date().toISOString(),
+    sleepingEnd: new Date().toISOString(),
     workingHours: 0,
-    workingStart: new Date(),
-    workingEnd: new Date(),
+    workingStart: new Date().toISOString(),
+    workingEnd: new Date().toISOString(),
     userId: 'user-id-placeholder', // Replace with actual user ID
   });
 
@@ -52,7 +53,7 @@ const OnboardingPage = () => {
     }
   };
 
-  const updateFormData = (field: string, value: any) => {
+  const updateFormData = (field: string, value: FormValue) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
