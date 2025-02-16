@@ -15,8 +15,50 @@ datasource db {
 
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
+  id              String          @id @default(cuid())
+  email           String          @unique
+  name            String
+  avatarUrl       String
+  googleId        String          @unique
+  schedules       Schedule[]
+  onboardingData  OnboardingData? // One-to-one relation
+  createdAt       DateTime        @default(now())
 }
+
+model OnboardingData {
+  id               String   @id @default(cuid())
+  profession       String
+  hobbies         String[]
+  
+  sleepingHours    Int
+  sleepingStart    String
+  sleepingEnd      String
+
+  workingHours     Int
+  workingStart     String
+  workingEnd       String
+
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id]) // One-to-One Relationship
+}
+
+
+
+model Schedule {
+  id           String          @id @default(cuid())
+  userId       String
+  user         User            @relation(fields: [userId], references: [id] , onDelete: Cascade)
+  originalData Task[]            // Aim to Store the AI-generated schedule
+  createdAt    DateTime        @default(now())
+}
+
+
+model Task {
+  id        String   @id @default(cuid())
+  name      String
+  time      String   
+  duration  Int
+  scheduleId String
+  schedule  Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+}
+

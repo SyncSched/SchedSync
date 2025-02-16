@@ -1,45 +1,78 @@
 import express, { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import passport from 'passport';
+import session from 'express-session'
+import cors from 'cors'
+import { generateToken } from './utils/jwt';
+import { User } from './models/user.model';
+import { attachPublicRoutes } from './routes/routes';
+import { attachPrivateRoutes } from './routes/routes';
+import { authMiddleware } from './middleware/authMiddleware';
+import { RouteNotFoundError } from './errors';
+import { handleError } from './middleware/error';
+import './utils/passportConfig'
+import { initScheduleCron } from './cron/scheduleCron'
 
 const app = express();
-const prisma = new PrismaClient();
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'default_secret',
+    resave: false,
+    saveUninitialized: false,
+  }),
+);
 
-app.use(express.json()); // Middleware to parse JSON requests
+app.use(passport.initialize());
+app.use(passport.session());
+
+app.use(cors());
+app.use(express.json()); 
+
+
+app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+app.get(
+  '/auth/google/callback',
+  passport.authenticate('google', {
+    failureRedirect: 'http://localhost:8080/',
+    session: true,
+  }),
+  (req, res) => {
+    const user = req.user as User;
+    console.log(user);
+    if (user && user.id) {
+      const token = generateToken({
+        id: user.id.toString(),
+        email: user.email,
+        name: user.name,
+        avatarUrl: user.avatarUrl
+      })
+      console.log('Login successful. User details:', req.user);
+      res.redirect(`http://localhost:8080/login?token=${token}`);
+    } else {
+      console.log('Login failed. User not authenticated.');
+      res.redirect('http://localhost:8080/');
+    }
+  },
+);
+
+
+//public routes
+attachPublicRoutes(app);
+
+//Middleware call
+app.use('/', authMiddleware);
+
+//private routes
+attachPrivateRoutes(app);
+
+
+app.use((req, _res, next) => next(new RouteNotFoundError(req.originalUrl)));
+app.use(handleError);
+
+// Initialize cron jobs
+initScheduleCron();
 
 const PORT = 3000;
-
-// Add a new user
-app.post('/users', async (req: Request, res: Response) => {
-  try {
-    const { email, name } = req.body;
-
-    if (!email || !name) {
-      return res.status(400).json({ error: 'Email and name are required' });
-    }
-
-    const newUser = await prisma.user.create({
-      data: { email, name },
-    });
-
-    res.status(201).json(newUser);
-  } catch (error) {
-    console.error('Error creating user:', error);
-    res.status(500).json({ error: 'Failed to create user' });
-  }
-});
-
-// Get all users
-app.get('/users', async (req: Request, res: Response) => {
-  try {
-    const users = await prisma.user.findMany();
-    res.json(users);
-  } catch (error) {
-    console.error('Error retrieving users:', error);
-    res.status(500).json({ error: 'Failed to retrieve users' });
-  }
-});
-
-// Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });

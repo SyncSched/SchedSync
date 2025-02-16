@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "OnboardingData" ALTER COLUMN "sleepingStart" SET DATA TYPE TEXT,
+ALTER COLUMN "sleepingEnd" SET DATA TYPE TEXT,
+ALTER COLUMN "workingStart" SET DATA TYPE TEXT,
+ALTER COLUMN "workingEnd" SET DATA TYPE TEXT;
