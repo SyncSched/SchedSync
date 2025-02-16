@@ -24,6 +24,15 @@ export async function middleware(request: NextRequest) {
       } else {
         // If no cookie, check database
         hasCompletedOnboarding = await checkOnboardingStatus(token.value);
+        if(hasCompletedOnboarding){
+          // Set cookie if onboarding is completed
+          const response = NextResponse.next();
+          response.cookies.set('onboardingComplete', 'true', {
+            maxAge: 60 * 60 * 24 * 365, // 30 days
+            path: '/',
+          });
+          return response;
+        }
       }
 
       console.log(hasCompletedOnboarding,"this is from db")
