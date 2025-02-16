@@ -15,10 +15,6 @@ export const attachPrivateRoutes = (app:any) :void =>{
     //create a Schedule  -> Here we call AI to schedule that day , call only once per day , whenever person opens the website
     app.get('/generateSchedule' , generateScheduleHandler);
     app.post('/createSchedule',createScheduleHandler);
-    
-
-    //create a Adjustment -> We store all these adjustments in Vector DBs inorder to retrive the matched information
-    // app.post('/createAdjustment',createAdjustmentHandler);
 
     app.post('/createOnboarding', createOnboardingHandler);
 

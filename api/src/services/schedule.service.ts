@@ -131,22 +131,8 @@ export const getTodaySchedules = async () => {
         originalData: true, // Include tasks
       }
     });
-    
-    // Apply any adjustments to the schedules if needed
-    const updatedSchedules = schedules.map(schedule => {
-      // const parsedAdjustments = schedule.adjustments.map(adjustment => ({
-      //   ...adjustment,
-      //   details: parseDetails(adjustment.details)
-      // }));
-      
-      // const updatedTasks = applyAdjustments(schedule.originalData, parsedAdjustments);
-      return {
-        ...schedule,
-        // originalData: updatedTasks
-      };
-    });
 
-    return updatedSchedules;
+    return schedules;
   } catch (error) {
     console.error('Error fetching today schedules:', error);
     throw error;
