@@ -3,7 +3,8 @@
 import { PineconeManager } from "../rag/vector-stores/PineconeManager";
 // import { CustomRetriever } from "./rag/retrievers/CustomRetriever";
 // import { CustomQAChain } from "./rag/chains/CustomQAChain";
-import { EmbeddingManager } from "../rag/embedding/EmbeddingManager";
+// import { EmbeddingManager } from "../rag/embedding/EmbeddingManager";
+import { EmbeddingManager } from "../rag/embedding/OpenAIEmbedding";
 // import { CustomDocument } from "./types/CustomDocument";
 // import dotenv from "dotenv";
 // import { PineconeDebugger } from "./pineconedebugger";
@@ -269,5 +270,3 @@ async function main() {
     console.error("Error:", error);
   }
 }
-
-// main();
