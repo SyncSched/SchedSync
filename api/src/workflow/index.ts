@@ -55,25 +55,25 @@ async function callDeepSeekAPI(prompt: string) {
 }
 
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+// const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+// const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
-async function callOpenAIAPI(prompt: string) {
-  try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo", 
-      // model: "gpt-4",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.7,
-      max_tokens: 500, // Adjust as needed
-    });
+// async function callOpenAIAPI(prompt: string) {
+//   try {
+//     const response = await openai.chat.completions.create({
+//       model: "gpt-3.5-turbo", 
+//       // model: "gpt-4",
+//       messages: [{ role: "user", content: prompt }],
+//       temperature: 0.7,
+//       max_tokens: 500, // Adjust as needed
+//     });
 
-    return response.choices[0].message.content;
-  } catch (error) {
-    console.error("Error calling OpenAI API:", error);
-    throw error;
-  }
-}
+//     return response.choices[0].message.content;
+//   } catch (error) {
+//     console.error("Error calling OpenAI API:", error);
+//     throw error;
+//   }
+// }
 
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;

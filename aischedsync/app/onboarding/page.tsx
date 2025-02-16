@@ -57,6 +57,7 @@ const OnboardingPage = () => {
       ...prev,
       [field]: value
     }));
+    console.log(formData,"lets see whether the form data updated or not...")
   };
 
   return (
