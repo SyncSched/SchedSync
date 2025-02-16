@@ -18,7 +18,7 @@ export const attachPrivateRoutes = (app:any) :void =>{
 
     app.post('/createOnboarding', createOnboardingHandler);
 
-    app.get('/checkonboardingdata/:userId', checkOnboardingDataHandler);
+    app.get('/checkonboardingdata', checkOnboardingDataHandler);
 
     app.put('/schedule/:id/update', updateScheduleHandler);
 

@@ -1,5 +1,5 @@
+import Cookies from 'js-cookie';
 // /lib/api.ts
-
 export interface User {
     id?: string;
     email: string;
@@ -112,22 +112,34 @@ export interface Schedule {
       throw error;
     }
   };
-  
-  
+
   /**
-   * Sends a createAdjustment API call with the updated task data.
-   */
-  // export const createAdjustment = async (adjustmentData: CreateAdjustmentInput): Promise<Adjustment> => {
-  //   const res = await fetch('http://localhost:3000/createAdjustment', {
-  //     method: 'POST',
-  //     headers: { 'Content-Type': 'application/json' , 'Authorization' : `Bearer ${getStoredAuthToken()}` },
-  //     body: JSON.stringify(adjustmentData)
-  //   });
-  //   if (!res.ok) {
-  //     throw new Error('Failed to save adjustment');
-  //   }
-  //   return res.json();
-  // };
+ * Checks if the user has completed onboarding
+ * @param token - The authentication token
+ * @returns Promise<boolean> - True if onboarding exists, false otherwise
+ */
+export const checkOnboardingStatus = async (token: string): Promise<boolean> => {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const res = await fetch(`${baseUrl}/checkonboardingdata`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!res.ok) {
+      throw new Error('Failed to check onboarding status');
+    }
+
+    const data = await res.json();
+    return data.hasOnboardingData;
+  } catch (error) {
+    console.error('Error checking onboarding status:', error);
+    return false;
+  }
+};
   
   /**
    * Sends a createOnboarding API call with the onboarding data.
@@ -192,7 +204,7 @@ export interface Schedule {
   };
   
 
-  export const getStoredAuthToken = () => localStorage.getItem('authToken');
+  export const getStoredAuthToken = () => Cookies.get('authToken');
 
 /**
  * Updates the schedule with new tasks

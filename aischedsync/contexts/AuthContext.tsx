@@ -20,7 +20,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     Cookies.remove('authToken');
-    localStorage.removeItem('authToken');
     setIsAuthenticated(false);
     window.location.href = '/login';
   };

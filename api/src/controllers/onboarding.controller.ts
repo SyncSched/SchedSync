@@ -4,16 +4,14 @@ import { AuthenticatedRequest } from "../types/request";
 // Define the authenticated request type inline
 
 
-export const checkOnboardingDataHandler = async (req: Request, res: Response) => {
+export const checkOnboardingDataHandler = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { userId } = req.params; // Get user ID from request params
-
+    const  userId  = req.user?.id; // Get user ID from request params
     if (!userId) {
       return res.status(400).json({ message: "User ID is required" });
     }
 
     const hasOnboardingData = await checkUserOnboarding(userId);
-
     return res.status(200).json({ hasOnboardingData });
   } catch (error) {
     console.error("Error checking onboarding data:", error);

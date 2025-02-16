@@ -1,8 +1,8 @@
 'use client'
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Cookies from 'js-cookie';
 import Image from 'next/image';
+import Cookies from 'js-cookie';
 // import "./login.css"
 import scheduleImg from '@/public/assets/schedule.png'
 import googleImg from '@/public/assets/google.png'
@@ -54,24 +54,20 @@ const Login = () => {
         const token = urlParams.get('token');
         
         if (token) {
-            // Store token in both cookie and localStorage for redundancy
-            Cookies.set('authToken', token, { expires: 7 }); // Expires in 7 days
-            localStorage.setItem('authToken', token);
-            
-            // Redirect to home page
+            Cookies.set('authToken', token, { expires: 7, sameSite: 'strict' });
             router.push('/');
         }
     }, [router]);
 
-    const handleLoginSuccess = async (data: any) => {
-        // Set auth token
-        document.cookie = `authToken=${data.token}; path=/`;
+    // const handleLoginSuccess = async (data: any) => {
+    //     // Set auth token
+    //     document.cookie = `authToken=${data.token}; path=/`;
         
-        // Don't set onboardingComplete cookie here
-        // Let the user go through onboarding
+    //     // Don't set onboardingComplete cookie here
+    //     // Let the user go through onboarding
         
-        router.push('/onboarding');
-    };
+    //     router.push('/onboarding');
+    // };
 
     return (
         <div className="min-h-screen flex items-stretch">
