@@ -31,12 +31,12 @@ model OnboardingData {
   hobbies         String[]
   
   sleepingHours    Int
-  sleepingStart    DateTime
-  sleepingEnd      DateTime
+  sleepingStart    String
+  sleepingEnd      String
 
   workingHours     Int
-  workingStart     DateTime
-  workingEnd       DateTime
+  workingStart     String
+  workingEnd       String
 
   userId           String   @unique
   user             User     @relation(fields: [userId], references: [id]) // One-to-One Relationship

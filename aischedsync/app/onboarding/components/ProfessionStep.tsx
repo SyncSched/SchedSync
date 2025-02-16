@@ -9,6 +9,9 @@ const ProfessionStep = ({ value, onChange }: { value: string; onChange: (value: 
     'Other'
   ];
 
+  // Track if we're in "Other" input mode
+  const isOtherMode = value === 'Other' || (value && !professions.includes(value));
+
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -22,7 +25,7 @@ const ProfessionStep = ({ value, onChange }: { value: string; onChange: (value: 
             key={profession}
             onClick={() => onChange(profession)}
             className={`p-4 rounded-xl border-2 transition-all duration-200
-              ${value === profession 
+              ${(!isOtherMode && value === profession) || (profession === 'Other' && isOtherMode)
                 ? 'border-green-500 bg-green-50 text-green-700' 
                 : 'border-gray-200 hover:border-gray-300 text-gray-700'}`}
           >
@@ -32,12 +35,13 @@ const ProfessionStep = ({ value, onChange }: { value: string; onChange: (value: 
       </div>
 
       {/* Custom Input for "Other" */}
-      {value === 'Other' && (
+      {isOtherMode && (
         <div className="mt-4">
           <input
             type="text"
             placeholder="Enter your profession"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            value={value === 'Other' ? '' : value}
+            className="w-full p-3 border  rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black"
             onChange={(e) => onChange(e.target.value)}
           />
         </div>
@@ -46,4 +50,4 @@ const ProfessionStep = ({ value, onChange }: { value: string; onChange: (value: 
   );
 };
 
-export default ProfessionStep; 
+export default ProfessionStep;

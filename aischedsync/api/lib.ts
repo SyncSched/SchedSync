@@ -41,11 +41,11 @@ export interface Schedule {
     profession: string;
     hobbies: string[];
     sleepingHours: number;
-    sleepingStart: Date;
-    sleepingEnd: Date;
+    sleepingStart: string;
+    sleepingEnd: string;
     workingHours: number;
-    workingStart: Date;
-    workingEnd: Date;
+    workingStart: string;
+    workingEnd: string;
     userId: string;
   }
   
@@ -134,13 +134,29 @@ export interface Schedule {
    */
   export const createOnboarding = async (onboardingData: OnboardingInput): Promise<Onboarding> => {
     try {
+      // Format Date objects to strings in the local time zone
+      const formatDateToLocalString = (dateString: string) => {
+        const date = new Date(dateString);
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
+      };
+  
+      const formattedData = {
+        ...onboardingData,
+        sleepingStart: formatDateToLocalString(onboardingData.sleepingStart),
+        sleepingEnd: formatDateToLocalString(onboardingData.sleepingEnd),
+        workingStart: formatDateToLocalString(onboardingData.workingStart),
+        workingEnd: formatDateToLocalString(onboardingData.workingEnd)
+      };
+  
+      console.log(onboardingData.sleepingStart, formattedData.sleepingStart);
+      console.log(formattedData, "before calling api, checking the onboarding data");
       const res = await fetch('http://localhost:3000/createOnboarding', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${getStoredAuthToken()}`
         },
-        body: JSON.stringify(onboardingData)
+        body: JSON.stringify(formattedData)
       });
   
       if (!res.ok) {

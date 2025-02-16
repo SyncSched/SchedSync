@@ -16,11 +16,11 @@ interface OnboardingData {
   profession: string;
   hobbies: string[];
   sleepingHours: number;
-  sleepingStart: Date;
-  sleepingEnd: Date;
+  sleepingStart: string;
+  sleepingEnd: string;
   workingHours: number;
-  workingStart: Date;
-  workingEnd: Date;
+  workingStart: string;
+  workingEnd: string;
 }
 
 export const getOnboardingData = async (userId: string): Promise<OnboardingData | null> => {
