@@ -1,3 +1,5 @@
+import './utils/env-loader';
+
 import express, { Request, Response } from 'express';
 import passport from 'passport';
 import session from 'express-session'
@@ -9,10 +11,11 @@ import { attachPrivateRoutes } from './routes/routes';
 import { authMiddleware } from './middleware/authMiddleware';
 import { RouteNotFoundError } from './errors';
 import { handleError } from './middleware/error';
-import './utils/passportConfig'
 import { initScheduleCron } from './cron/scheduleCron'
 
+import './utils/passportConfig'
 const app = express();
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET || 'default_secret',
@@ -20,6 +23,7 @@ app.use(
     saveUninitialized: false,
   }),
 );
+
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -33,7 +37,7 @@ app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'em
 app.get(
   '/auth/google/callback',
   passport.authenticate('google', {
-    failureRedirect: 'http://localhost:8080/',
+    failureRedirect: process.env.CLIENT_URL,
     session: true,
   }),
   (req, res) => {
@@ -47,10 +51,10 @@ app.get(
         avatarUrl: user.avatarUrl
       })
       console.log('Login successful. User details:', req.user);
-      res.redirect(`http://localhost:8080/login?token=${token}`);
+      res.redirect(`${process.env.CLIENT_URL}/login?token=${token}`);
     } else {
       console.log('Login failed. User not authenticated.');
-      res.redirect('http://localhost:8080/');
+      res.redirect(process.env.CLIENT_URL || 'http://localhost:8080');
     }
   },
 );
