@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - main  # Change to 'master' if needed
-    paths:
-      - 'api/**'  # Trigger workflow only when changes occur inside `api/`
+    # paths:
+    #   - 'api/**'  # Trigger workflow only when changes occur inside `api/`
 
 jobs:
   deploy_lambda:
