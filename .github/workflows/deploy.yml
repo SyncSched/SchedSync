@@ -23,7 +23,7 @@ jobs:
       - name: Set Up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Install Dependencies
         run: |
@@ -39,4 +39,4 @@ jobs:
         run: |
           cd api
           zip -r deploy.zip ./dist/* package.json package-lock.json
-          aws lambda update-function-code --function-name YOUR_LAMBDA_FUNCTION_NAME --zip-file fileb://deploy.zip
+          aws lambda update-function-code --function-name schedsyncapi --zip-file fileb://deploy.zip
