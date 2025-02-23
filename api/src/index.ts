@@ -1,4 +1,9 @@
-import serverless from 'serverless-http';
+import { APIGatewayProxyEvent, Context } from 'aws-lambda';
+import serverless from 'aws-serverless-express';
 import app from './app';
 
-export const handler = serverless(app);
+const server = serverless.createServer(app);
+
+export const handler = (event: APIGatewayProxyEvent, context: Context) => {
+  return serverless.proxy(server, event, context);
+};

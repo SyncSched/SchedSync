@@ -3,11 +3,11 @@ import { createScheduleHandler, generateScheduleHandler, getScheduleHandler , up
 import {getAllUsersHandler, getCurrentUser} from '../controllers/user.controller'
 
 export const attachPublicRoutes = (app:any) : void =>{
+    app.get('/users',getAllUsersHandler); //This route is not required but working fine
 }
 
 export const attachPrivateRoutes = (app:any) :void =>{
     
-    app.get('/users',getAllUsersHandler); //This route is not required but working fine
     
     app.get('/currentUser',getCurrentUser);
     

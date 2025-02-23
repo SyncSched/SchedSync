@@ -4,14 +4,14 @@
   "main": "index.js",
   "scripts": {
     "dev": "cross-env NODE_ENV=development nodemon --exec ts-node src/server.ts",
-    "start": "cross-env NODE_ENV=production node dist/index.js",
+    "start": "cross-env NODE_ENV=development node dist/server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "migration:create": "dotenv -e .env.development -- prisma migrate dev --create-only",
     "migrate": "dotenv -e .env.development -- prisma migrate dev",
     "prisma:studio:dev": "dotenv -e .env.development -- prisma studio",
     "prisma:studio:prod": "dotenv -e .env.production -- prisma studio",
     "migrate:production": "dotenv -e .env.production -- npx prisma migrate deploy",
-    "build": "tsc --project tsconfig.json && echo Build completed successfully!"
+    "build": "tsc --project tsconfig.json && cpy .env.development dist/ --rename=.env.development && echo Build completed successfully!"
   },
   "keywords": [],
   "author": "",
@@ -26,6 +26,8 @@
     "@pinecone-database/pinecone": "^4.1.0",
     "@prisma/client": "^6.2.1",
     "@types/node-cron": "^3.0.11",
+    "aws-lambda": "^1.0.7",
+    "aws-serverless-express": "^3.4.0",
     "axios": "^1.7.9",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
@@ -52,6 +54,7 @@
     "@types/node": "^22.10.7",
     "@types/passport": "^1.0.17",
     "@types/passport-google-oauth20": "^2.0.16",
+    "cpy-cli": "^5.0.0",
     "cross-env": "^7.0.3",
     "nodemon": "^3.1.9",
     "rimraf": "^6.0.1",
