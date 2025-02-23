@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development nodemon --exec ts-node src/index.ts",
+    "dev": "cross-env NODE_ENV=development nodemon --exec ts-node src/server.ts",
     "start": "cross-env NODE_ENV=production node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "migration:create": "dotenv -e .env.development -- prisma migrate dev --create-only",
@@ -40,6 +40,7 @@
     "pg": "^8.13.1",
     "prisma": "^6.2.1",
     "react-time-picker": "^7.0.0",
+    "serverless-http": "^3.2.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
