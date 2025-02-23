@@ -3,32 +3,40 @@ name: Deploy to AWS Lambda
 on:
   push:
     branches:
-      - main  # Change to 'master' if needed
+      - main  # Change if using 'master'
 
 jobs:
   deploy_lambda:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      - name: Configure AWS Credentials
+        run: |
+          echo "Configuring AWS Credentials..."
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set region ${{ secrets.AWS_REGION }}
+
       - name: Set Up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'  # Match your AWS Lambda runtime
+          node-version: '20'
 
       - name: Install Dependencies
         run: |
           cd api
-          npm install --force
+          npm ci --force  # Ensures a clean install
 
       - name: Compile TypeScript
         run: |
           cd api
-          npm run build  # This should run `tsc`
+          npm run build
 
-      - name: Package and Upload to AWS Lambda
+      - name: Package and Deploy to AWS Lambda
         run: |
           cd api
           zip -r deploy.zip ./dist/* package.json package-lock.json
-          aws lambda update-function-code --function-name your-lambda-function-name --zip-file fileb://deploy.zip
+          aws lambda update-function-code --function-name YOUR_LAMBDA_FUNCTION_NAME --zip-file fileb://deploy.zip
