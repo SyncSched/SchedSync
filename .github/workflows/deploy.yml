@@ -38,5 +38,5 @@ jobs:
       - name: Package and Deploy to AWS Lambda
         run: |
           cd api
-          zip -r deploy.zip ./dist/* package.json package-lock.json
+          zip -r deploy.zip ./dist/* node_modules package.json package-lock.json
           aws lambda update-function-code --function-name schedsyncapi --zip-file fileb://deploy.zip
