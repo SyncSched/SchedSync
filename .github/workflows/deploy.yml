@@ -20,7 +20,7 @@ jobs:
       - name: Install Dependencies
         run: |
           cd api
-          npm ci  # Install dependencies (clean install)
+          npm install --force
 
       - name: Compile TypeScript
         run: |
