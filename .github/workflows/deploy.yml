@@ -28,7 +28,7 @@ jobs:
       - name: Install Dependencies
         run: |
           cd api
-          npm ci --force  # Ensures a clean install
+          npm install --force  # Use --force to resolve minor mismatches
 
       - name: Compile TypeScript
         run: |
