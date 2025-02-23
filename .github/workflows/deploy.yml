@@ -21,7 +21,7 @@ jobs:
       - name: Set Up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'  # Match your AWS Lambda runtime
+          node-version: '20'  # Match your AWS Lambda runtime
 
       - name: Install Dependencies
         run: npm ci  # Clean install dependencies
