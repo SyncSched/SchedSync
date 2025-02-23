@@ -11,7 +11,7 @@
     "prisma:studio:dev": "dotenv -e .env.development -- prisma studio",
     "prisma:studio:prod": "dotenv -e .env.production -- prisma studio",
     "migrate:production": "dotenv -e .env.production -- npx prisma migrate deploy",
-    "build": "tsc --project tsconfig.json && cpy .env.development dist/ --rename=.env.development && echo Build completed successfully!"
+    "build": "tsc --project tsconfig.json && echo Build completed successfully!"
   },
   "keywords": [],
   "author": "",
