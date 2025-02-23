@@ -4,16 +4,10 @@ on:
   push:
     branches:
       - main  # Change to 'master' if needed
-    # paths:
-    #   - 'api/**'  # Trigger workflow only when changes occur inside `api/`
 
 jobs:
   deploy_lambda:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: api  # Set the working directory to `api`
-    
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -24,12 +18,17 @@ jobs:
           node-version: '20'  # Match your AWS Lambda runtime
 
       - name: Install Dependencies
-        run: npm ci  # Clean install dependencies
+        run: |
+          cd api
+          npm ci  # Install dependencies (clean install)
 
       - name: Compile TypeScript
-        run: npm run build  # Runs `tsc` to compile TypeScript to JavaScript
+        run: |
+          cd api
+          npm run build  # This should run `tsc`
 
       - name: Package and Upload to AWS Lambda
         run: |
+          cd api
           zip -r deploy.zip ./dist/* package.json package-lock.json
           aws lambda update-function-code --function-name your-lambda-function-name --zip-file fileb://deploy.zip
