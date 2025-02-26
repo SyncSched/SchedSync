@@ -14,10 +14,11 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Configure AWS Credentials
-        run: |
-          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws configure set region ${{ secrets.AWS_REGION }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Set Up Node.js
         uses: actions/setup-node@v3
@@ -27,54 +28,67 @@ jobs:
       - name: Install Production Dependencies
         run: |
           cd api
-          npm install --only=prod --force  # Install only dependencies, skipping devDependencies
+          npm install --only=prod --force  # Install only production dependencies
+
+      - name: Generate Prisma Binaries
+        run: |
+          cd api
+          npx prisma generate  # Required for Prisma to work in Lambda
 
       - name: Create Lambda Layer 1 (Core Dependencies)
         run: |
           cd api
-          mkdir -p layer1/nodejs
-          
-          cp -r node_modules/express layer1/nodejs/
-          cp -r node_modules/cors layer1/nodejs/
-          cp -r node_modules/aws-serverless-express layer1/nodejs/
-          cp -r node_modules/dotenv layer1/nodejs/
-          cp -r node_modules/jsonwebtoken layer1/nodejs/
-          cp -r node_modules/zod layer1/nodejs/
-          cp -r node_modules/pg layer1/nodejs/
-          cp -r node_modules/passport layer1/nodejs/
-          cp -r node_modules/passport-google-oauth20 layer1/nodejs/
-          cp -r node_modules/lodash layer1/nodejs/
-          cp -r node_modules/axios layer1/nodejs/
-          cp -r node_modules/node-cron layer1/nodejs/
+          mkdir -p layer1/nodejs/node_modules  # Correct layer structure
 
+          # Copy core dependencies
+          cp -r node_modules/express layer1/nodejs/node_modules/
+          cp -r node_modules/cors layer1/nodejs/node_modules/
+          cp -r node_modules/aws-serverless-express layer1/nodejs/node_modules/
+          cp -r node_modules/dotenv layer1/nodejs/node_modules/
+          cp -r node_modules/jsonwebtoken layer1/nodejs/node_modules/
+          cp -r node_modules/zod layer1/nodejs/node_modules/
+          cp -r node_modules/pg layer1/nodejs/node_modules/
+          cp -r node_modules/passport layer1/nodejs/node_modules/
+          cp -r node_modules/passport-google-oauth20 layer1/nodejs/node_modules/
+          cp -r node_modules/lodash layer1/nodejs/node_modules/
+          cp -r node_modules/axios layer1/nodejs/node_modules/
+          cp -r node_modules/node-cron layer1/nodejs/node_modules/
+
+          # Zip and publish Layer 1
           cd layer1
           zip -r layer1.zip nodejs
-          aws lambda publish-layer-version \
+          LAYER1_ARN=$(aws lambda publish-layer-version \
             --layer-name "schedsync-layer-1" \
             --content "fileb://layer1.zip" \
-            --compatible-runtimes "[\"nodejs22.x\"]" \
-            --region "${{ secrets.AWS_REGION }}"
+            --compatible-runtimes "nodejs22.x" \
+            --query 'LayerVersionArn' \
+            --output text)
+          echo "LAYER1_ARN=$LAYER1_ARN" >> $GITHUB_ENV  # Store ARN for later use
 
       - name: Create Lambda Layer 2 (AI & DB Dependencies)
         run: |
           cd api
-          mkdir -p layer2/nodejs
-          
-          cp -r node_modules/@prisma layer2/nodejs/
-          cp -r node_modules/@google layer2/nodejs/
-          cp -r node_modules/@langchain layer2/nodejs/
-          cp -r node_modules/@pinecone-database layer2/nodejs/
-          cp -r node_modules/openai layer2/nodejs/
-          cp -r node_modules/serverless-http layer2/nodejs/
+          mkdir -p layer2/nodejs/node_modules  # Correct layer structure
 
+          # Copy AI & DB dependencies
+          cp -r node_modules/@prisma layer2/nodejs/node_modules/
+          cp -r node_modules/prisma layer2/nodejs/node_modules/  # Include Prisma client
+          cp -r node_modules/@google layer2/nodejs/node_modules/
+          cp -r node_modules/@langchain layer2/nodejs/node_modules/
+          cp -r node_modules/@pinecone-database layer2/nodejs/node_modules/
+          cp -r node_modules/openai layer2/nodejs/node_modules/
+          cp -r node_modules/serverless-http layer2/nodejs/node_modules/
+
+          # Zip and publish Layer 2
           cd layer2
           zip -r layer2.zip nodejs
-          aws lambda publish-layer-version \
+          LAYER2_ARN=$(aws lambda publish-layer-version \
             --layer-name "schedsync-layer-2" \
             --content "fileb://layer2.zip" \
-            --compatible-runtimes "[\"nodejs22.x\"]" \
-            --region "${{ secrets.AWS_REGION }}"
-
+            --compatible-runtimes "nodejs22.x" \
+            --query 'LayerVersionArn' \
+            --output text)
+          echo "LAYER2_ARN=$LAYER2_ARN" >> $GITHUB_ENV  # Store ARN for later use
 
       - name: Compile TypeScript
         run: |
@@ -98,7 +112,5 @@ jobs:
         run: |
           aws lambda update-function-configuration \
             --function-name schedsyncapi \
-            --layers \
-              arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:layer:schedsync-layer-1:latest \
-              arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:layer:schedsync-layer-2:latest \
+            --layers $LAYER1_ARN $LAYER2_ARN \
             --region ${{ secrets.AWS_REGION }}
