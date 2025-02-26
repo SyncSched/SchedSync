@@ -102,6 +102,25 @@ jobs:
           # Store the ARN in GitHub environment variables for later use
           echo "LAYER2_ARN=$LAYER2_ARN" >> $GITHUB_ENV
 
+
+
+      - name: Install Dependencies
+        run: |
+          cd api
+          npm install --force
+          npm install --save-dev \
+            @types/passport \
+            @types/express-session \
+            @types/cors \
+            @types/express \
+            @types/aws-lambda \
+            @types/aws-serverless-express \
+            @types/lodash \
+            @types/jsonwebtoken \
+            @types/passport-google-oauth20
+
+
+
       - name: Compile TypeScript
         run: |
           cd api
