@@ -76,7 +76,23 @@ jobs:
       - name: Package and Deploy to AWS Lambda
         run: |
           cd api
-          zip -r deploy.zip ./dist/* node_modules package.json package-lock.json .prisma
           
-          aws lambda update-function-code --function-name schedsyncapi --zip-file fileb://deploy.zip \
-            --layers $OPENAI_LAYER_ARN $LANGCHAIN_LAYER_ARN $PINECONE_LAYER_ARN
+          # Create a deployment package
+          zip -r deploy.zip ./dist/* node_modules package.json package-lock.json
+          
+          # Upload the updated function code to AWS Lambda
+          aws lambda update-function-code \
+            --function-name schedsyncapi \
+            --zip-file fileb://deploy.zip \
+            --region ${{ secrets.AWS_REGION }} \
+            --profile default
+
+          # Attach layers separately (Ensure layers exist before using them)
+          aws lambda update-function-configuration \
+            --function-name schedsyncapi \
+            --layers arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:layer:openai-layer:latest \
+                     arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:layer:langchain-layer:latest \
+                     arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:layer:pinecone-layer:latest \
+            --region ${{ secrets.AWS_REGION }} \
+            --profile default
+
