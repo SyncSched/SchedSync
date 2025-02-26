@@ -126,6 +126,8 @@ jobs:
           cd api
           npm run build
 
+
+
       - name: Package and Deploy Application Code to AWS Lambda
         run: |
           cd api
@@ -138,6 +140,19 @@ jobs:
             --function-name schedsyncapi \
             --zip-file fileb://deploy.zip \
             --region ${{ secrets.AWS_REGION }}
+
+
+      - name: Wait for Function Code Update to Complete
+        run: |
+          aws lambda wait function-updated \
+            --function-name schedsyncapi \
+            --region ${{ secrets.AWS_REGION }}
+
+      - name: Debug Logs
+        run: |
+          echo "LAYER1_ARN: $LAYER1_ARN"
+          echo "LAYER2_ARN: $LAYER2_ARN"
+
 
       - name: Attach Layers to Lambda Function
         run: |
