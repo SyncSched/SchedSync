@@ -30,6 +30,7 @@
     "aws-lambda": "^1.0.7",
     "aws-serverless-express": "^3.4.0",
     "axios": "^1.7.9",
+    "binary-case": "^1.1.4",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
