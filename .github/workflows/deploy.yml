@@ -74,9 +74,11 @@ jobs:
       - name: Create Lambda Layer 2 (AI & DB Dependencies)
         run: |
           cd api
-          mkdir -p layer2/nodejs/node_modules  # Correct layer structure
 
-          # Copy AI & DB dependencies
+          # Create the correct directory structure for the layer
+          mkdir -p layer2/nodejs/node_modules
+
+          # Copy AI & DB dependencies into the layer
           cp -r node_modules/@prisma layer2/nodejs/node_modules/
           cp -r node_modules/prisma layer2/nodejs/node_modules/  # Include Prisma client
           cp -r node_modules/@google layer2/nodejs/node_modules/
@@ -85,16 +87,20 @@ jobs:
           cp -r node_modules/openai layer2/nodejs/node_modules/
           cp -r node_modules/serverless-http layer2/nodejs/node_modules/
 
-          # Zip and publish Layer 2
+          # Zip the layer
           cd layer2
           zip -r layer2.zip nodejs
+
+          # Publish the layer and capture the ARN
           LAYER2_ARN=$(aws lambda publish-layer-version \
             --layer-name "schedsync-layer-2" \
-            --content "fileb://layer2.zip" \
+            --zip-file "fileb://layer2.zip" \
             --compatible-runtimes "nodejs22.x" \
             --query 'LayerVersionArn' \
             --output text)
-          echo "LAYER2_ARN=$LAYER2_ARN" >> $GITHUB_ENV  # Store ARN for later use
+
+          # Store the ARN in GitHub environment variables for later use
+          echo "LAYER2_ARN=$LAYER2_ARN" >> $GITHUB_ENV
 
       - name: Compile TypeScript
         run: |
