@@ -89,9 +89,14 @@ jobs:
 
       - name: Attach Layers to Lambda Function
         run: |
-          LAYERS=$(for ((i = 1; i <= $(ls -1 layers | wc -l); i++)); do
-            echo -n "$(eval echo \$LAYER${i}_ARN) "
-          done)
+          # Collect all layer ARNs into a single variable
+          LAYERS=""
+          for ((i = 1; i <= $(ls -1 api/layers | wc -l); i++)); do
+            LAYER_ARN=$(eval echo \$LAYER${i}_ARN)
+            LAYERS="$LAYERS $LAYER_ARN"
+          done
+
+          # Attach layers to the Lambda function
           aws lambda update-function-configuration \
             --function-name schedsyncapi \
             --layers $LAYERS \
