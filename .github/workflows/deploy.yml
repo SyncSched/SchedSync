@@ -52,7 +52,7 @@ jobs:
           aws lambda publish-layer-version \
             --layer-name "schedsync-layer-1" \
             --content "fileb://layer1.zip" \
-            --compatible-runtimes "nodejs22.x" \
+            --compatible-runtimes "[\"nodejs22.x\"]" \
             --region "${{ secrets.AWS_REGION }}"
 
       - name: Create Lambda Layer 2 (AI & DB Dependencies)
@@ -72,7 +72,7 @@ jobs:
           aws lambda publish-layer-version \
             --layer-name "schedsync-layer-2" \
             --content "fileb://layer2.zip" \
-            --compatible-runtimes "nodejs22.x" \
+            --compatible-runtimes "[\"nodejs22.x\"]" \
             --region "${{ secrets.AWS_REGION }}"
 
 
