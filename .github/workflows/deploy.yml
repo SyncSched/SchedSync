@@ -105,7 +105,54 @@ jobs:
           # Store the ARN in GitHub environment variables for later use
           echo "LAYER2_ARN=$LAYER2_ARN" >> $GITHUB_ENV
 
+      - name: Create Lambda Layer 3 (Remaining Dependencies)
+        run: |
+          cd api
 
+          # Create the correct directory structure for the layer
+          mkdir -p layer3/nodejs/node_modules
+
+          # Copy all node_modules into the layer
+          cp -r node_modules/* layer3/nodejs/node_modules/
+
+          # Remove dependencies already included in Layer 1 and Layer 2
+          rm -rf layer3/nodejs/node_modules/express
+          rm -rf layer3/nodejs/node_modules/cors
+          rm -rf layer3/nodejs/node_modules/aws-serverless-express
+          rm -rf layer3/nodejs/node_modules/dotenv
+          rm -rf layer3/nodejs/node_modules/jsonwebtoken
+          rm -rf layer3/nodejs/node_modules/zod
+          rm -rf layer3/nodejs/node_modules/pg
+          rm -rf layer3/nodejs/node_modules/passport
+          rm -rf layer3/nodejs/node_modules/passport-google-oauth20
+          rm -rf layer3/nodejs/node_modules/lodash
+          rm -rf layer3/nodejs/node_modules/axios
+          rm -rf layer3/nodejs/node_modules/node-cron
+          rm -rf layer3/nodejs/node_modules/@prisma
+          rm -rf layer3/nodejs/node_modules/prisma
+          rm -rf layer3/nodejs/node_modules/@google
+          rm -rf layer3/nodejs/node_modules/@langchain
+          rm -rf layer3/nodejs/node_modules/@pinecone-database
+          rm -rf layer3/nodejs/node_modules/openai
+          rm -rf layer3/nodejs/node_modules/serverless-http
+          rm -rf layer3/nodejs/node_modules/@vendia
+          rm -rf layer3/nodejs/node_modules/binary-case
+          rm -rf layer3/nodejs/node_modules/type-is
+
+          # Zip the layer
+          cd layer3
+          zip -r layer3.zip nodejs
+
+          # Publish the layer and capture the ARN
+          LAYER3_ARN=$(aws lambda publish-layer-version \
+            --layer-name "schedsync-layer-3" \
+            --zip-file "fileb://layer3.zip" \
+            --compatible-runtimes "nodejs22.x" \
+            --query 'LayerVersionArn' \
+            --output text)
+
+          # Store the ARN in GitHub environment variables for later use
+          echo "LAYER3_ARN=$LAYER3_ARN" >> $GITHUB_ENV
 
       - name: Install Dependencies
         run: |
@@ -122,14 +169,10 @@ jobs:
             @types/jsonwebtoken \
             @types/passport-google-oauth20
 
-
-
       - name: Compile TypeScript
         run: |
           cd api
           npm run build
-
-
 
       - name: Package and Deploy Application Code to AWS Lambda
         run: |
@@ -144,7 +187,6 @@ jobs:
             --zip-file fileb://deploy.zip \
             --region ${{ secrets.AWS_REGION }}
 
-
       - name: Wait for Function Code Update to Complete
         run: |
           aws lambda wait function-updated \
@@ -155,11 +197,11 @@ jobs:
         run: |
           echo "LAYER1_ARN: $LAYER1_ARN"
           echo "LAYER2_ARN: $LAYER2_ARN"
-
+          echo "LAYER3_ARN: $LAYER3_ARN"
 
       - name: Attach Layers to Lambda Function
         run: |
           aws lambda update-function-configuration \
             --function-name schedsyncapi \
-            --layers $LAYER1_ARN $LAYER2_ARN \
+            --layers $LAYER1_ARN $LAYER2_ARN $LAYER3_ARN \
             --region ${{ secrets.AWS_REGION }}
