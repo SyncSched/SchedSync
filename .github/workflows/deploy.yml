@@ -50,10 +50,10 @@ jobs:
           cd layer1
           zip -r layer1.zip nodejs
           aws lambda publish-layer-version \
-            --layer-name schedsync-layer-1 \
-            --content fileb://layer1.zip \
-            --compatible-runtimes nodejs22.x \
-            --region ${{ secrets.AWS_REGION }}
+            --layer-name "schedsync-layer-1" \
+            --content "fileb://layer1.zip" \
+            --compatible-runtimes "nodejs22.x" \
+            --region "${{ secrets.AWS_REGION }}"
 
       - name: Create Lambda Layer 2 (AI & DB Dependencies)
         run: |
@@ -70,10 +70,11 @@ jobs:
           cd layer2
           zip -r layer2.zip nodejs
           aws lambda publish-layer-version \
-            --layer-name schedsync-layer-2 \
-            --content fileb://layer2.zip \
-            --compatible-runtimes nodejs22.x \
-            --region ${{ secrets.AWS_REGION }}
+            --layer-name "schedsync-layer-2" \
+            --content "fileb://layer2.zip" \
+            --compatible-runtimes "nodejs22.x" \
+            --region "${{ secrets.AWS_REGION }}"
+
 
       - name: Compile TypeScript
         run: |
