@@ -28,15 +28,55 @@ jobs:
       - name: Install Dependencies
         run: |
           cd api
-          npm install --force  # Use --force to resolve minor mismatches
+          npm install --force
 
       - name: Compile TypeScript
         run: |
           cd api
           npm run build
 
+      - name: Create AWS Lambda Layers
+        run: |
+          cd api
+          mkdir -p layers/layer-openai/nodejs/node_modules
+          mkdir -p layers/layer-langchain/nodejs/node_modules
+          mkdir -p layers/layer-pinecone/nodejs/node_modules
+
+          # Move dependencies to layers
+          cp -r node_modules/openai layers/layer-openai/nodejs/node_modules/
+          cp -r node_modules/@google/generative-ai layers/layer-openai/nodejs/node_modules/
+          cp -r node_modules/@langchain/community layers/layer-langchain/nodejs/node_modules/
+          cp -r node_modules/@langchain/core layers/layer-langchain/nodejs/node_modules/
+          cp -r node_modules/@langchain/ollama layers/layer-langchain/nodejs/node_modules/
+          cp -r node_modules/@pinecone-database/pinecone layers/layer-pinecone/nodejs/node_modules/
+
+          # Zip layers
+          cd layers/layer-openai && zip -r layer-openai.zip nodejs && cd ../..
+          cd layers/layer-langchain && zip -r layer-langchain.zip nodejs && cd ../..
+          cd layers/layer-pinecone && zip -r layer-pinecone.zip nodejs && cd ../..
+
+          # Upload layers to S3
+          aws s3 cp layers/layer-openai/layer-openai.zip s3://lambda-layers-schedsync/layers/
+          aws s3 cp layers/layer-langchain/layer-langchain.zip s3://lambda-layers-schedsync/layers/
+          aws s3 cp layers/layer-pinecone/layer-pinecone.zip s3://lambda-layers-schedsync/layers/
+
+          # Publish layers to AWS Lambda
+          OPENAI_LAYER_ARN=$(aws lambda publish-layer-version --layer-name openai-layer --content S3Bucket=lambda-layers-schedsync,S3Key=layers/layer-openai.zip --compatible-runtimes nodejs22.x --query 'LayerVersionArn' --output text)
+          LANGCHAIN_LAYER_ARN=$(aws lambda publish-layer-version --layer-name langchain-layer --content S3Bucket=lambda-layers-schedsync,S3Key=layers/layer-langchain.zip --compatible-runtimes nodejs22.x --query 'LayerVersionArn' --output text)
+          PINECONE_LAYER_ARN=$(aws lambda publish-layer-version --layer-name pinecone-layer --content S3Bucket=lambda-layers-schedsync,S3Key=layers/layer-pinecone.zip --compatible-runtimes nodejs22.x --query 'LayerVersionArn' --output text)
+
+          # Remove dependencies from node_modules to avoid duplication
+          rm -rf node_modules/openai
+          rm -rf node_modules/@google/generative-ai
+          rm -rf node_modules/@langchain/community
+          rm -rf node_modules/@langchain/core
+          rm -rf node_modules/@langchain/ollama
+          rm -rf node_modules/@pinecone-database/pinecone
+
       - name: Package and Deploy to AWS Lambda
         run: |
           cd api
-          zip -r deploy.zip ./dist/* node_modules package.json package-lock.json
-          aws lambda update-function-code --function-name schedsyncapi --zip-file fileb://deploy.zip
+          zip -r deploy.zip ./dist/* node_modules package.json package-lock.json .prisma
+          
+          aws lambda update-function-code --function-name schedsyncapi --zip-file fileb://deploy.zip \
+            --layers $OPENAI_LAYER_ARN $LANGCHAIN_LAYER_ARN $PINECONE_LAYER_ARN
