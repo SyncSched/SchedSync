@@ -27,9 +27,8 @@ jobs:
 
       - name: Install Production Dependencies
         run: |
-          cd api  # Only if your Lambda code is in the `api` folder
+          cd api
           npm install --production
-
 
       - name: Install Dependencies
         run: |
@@ -48,23 +47,34 @@ jobs:
 
       - name: Generate Prisma Binaries
         run: |
-          cd api  # Only if your Lambda code is in the `api` folder
+          cd api
           npx prisma generate
 
       - name: Split node_modules into Layers
         run: |
-          cd api  # Only if your Lambda code is in the `api` folder
+          cd api
           chmod +x split-layers.sh
           ./split-layers.sh
 
+      - name: Debug Layers Directory
+        run: |
+          cd api
+          ls -R layers  # List the contents of the layers directory
+
+      - name: Debug Layer ARNs
+        run: |
+          echo "LAYER1_ARN: $LAYER1_ARN"
+          echo "LAYER2_ARN: $LAYER2_ARN"
+          echo "LAYER3_ARN: $LAYER3_ARN"
+
       - name: Compile TypeScript
         run: |
-          cd api  # Only if your Lambda code is in the `api` folder
+          cd api
           npm run build
 
       - name: Package and Deploy Application Code to AWS Lambda
         run: |
-          cd api  # Only if your Lambda code is in the `api` folder
+          cd api
           zip -r deploy.zip dist/* package.json package-lock.json
           aws lambda update-function-code \
             --function-name schedsyncapi \
