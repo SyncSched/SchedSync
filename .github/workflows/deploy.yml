@@ -30,6 +30,22 @@ jobs:
           cd api  # Only if your Lambda code is in the `api` folder
           npm install --production
 
+
+      - name: Install Dependencies
+        run: |
+          cd api
+          npm install --force
+          npm install --save-dev \
+            @types/passport \
+            @types/express-session \
+            @types/cors \
+            @types/express \
+            @types/aws-lambda \
+            @types/aws-serverless-express \
+            @types/lodash \
+            @types/jsonwebtoken \
+            @types/passport-google-oauth20
+
       - name: Generate Prisma Binaries
         run: |
           cd api  # Only if your Lambda code is in the `api` folder
