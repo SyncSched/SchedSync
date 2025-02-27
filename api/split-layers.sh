@@ -15,7 +15,7 @@ mkdir -p "$LAYERS_DIR/layer$LAYER_INDEX/nodejs/node_modules"
 # Loop through all dependencies in node_modules
 for DEPENDENCY in $(ls -1 node_modules); do
   DEPENDENCY_SIZE=$(du -sb "node_modules/$DEPENDENCY" | cut -f1)
-  echo "Processing dependency: $DEPENDENCY (Size: $DEPENDENCY_SIZE bytes)"
+  # echo "Processing dependency: $DEPENDENCY (Size: $DEPENDENCY_SIZE bytes)"
 
   # If adding this dependency exceeds the layer size limit, create a new layer
   if (( CURRENT_SIZE + DEPENDENCY_SIZE > MAX_LAYER_SIZE )); then
@@ -26,7 +26,7 @@ for DEPENDENCY in $(ls -1 node_modules); do
   fi
 
   # Copy the dependency to the current layer
-  echo "Adding $DEPENDENCY to layer$LAYER_INDEX"
+  # echo "Adding $DEPENDENCY to layer$LAYER_INDEX"
   cp -r "node_modules/$DEPENDENCY" "$LAYERS_DIR/layer$LAYER_INDEX/nodejs/node_modules/"
   CURRENT_SIZE=$((CURRENT_SIZE + DEPENDENCY_SIZE))
 done
