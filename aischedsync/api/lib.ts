@@ -63,8 +63,7 @@ export interface Schedule {
     createdAt: Date;
   }
   
-  const API_URL = process.env.API_URL || 'http://localhost:3000';
-
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
   /**
    * Fetches the schedule for today.
    * If no schedule exists, it calls the schedule creation endpoint.

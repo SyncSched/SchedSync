@@ -41,7 +41,8 @@ const Login = () => {
 
     const loginWithGoogle = () => {
         const scope = `https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email`;
-        const redirectUri = `http://localhost:3000/auth/google/callback`;
+        const redirectUri = `${process.env.NEXT_PUBLIC_API_URL}/auth/google/callback`;
+        // const redirectUri = `https://jtxg13v8e1.execute-api.us-east-1.amazonaws.com/default/auth/google/callback`;
         const clientId = `535450891467-v9pu6251j703u36r8l5gsogdrrnkf04a.apps.googleusercontent.com`;
         const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
         
