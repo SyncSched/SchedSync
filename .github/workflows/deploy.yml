@@ -27,17 +27,15 @@ jobs:
           docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
       - name: Get Image Digest of Previous Image
-        id: get_previous_digest
         run: |
           PREVIOUS_DIGEST=$(aws ecr list-images --repository-name ${{ secrets.ECR_REPOSITORY }} --query 'imageIds[0].imageDigest' --output text)
           echo "PREVIOUS_DIGEST=$PREVIOUS_DIGEST" >> $GITHUB_ENV
 
       - name: Delete Previous Docker Image (if exists)
-        if: env.PREVIOUS_DIGEST != "None"
         run: |
-          aws ecr batch-delete-image \
-            --repository-name ${{ secrets.ECR_REPOSITORY }} \
-            --image-ids imageDigest=${{ env.PREVIOUS_DIGEST }}
+          if [[ -n "$PREVIOUS_DIGEST" && "$PREVIOUS_DIGEST" != "None" ]]; then
+            aws ecr batch-delete-image --repository-name ${{ secrets.ECR_REPOSITORY }} --image-ids imageDigest=$PREVIOUS_DIGEST
+          fi
 
       - name: Build Docker Image
         run: |
