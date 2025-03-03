@@ -42,6 +42,22 @@ jobs:
           echo "Deleting previous image: $PREVIOUS_DIGEST"
           aws ecr batch-delete-image --repository-name ${{ secrets.ECR_REPOSITORY }} --image-ids imageDigest=$PREVIOUS_DIGEST
 
+      - name: Install Dependencies & Build TypeScript
+        run: |
+          cd api
+          npm install
+          npx prisma generate
+          npx tsc
+
+      - name: Ensure `dist/` is Ready
+        run: |
+          cd api
+          while [ ! -d "dist" ]; do
+            echo "Waiting for dist/ to be generated..."
+            sleep 2
+          done
+          echo "dist/ is ready!"
+
       - name: Build Docker Image (Using `api/` Folder)
         run: |
           docker build --provenance=false -t schedsyncapi ./api
