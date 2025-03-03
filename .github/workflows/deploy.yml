@@ -27,19 +27,24 @@ jobs:
           docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
       - name: Get Image Digest of Previous Image
+        id: get_digest
         run: |
-          PREVIOUS_DIGEST=$(aws ecr list-images --repository-name ${{ secrets.ECR_REPOSITORY }} --query 'imageIds[0].imageDigest' --output text)
-          echo "PREVIOUS_DIGEST=$PREVIOUS_DIGEST" >> $GITHUB_ENV
-
-      - name: Delete Previous Docker Image (if exists)
-        run: |
-          if [[ -n "$PREVIOUS_DIGEST" && "$PREVIOUS_DIGEST" != "None" ]]; then
-            aws ecr batch-delete-image --repository-name ${{ secrets.ECR_REPOSITORY }} --image-ids imageDigest=$PREVIOUS_DIGEST
+          PREVIOUS_DIGEST=$(aws ecr list-images --repository-name ${{ secrets.ECR_REPOSITORY }} --query 'imageIds[0].imageDigest' --output text 2>/dev/null || echo "")
+          if [[ "$PREVIOUS_DIGEST" == "None" || -z "$PREVIOUS_DIGEST" ]]; then
+            echo "No previous image found. Skipping deletion."
+          else
+            echo "PREVIOUS_DIGEST=$PREVIOUS_DIGEST" >> $GITHUB_ENV
           fi
 
-      - name: Build Docker Image
+      - name: Delete Previous Docker Image (if exists)
+        if: env.PREVIOUS_DIGEST != ''
         run: |
-          docker build --provenance=false -t schedsyncapi .
+          echo "Deleting previous image: $PREVIOUS_DIGEST"
+          aws ecr batch-delete-image --repository-name ${{ secrets.ECR_REPOSITORY }} --image-ids imageDigest=$PREVIOUS_DIGEST
+
+      - name: Build Docker Image (Using `api/` Folder)
+        run: |
+          docker build --provenance=false -t schedsyncapi ./api
 
       - name: Tag Docker Image
         run: |
