@@ -19,12 +19,13 @@ COPY tsconfig.json ./
 
 # Copy source files and compile TypeScript
 COPY src ./src
-RUN npx tsc
+RUN npx tsc && ls -l dist
+
+# Ensure the dist directory exists
+RUN mkdir -p dist
 
 # Copy compiled JS files (ONLY compiled output)
 COPY dist ./dist
 
 # Set the Lambda handler
 CMD ["dist/index.handler"]
-
-
