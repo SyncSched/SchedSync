@@ -74,7 +74,8 @@ const Hero = () => {
                   whileTap={{ scale: 0.95 }}
                 >
                   <Link
-                    href="http://localhost:8080/login"
+                    href="http://ai.schedsync.com/login"
+                    // href="http://localhost:8080/login"
                     className="group relative inline-flex items-center justify-center px-8 py-3 font-medium rounded-full text-white bg-gradient-to-r from-indigo-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 transition-all duration-300"
                   >
                     <span className="absolute w-full h-full rounded-full bg-white/10 group-hover:scale-110 transition-transform duration-300" />
