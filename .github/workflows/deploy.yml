@@ -1,4 +1,4 @@
-name: Deploy to AWS Lambda
+name: Build, Push Docker Image to ECR, and Update Lambda
 
 on:
   push:
@@ -6,98 +6,53 @@ on:
       - main
 
 jobs:
-  deploy_lambda:
+  build-push-update:
+    name: Build, Delete Old Image, Push to AWS ECR, and Update Lambda
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Set Up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '22'
-
-      - name: Install Production Dependencies
+      - name: Login to Amazon ECR
         run: |
-          cd api
-          npm install --production
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
+          docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
-      - name: Install Dependencies
+      - name: Get Image Digest of Previous Image
+        id: get_previous_digest
         run: |
-          cd api
-          npm install --force
-          npm install --save-dev \
-            @types/passport \
-            @types/express-session \
-            @types/cors \
-            @types/express \
-            @types/aws-lambda \
-            @types/aws-serverless-express \
-            @types/lodash \
-            @types/jsonwebtoken \
-            @types/passport-google-oauth20
+          PREVIOUS_DIGEST=$(aws ecr list-images --repository-name ${{ secrets.ECR_REPOSITORY }} --query 'imageIds[0].imageDigest' --output text)
+          echo "PREVIOUS_DIGEST=$PREVIOUS_DIGEST" >> $GITHUB_ENV
 
-      - name: Generate Prisma Binaries
+      - name: Delete Previous Docker Image (if exists)
+        if: env.PREVIOUS_DIGEST != "None"
         run: |
-          cd api
-          npx prisma generate
+          aws ecr batch-delete-image \
+            --repository-name ${{ secrets.ECR_REPOSITORY }} \
+            --image-ids imageDigest=${{ env.PREVIOUS_DIGEST }}
 
-      - name: Split node_modules into Layers
+      - name: Build Docker Image
         run: |
-          cd api
-          chmod +x split-layers.sh
-          ./split-layers.sh
+          docker build --provenance=false -t schedsyncapi .
 
-      - name: Debug Layers Directory
+      - name: Tag Docker Image
         run: |
-          cd api
-          ls -R layers  # List the contents of the layers directory
+          docker tag schedsyncapi:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
 
-      - name: Debug Layer ARNs
+      - name: Push Docker Image to ECR
         run: |
-          echo "LAYER1_ARN: $LAYER1_ARN"
-          echo "LAYER2_ARN: $LAYER2_ARN"
-          echo "LAYER3_ARN: $LAYER3_ARN"
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
 
-      - name: Compile TypeScript
+      - name: Update AWS Lambda Function
         run: |
-          cd api
-          npm run build
-
-      - name: Package and Deploy Application Code to AWS Lambda
-        run: |
-          cd api
-          zip -r deploy.zip dist/* package.json package-lock.json
           aws lambda update-function-code \
-            --function-name schedsyncapi \
-            --zip-file fileb://deploy.zip \
-            --region ${{ secrets.AWS_REGION }}
-
-      - name: Wait for Function Code Update to Complete
-        run: |
-          aws lambda wait function-updated \
-            --function-name schedsyncapi \
-            --region ${{ secrets.AWS_REGION }}
-
-      - name: Attach Layers to Lambda Function
-        run: |
-          # Collect all layer ARNs into a single variable
-          LAYERS=""
-          for ((i = 1; i <= $(ls -1 api/layers | wc -l); i++)); do
-            LAYER_ARN=$(eval echo \$LAYER${i}_ARN)
-            LAYERS="$LAYERS $LAYER_ARN"
-          done
-
-          # Attach layers to the Lambda function
-          aws lambda update-function-configuration \
-            --function-name schedsyncapi \
-            --layers $LAYERS \
-            --region ${{ secrets.AWS_REGION }}
+            --function-name ${{ secrets.LAMBDA_FUNCTION_NAME }} \
+            --image-uri ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest

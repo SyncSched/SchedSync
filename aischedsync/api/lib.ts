@@ -63,6 +63,8 @@ export interface Schedule {
     createdAt: Date;
   }
   
+  const API_URL = process.env.API_URL || 'http://localhost:3000';
+
   /**
    * Fetches the schedule for today.
    * If no schedule exists, it calls the schedule creation endpoint.
@@ -71,7 +73,7 @@ export interface Schedule {
 
   export const getTodaySchedule = async (): Promise<Schedule> => {
     try {
-      const res = await fetch('http://localhost:3000/getSchedule', {
+      const res = await fetch(`${API_URL}/getSchedule`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -88,7 +90,7 @@ export interface Schedule {
       if (!isGeneratingSchedule) {
         isGeneratingSchedule = true; // Lock to prevent duplicate calls
   
-        const createRes = await fetch('http://localhost:3000/generateSchedule', {
+        const createRes = await fetch(`${API_URL}/generateSchedule`, {
           method: 'GET',
           headers: { 
             'Content-Type': 'application/json', 
@@ -120,8 +122,7 @@ export interface Schedule {
  */
 export const checkOnboardingStatus = async (token: string): Promise<boolean> => {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-    const res = await fetch(`${baseUrl}/checkonboardingdata`, {
+    const res = await fetch(`${API_URL}/checkonboardingdata`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -162,7 +163,7 @@ export const checkOnboardingStatus = async (token: string): Promise<boolean> => 
   
       console.log(onboardingData.sleepingStart, formattedData.sleepingStart);
       console.log(formattedData, "before calling api, checking the onboarding data");
-      const res = await fetch('http://localhost:3000/createOnboarding', {
+      const res = await fetch(`${API_URL}/createOnboarding`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -187,7 +188,7 @@ export const checkOnboardingStatus = async (token: string): Promise<boolean> => 
    * Retrieves the current logged-in user.
    */
   export const getCurrentUser = async (): Promise<UserInfo> => {
-    const res = await fetch('http://localhost:3000/currentUser', {
+    const res = await fetch(`${API_URL}/currentUser`, {
       headers: {
         'Authorization': `Bearer ${getStoredAuthToken()}`
       }
@@ -211,7 +212,7 @@ export const checkOnboardingStatus = async (token: string): Promise<boolean> => 
  */
 export const updateSchedule = async (scheduleId: string, tasks: Task[]): Promise<Schedule> => {
   try {
-    const res = await fetch(`http://localhost:3000/schedule/${scheduleId}/update`, {
+    const res = await fetch(`${API_URL}/schedule/${scheduleId}/update`, {
       method: 'PUT',
       headers: { 
         'Content-Type': 'application/json',
