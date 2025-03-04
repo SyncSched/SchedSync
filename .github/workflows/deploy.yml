@@ -52,7 +52,7 @@ jobs:
       - name: Run Database Migrations on Railway
         run: |
           cd api
-          DATABASE_URL=${{ secrets.DATABASE_URL }} npm run migrate:production
+          DATABASE_URL=${{ secrets.DATABASE_URL }} npx prisma migrate deploy
 
       - name: Ensure `dist/` is Ready
         run: |
