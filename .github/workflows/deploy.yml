@@ -49,6 +49,11 @@ jobs:
           npx prisma generate
           npx tsc
 
+      - name: Run Database Migrations on Railway
+        run: |
+          cd api
+          DATABASE_URL=${{ secrets.DATABASE_URL }} npm run migrate:production
+
       - name: Ensure `dist/` is Ready
         run: |
           cd api
