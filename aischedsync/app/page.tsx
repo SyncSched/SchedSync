@@ -343,7 +343,7 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-white overflow-hidden">
+    <div className="flex flex-col md:flex-row h-screen bg-[#212121] overflow-hidden">
       {/* Mobile Header */}
       <div className="md:hidden flex items-center justify-between p-4 border-b border-gray-200">
         <div className="text-xl text-black font-semibold">SchedSync</div>
@@ -359,50 +359,50 @@ export default function Home() {
 
       {/* Sidebar */}
       <aside className={`
-        fixed md:relative w-[280px] md:w-56 h-full bg-white border-r border-gray-200 
+        fixed md:relative w-[280px] md:w-56 h-full bg-[#171717] border-r border-gray-700 
         transform transition-transform duration-300 ease-in-out z-30
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         <div className="flex flex-col h-full p-4">
-          <div className="hidden md:block text-xl text-black font-semibold mb-8">SchedSync</div>
+          <div className="hidden md:block text-xl text-white font-semibold mb-8">SchedSync</div>
           
           <nav className="flex flex-col space-y-2 flex-grow">
-            <button className="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+            <button className="flex items-center space-x-3 px-3 py-2 text-white hover:bg-gray-800 rounded-lg">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/>
               </svg>
               <span>Dashboard</span>
             </button>
             
-            <button className="flex items-center space-x-3 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg">
+            <button className="flex items-center space-x-3 px-3 py-2 bg-[#2f2f2f] text-white rounded-lg">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
               </svg>
               <span>Schedule</span>
             </button>
             
-            <button className="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+            <button className="flex items-center space-x-3 px-3 py-2 text-white hover:bg-gray-800 rounded-lg">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
               </svg>
               <span>Calendar</span>
             </button>
             
-            <button className="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+            <button className="flex items-center space-x-3 px-3 py-2 text-white hover:bg-gray-800 rounded-lg">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
               </svg>
               <span>Tools</span>
             </button>
             
-            <button className="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+            <button className="flex items-center space-x-3 px-3 py-2 text-white hover:bg-gray-800 rounded-lg">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
               <span>Remainder</span>
             </button>
             
-            <button className="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+            <button className="flex items-center space-x-3 px-3 py-2 text-white hover:bg-gray-800 rounded-lg">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
               </svg>
@@ -411,7 +411,7 @@ export default function Home() {
           </nav>
           
           <div className="mt-auto space-y-2">
-            <button className="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+            <button className="flex items-center space-x-3 px-3 py-2 text-white hover:bg-gray-100 rounded-lg">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"/>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -497,7 +497,7 @@ export default function Home() {
         <div className="p-4 md:p-8">
           {/* Header */}
           <div className="flex justify-between items-center mb-6 md:mb-8">
-            <h1 className="text-xl md:text-2xl font-semibold text-[#2C3E50]">Schedule</h1>
+            <h1 className="text-xl md:text-2xl font-semibold text-[#fffff]">Schedule</h1>
             
             {/* User Actions */}
             <div className="flex items-center space-x-3 md:space-x-4">
@@ -574,12 +574,12 @@ export default function Home() {
           {/* Task List */}
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="text-base md:text-lg font-medium text-[#2C3E50] sticky top-0 bg-white z-10">Tasks</h2>
+              <h2 className="text-base md:text-lg font-medium text-[#fffff] sticky top-0 bg-none z-10">Tasks</h2>
             </div>
 
             {/* Main Kanban Column */}
             <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-              <div className="flex-1 bg-gray-50 p-3 md:p-4 rounded-lg min-h-[400px] md:min-h-[500px] overflow-y-auto max-h-[500px] scrollable">
+              <div className="flex-1 bg-none p-3 md:p-4 rounded-lg min-h-[400px] md:min-h-[500px] overflow-y-auto max-h-[500px] scrollable">
                 {/* Kanban Cards */}
                 <div className="space-y-3 md:space-y-4">
                   {mainTasks.map((task, index) => (
@@ -592,10 +592,10 @@ export default function Home() {
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, 'main', index)}
                       onClick={() => handleTaskClick(task)}
-                      className="bg-white p-3 md:p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-lg transition-shadow cursor-pointer transform hover:scale-105"
+                      className="bg-[#303030] p-3 md:p-4 rounded-lg border-[0px] border-gray-200 shadow-sm hover:shadow-lg transition-shadow cursor-pointer transform hover:scale-105"
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <h3 className="font-medium text-[#2C3E50] text-sm md:text-base">{task.name}</h3>
+                        <h3 className="font-medium text-[#fffff] text-sm md:text-base">{task.name}</h3>
                         <button className="text-[#95A5A6] hover:text-[#7F8C8D]" onClick={() => handleTaskClick(task)}>
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
@@ -607,13 +607,13 @@ export default function Home() {
                           <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                           </svg>
-                          <span className="text-xs text-gray-500">{task.time}</span>
+                          <span className="text-xs text-[#8d8d8d]">{task.time}</span>
                         </div>
                         <div className="flex items-center space-x-2">
                           <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                           </svg>
-                          <span className="text-xs text-gray-500">{task.duration} min</span>
+                          <span className="text-xs text-[#8d8d8d]">{task.duration} min</span>
                         </div>
                       </div>
                     </div>
@@ -622,8 +622,8 @@ export default function Home() {
               </div>
 
               {/* Secondary Column (Quick Tasks) */}
-              <div className="w-full md:w-80 bg-gray-50 p-3 md:p-4 rounded-lg h-[200px] md:h-[250px]">
-                <h3 className="text-base md:text-lg font-medium text-[#2C3E50] mb-3 md:mb-4">Quick Tasks</h3>
+              <div className="w-full md:w-80 bg-[#292929] p-3 md:p-4 rounded-lg h-[200px] md:h-[250px]">
+                <h3 className="text-base md:text-lg font-medium text-white mb-3 md:mb-4">Quick Tasks</h3>
                 <div className="space-y-2 md:space-y-3">
                   {quickTasks.map((task, index) => (
                     <div 
@@ -634,10 +634,10 @@ export default function Home() {
                       onDragOver={handleDragOver}
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, 'quick', index)}
-                      className="bg-white p-2 md:p-3 rounded-lg border border-gray-200 shadow-sm cursor-move"
+                      className="bg-[#303030] p-2 md:p-3 rounded-lg border-[0px] border-gray-200 shadow-sm cursor-move"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-xs md:text-sm text-[#2C3E50]">{task.title}</span>
+                        <span className="text-xs md:text-sm text-[#fffff]">{task.title}</span>
                         <span className="text-xs text-[#95A5A6]">{task.time}</span>
                       </div>
                     </div>
