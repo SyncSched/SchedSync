@@ -159,30 +159,37 @@ export const generateSchedule = async (data:string) => {
   
   
       const question = `
-      Generate a complete daily schedule based on the provided user data, profession, and personal preferences.
-      
-      ### **Schedule Requirements:**
-      1. The schedule must **cover all time slots in the day except sleep time**.
-      2. Activities should be structured logically with appropriate time slots and durations.
-      3. Work hours should match the user’s profession and can be flexible.
-      4. Free time should include personal hobbies, meals, and relaxation.
-      5. **NO overlapping time slots.**
-      6. Ensure a balanced distribution of work, breaks, and personal time.
-      7. Each schedule should be unique, varying in time slots, activity order, and work session length.
-      
-      ### **Output Format:**
-      The response must be a **valid JSON array** with each entry containing:
-      - "name": The name of the activity.
-      - "time": The start time in **HH:MM** format (24-hour format).
-      - "duration": The duration in **minutes**.
-      
-      ### **Strict Output Rules:**
-      1. **Return ONLY the JSON array**. Do NOT include explanations, reasoning, or additional text.
-      2. Ensure valid JSON syntax.
-      3. The schedule must be **fully structured**, covering all available hours except sleep time.
-      4. Each generated schedule must be unique and adapted to the user's profession and personal routines.
-      
-      **Return only the JSON array and nothing else.**
+
+      Generate a complete daily schedule based on the provided user data, context, and profession. The schedule must align with the user's work hours, personal preferences, and hobbies while ensuring a well-balanced routine.  
+
+### **Schedule Requirements:**  
+1. The schedule must **cover all available hours except sleep time**, strictly following the user’s sleeping hours from the provided user data.  
+2. **Do NOT explicitly include tasks like "Sleep Start" or "Go to Sleep."** Instead, generate tasks naturally until the user's sleep start time is reached.  
+3. Activities should be structured logically with appropriate time slots and durations.  
+4. Work hours must strictly follow the user’s professional schedule.  
+5. Personal hobbies, meals, and relaxation should be included in free time.  
+6. **NO overlapping time slots.**  
+7. The schedule should be balanced, ensuring productivity, breaks, and personal time.  
+8. The generated schedule should be **context-aware** and dynamically adapt based on retrieved context data.  
+9. **All activity durations must be at least 1 minute to ensure valid JSON output.**  
+
+### **Output Format:**  
+The response must be a **valid JSON array** with each entry containing:  
+- "name": The name of the activity.  
+- "time": The start time in **HH:MM** format (24-hour format).  
+- "duration": The duration in **minutes** (must be **at least 1 minute**).  
+
+### **Strict Output Rules:**  
+1. **Return ONLY the JSON array**. Do NOT include explanations, reasoning, or additional text.  
+2. Ensure valid JSON syntax.  
+3. The schedule must be **fully structured**, covering all available hours **except sleep time**, strictly following the user's **sleep start and sleep end time** from the provided user data.  
+4. **Ensure all durations are at least 1 minute to avoid validation errors.**  
+5. **Do NOT explicitly add sleep-related tasks. Instead, generate tasks naturally until sleep start time.**  
+6. Each generated schedule must be unique and tailored to the user's data and retrieved context.  
+
+**Return only the JSON array and nothing else.**
+
+
       `;
       
       const chain = RunnableSequence.from([
@@ -199,7 +206,7 @@ export const generateSchedule = async (data:string) => {
             
             Question: ${question}
           `.trim(); // Trim removes extra whitespace
-  
+          console.log(prompt)
           // Send the prompt to the DeepSeek API
           // return await callDeepSeekAPI(prompt);
           // return await callOpenAIAPI(prompt);

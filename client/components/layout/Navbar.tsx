@@ -41,7 +41,7 @@ const Navbar = () => {
                 </Link>
               ))}
               <Link
-                href="http://localhost:8080/login"
+                href="http://ai.schedsync.com/login"
                 className="group relative inline-flex items-center justify-center px-6 py-2 font-medium rounded-full text-white bg-gradient-to-r from-indigo-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 transition-all duration-300"
               >
                 <span className="absolute w-full h-full rounded-full bg-white/10 group-hover:scale-110 transition-transform duration-300" />

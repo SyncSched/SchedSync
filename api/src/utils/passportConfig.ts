@@ -20,7 +20,9 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID || '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-      callbackURL: 'http://localhost:3000/auth/google/callback',
+      callbackURL: `${process.env.NODE_API_URL}/auth/google/callback`,
+      // callbackURL: 'https://jtxg13v8e1.execute-api.us-east-1.amazonaws.com/default/auth/google/callback',
+      // callbackURL: 'http://localhost:3000/auth/google/callback',
       scope: ['profile', 'email'],
     },
     async (_accessToken, _refreshToken, profile: GoogleProfile, done) => {
