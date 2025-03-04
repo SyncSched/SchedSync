@@ -39,7 +39,7 @@ model OnboardingData {
   workingEnd       String
 
   userId           String   @unique
-  user             User     @relation(fields: [userId], references: [id]) // One-to-One Relationship
+  user             User     @relation(fields: [userId], references: [id] , onDelete: Cascade) // One-to-One Relationship
 }
 
 
