@@ -146,18 +146,13 @@ export const checkOnboardingStatus = async (token: string): Promise<boolean> => 
    */
   export const createOnboarding = async (onboardingData: OnboardingInput): Promise<Onboarding> => {
     try {
-      // Format Date objects to strings in the local time zone
-      const formatDateToLocalString = (dateString: string) => {
-        const date = new Date(dateString);
-        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
-      };
-  
+
       const formattedData = {
         ...onboardingData,
-        sleepingStart: formatDateToLocalString(onboardingData.sleepingStart),
-        sleepingEnd: formatDateToLocalString(onboardingData.sleepingEnd),
-        workingStart: formatDateToLocalString(onboardingData.workingStart),
-        workingEnd: formatDateToLocalString(onboardingData.workingEnd)
+        sleepingStart: onboardingData.sleepingStart,
+        sleepingEnd: onboardingData.sleepingEnd,
+        workingStart: onboardingData.workingStart,
+        workingEnd: onboardingData.workingEnd
       };
   
       console.log(onboardingData.sleepingStart, formattedData.sleepingStart);
