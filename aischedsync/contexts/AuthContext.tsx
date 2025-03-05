@@ -1,6 +1,7 @@
 'use client'
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
+import { isTokenValid } from '@/api/lib';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -15,7 +16,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const token = Cookies.get('authToken');
-    setIsAuthenticated(!!token);
+    if (token) {
+      if (isTokenValid(token)) {
+        setIsAuthenticated(true);
+      } else {
+        logout();
+      }
+    } else {
+      setIsAuthenticated(false);
+    }
   }, []);
 
   const logout = () => {
@@ -37,4 +46,4 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-} 
+}
