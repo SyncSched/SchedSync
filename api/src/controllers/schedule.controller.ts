@@ -39,7 +39,6 @@ export const generateScheduleHandler = async(req:AuthenticatedRequest , res:Resp
     // Try to acquire lock for this user
     const lockAcquired = await acquireLock(userId, 20); // 60 seconds TTL
     if (!lockAcquired) {
-        console.log("tried here sorry")
         return next(new BadUserInputError({ message: "Schedule generation already in progress for this user" }));
     }
 
