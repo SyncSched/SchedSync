@@ -43,6 +43,7 @@
     "pg": "^8.13.1",
     "prisma": "^6.2.1",
     "react-time-picker": "^7.0.0",
+    "redis": "^4.7.0",
     "serverless-http": "^3.2.0",
     "type-is": "^1.6.18",
     "zod": "^3.24.1"
