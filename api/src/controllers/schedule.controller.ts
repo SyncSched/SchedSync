@@ -6,7 +6,7 @@ import { generateSchedule } from '../workflow';
 import { getOnboardingData } from '../services/onboarding.service';
 import { AuthenticatedRequest } from '../types/request';
 import { PrismaClient } from '@prisma/client';
-
+import { acquireLock, releaseLock } from '../utils/redisLock';
 
 const prisma = new PrismaClient();
 
@@ -36,50 +36,62 @@ export const generateScheduleHandler = async(req:AuthenticatedRequest , res:Resp
         return next(new BadUserInputError({ message: "User ID is missing from request" }));
     }
 
-    // Fetch user onboarding data from the database
-    const onboardingData = await getOnboardingData(userId);
-    console.log("users ONBOARDING DATA" , onboardingData);
-
-    if (!onboardingData) {
-        return next(new EntityNotFoundError("Onboarding data not found. Please complete onboarding."));
-    }
-      
-      // Convert to a string
-    const userData = JSON.stringify(onboardingData);
-            
-
-    const generatedSchedule  = await generateSchedule(userData);
-    if (!generatedSchedule) {
-        return next(new EntityNotFoundError("Failed to generate schedule"));
+    // Try to acquire lock for this user
+    const lockAcquired = await acquireLock(userId, 20); // 60 seconds TTL
+    if (!lockAcquired) {
+        console.log("tried here sorry")
+        return next(new BadUserInputError({ message: "Schedule generation already in progress for this user" }));
     }
 
-    console.log("Schedule generated successfully:", generatedSchedule);
-
-    let cleanedSchedule = generatedSchedule
-    .trim() // Remove leading/trailing spaces
-    .replace(/^```json/, "") // Remove starting ```json if present
-    .replace(/```$/, ""); // Remove ending ``` if present
-
-    let parsedSchedule;
     try {
-        parsedSchedule = JSON.parse(cleanedSchedule);
+        // Fetch user onboarding data from the database
+        const onboardingData = await getOnboardingData(userId);
+        console.log("users ONBOARDING DATA" , onboardingData);
+
+        if (!onboardingData) {
+            return next(new EntityNotFoundError("Onboarding data not found. Please complete onboarding."));
+        }
+          
+        // Convert to a string
+        const userData = JSON.stringify(onboardingData);
+                
+        const generatedSchedule  = await generateSchedule(userData);
+        if (!generatedSchedule) {
+            return next(new EntityNotFoundError("Failed to generate schedule"));
+        }
+
+        console.log("Schedule generated successfully:", generatedSchedule);
+
+        let cleanedSchedule = generatedSchedule
+        .trim() // Remove leading/trailing spaces
+        .replace(/^```json/, "") // Remove starting ```json if present
+        .replace(/```$/, ""); // Remove ending ``` if present
+
+        let parsedSchedule;
+        try {
+            parsedSchedule = JSON.parse(cleanedSchedule);
+        } catch (error) {
+            console.error("Error parsing generated schedule:", error);
+            return next(new BadUserInputError({ message: "Invalid schedule format received" }));
+        }
+      
+        const scheduleInput: CreateScheduleInput = {
+            originalData: parsedSchedule,
+            userId,
+        };
+        
+        const createdSchedule = await createSchedule(scheduleInput);
+        if (!createdSchedule) {
+            return next(new EntityNotFoundError("Failed to save generated schedule"));
+        }
+
+        res.status(201).json(createdSchedule);
     } catch (error) {
-      console.error("Error parsing generated schedule:", error);
-      return next(new BadUserInputError({ message: "Invalid schedule format received" }));
+        next(error);
+    } finally {
+        // Always release the lock, even if an error occurred
+        await releaseLock(userId);
     }
-  
-    const scheduleInput: CreateScheduleInput = {
-        originalData: parsedSchedule, // ✅ Now it's a Task[] instead of string
-        userId,
-    };
-    
-
-    const createdSchedule = await createSchedule(scheduleInput);
-    if (!createdSchedule) {
-        return next(new EntityNotFoundError("Failed to save generated schedule"));
-    }
-
-    res.status(201).json(createdSchedule);
 }
 
 export const createScheduleHandler = async(req:AuthenticatedRequest , res:Response, next: NextFunction): Promise<void> => {
