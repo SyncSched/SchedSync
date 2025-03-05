@@ -37,6 +37,28 @@ const isTaskActive = (taskTime: string, taskDuration: number): boolean => {
   return now >= taskStart && now <= taskEnd;
 };
 
+const TimeDisplay = () => {
+  const [currentTime, setCurrentTime] = useState('');
+
+  useEffect(() => {
+    const updateTime = () => {
+      const time = new Date().toLocaleTimeString(undefined, {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      });
+      setCurrentTime(time);
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return currentTime;
+};
 
 export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -388,7 +410,7 @@ export default function Home() {
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           className="p-2 hover:bg-gray-100 rounded-lg"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6" fill="none" stroke="white" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/>
           </svg>
         </button>
@@ -534,12 +556,12 @@ export default function Home() {
         <div className="p-4 md:p-8">
           {/* Header */}
           <div className="flex justify-between items-center mb-6 md:mb-8">
-            <h1 className="text-xl md:text-2xl font-semibold text-[#fffff]">Schedule</h1>
+            <h1 className="text-xl md:text-2xl font-semibold text-white">Schedule</h1>
             
             {/* User Actions */}
             <div className="flex items-center space-x-3 md:space-x-4">
               <button className="p-1.5 md:p-2 hover:bg-none rounded-lg">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="white" className="size-6">
   <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0M3.124 7.5A8.969 8.969 0 0 1 5.292 3m13.416 0a8.969 8.969 0 0 1 2.168 4.5" />
 </svg>
 
@@ -612,7 +634,7 @@ export default function Home() {
           {/* Task List */}
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="text-base md:text-lg font-medium text-[#fffff] sticky top-0 bg-none z-10">Tasks</h2>
+              <h2 className="text-base md:text-lg font-medium text-white sticky top-0 bg-none z-10">Tasks</h2>
             </div>
 
             {/* Main Kanban Column */}
@@ -643,11 +665,11 @@ export default function Home() {
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <h3 className="font-medium text-[#fffff] text-sm md:text-base">{task.name}</h3>
+                          <h3 className="font-medium text-white text-sm md:text-base">{task.name}</h3>
                           {isTaskActive(task.time, task.duration) && (
                             <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-green-100 text-[#22c55e] dark:bg-green-800/30 dark:text-[#22c55e] border-[0.25px] border-[#22c55e]">
                               <span className="size-1.5 inline-block rounded-full bg-[#22c55e] animate-pulse shadow-sm shadow-green-400" />
-                              Active
+                              <TimeDisplay />
                             </span>
                           )}
                         </div>
@@ -692,7 +714,7 @@ export default function Home() {
                       className="bg-[#303030] p-2 md:p-3 rounded-lg border-[0px] border-gray-200 shadow-sm cursor-move"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-xs md:text-sm text-[#fffff]">{task.title}</span>
+                        <span className="text-xs md:text-sm text-white">{task.title}</span>
                         <span className="text-xs text-[#95A5A6]">{task.time}</span>
                       </div>
                     </div>
