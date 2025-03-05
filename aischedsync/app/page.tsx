@@ -29,6 +29,14 @@ const getTimeDifferenceInMinutes = (time1: string, time2: string): number => {
   return Math.round((date2.getTime() - date1.getTime()) / (1000 * 60));
 };
 
+const isTaskActive = (taskTime: string, taskDuration: number): boolean => {
+  const now = new Date();
+  const taskStart = parseTimeString(taskTime);
+  const taskEnd = new Date(taskStart);
+  taskEnd.setMinutes(taskStart.getMinutes() + taskDuration);
+  return now >= taskStart && now <= taskEnd;
+};
+
 
 export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -58,6 +66,23 @@ export default function Home() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const [showTaskStatusModal, setShowTaskStatusModal] = useState(false);
+  const [selectedPastTask, setSelectedPastTask] = useState<Task | null>(null);
+
+  // Add this useEffect after other useEffect hooks
+  useEffect(() => {
+    // Find the first active task
+    const activeTask = mainTasks.find(task => isTaskActive(task.time, task.duration));
+    
+    if (activeTask) {
+      // Find the task element
+      const taskElement = document.querySelector(`[data-task-id="${activeTask.id}"]`);
+      if (taskElement) {
+        // Scroll the task into view with smooth behavior
+        taskElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [mainTasks]); // Re-run when tasks change
 
   // Add these new state variables at the top with other state declarations
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
@@ -299,8 +324,20 @@ export default function Home() {
 
   // Modify the task card click handler
   const handleTaskClick = (task: Task) => {
-    setSelectedTask(task);
-    setIsEditModalOpen(true);
+    const now = new Date();
+    const taskStart = parseTimeString(task.time);
+    const taskEnd = new Date(taskStart);
+    taskEnd.setMinutes(taskStart.getMinutes() + task.duration);
+
+    if (now > taskEnd) {
+      // Past task - show status modal
+      setSelectedPastTask(task);
+      setShowTaskStatusModal(true);
+    } else {
+      // Current or future task - show edit modal
+      setSelectedTask(task);
+      setIsEditModalOpen(true);
+    }
   };
 
   // Add this new function before the return statement
@@ -346,7 +383,7 @@ export default function Home() {
     <div className="flex flex-col md:flex-row h-screen bg-[#212121] overflow-hidden">
       {/* Mobile Header */}
       <div className="md:hidden flex items-center justify-between p-4 border-b border-gray-200">
-        <div className="text-xl text-black font-semibold">SchedSync</div>
+        <div className="text-xl text-white font-semibold">SchedSync</div>
         <button 
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           className="p-2 hover:bg-gray-100 rounded-lg"
@@ -501,10 +538,11 @@ export default function Home() {
             
             {/* User Actions */}
             <div className="flex items-center space-x-3 md:space-x-4">
-              <button className="p-1.5 md:p-2 hover:bg-gray-100 rounded-lg">
-                <svg className="w-5 h-5 md:w-6 md:h-6 text-[#2C3E50]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                </svg>
+              <button className="p-1.5 md:p-2 hover:bg-none rounded-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+  <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0M3.124 7.5A8.969 8.969 0 0 1 5.292 3m13.416 0a8.969 8.969 0 0 1 2.168 4.5" />
+</svg>
+
               </button>
               
               <div className="relative">
@@ -585,6 +623,7 @@ export default function Home() {
                   {mainTasks.map((task, index) => (
                     <div 
                       key={task.id} 
+                      data-task-id={task.id}
                       draggable
                       data-draggable="true"
                       onDragStart={(e) => handleDragStart(e, 'main', index)}
@@ -592,10 +631,26 @@ export default function Home() {
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, 'main', index)}
                       onClick={() => handleTaskClick(task)}
-                      className="bg-[#303030] p-3 md:p-4 rounded-lg border-[0px] border-gray-200 shadow-sm hover:shadow-lg transition-shadow cursor-pointer transform hover:scale-105"
+                      className={`bg-[#303030] p-3 md:p-4 rounded-lg border-[0px] border-gray-200 shadow-sm hover:shadow-lg transition-shadow cursor-pointer transform hover:scale-105 ${
+                        (() => {
+                          const now = new Date();
+                          const taskStart = parseTimeString(task.time);
+                          const taskEnd = new Date(taskStart);
+                          taskEnd.setMinutes(taskStart.getMinutes() + task.duration);
+                          return now > taskEnd ? 'blur-[1px] opacity-60 hover:blur-none hover:opacity-100 transition-all duration-200' : '';
+                        })()
+                      }`}
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <h3 className="font-medium text-[#fffff] text-sm md:text-base">{task.name}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium text-[#fffff] text-sm md:text-base">{task.name}</h3>
+                          {isTaskActive(task.time, task.duration) && (
+                            <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-green-100 text-[#22c55e] dark:bg-green-800/30 dark:text-[#22c55e] border-[0.25px] border-[#22c55e]">
+                              <span className="size-1.5 inline-block rounded-full bg-[#22c55e] animate-pulse shadow-sm shadow-green-400" />
+                              Active
+                            </span>
+                          )}
+                        </div>
                         <button className="text-[#95A5A6] hover:text-[#7F8C8D]" onClick={() => handleTaskClick(task)}>
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
@@ -755,6 +810,42 @@ export default function Home() {
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Task Status Modal */}
+      {showTaskStatusModal && selectedPastTask && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-sm mx-4">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Task Status</h3>
+            <p className="text-sm text-gray-500 mb-6">
+              Was this task completed?
+            </p>
+            
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => {
+                  // Handle task not done
+                  setShowTaskStatusModal(false);
+                  showErrorToast('Task marked as incomplete');
+                }}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Not Done
+              </button>
+              
+              <button
+                onClick={() => {
+                  // Handle task done
+                  setShowTaskStatusModal(false);
+                  showSuccessToast('Task marked as complete');
+                }}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+              >
+                Done
               </button>
             </div>
           </div>
