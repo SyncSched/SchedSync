@@ -182,22 +182,37 @@ export const checkOnboardingStatus = async (token: string): Promise<boolean> => 
    * Retrieves the current logged-in user.
    */
   export const getCurrentUser = async (): Promise<UserInfo> => {
+    const token = getStoredAuthToken();
+    
+    // Check token validity before making the request
+    if (token && !isTokenValid(token)) {
+      throw new Error('Token expired');
+    }
+
     const res = await fetch(`${API_URL}/currentUser`, {
       headers: {
-        'Authorization': `Bearer ${getStoredAuthToken()}`
+        'Authorization': `Bearer ${token}`
       }
     });
     
     if (!res.ok) {
-      console.error('Failed to fetch user:', res.status, res.statusText);
       throw new Error('Failed to fetch current user');
     }
     
     const data = await res.json();
-    // Return just the currentUser object instead of the whole response
     return data.currentUser;
   };
-  
+
+  export const isTokenValid = (token: string): boolean => {
+    try {
+      // JWT tokens are in format: header.payload.signature
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const expirationTime = payload.exp * 1000; // Convert to milliseconds
+      return Date.now() < expirationTime;
+    } catch {
+      return false;
+    }
+  };
 
   export const getStoredAuthToken = () => Cookies.get('authToken');
 
