@@ -304,10 +304,47 @@ export default function Home() {
     try {
       if (!selectedTask) return;
 
-      // Update the task in the local array
-      const updatedTasks = mainTasks.map(task => 
-        task.id === updatedTask.id ? updatedTask : task
-      );
+      const currentIndex = mainTasks.findIndex(task => task.id === updatedTask.id);
+      if (currentIndex === -1) return;
+
+      let updatedTasks = [...mainTasks];
+      
+      // Case 1: Time changed
+      if (updatedTask.time !== selectedTask.time) {
+        updatedTasks[currentIndex] = updatedTask;
+        
+        // Adjust all subsequent tasks based on the new time
+        let currentTime = addMinutesToTime(updatedTask.time, updatedTask.duration);
+        
+        // Update times for all tasks after the modified task
+        for (let i = currentIndex + 1; i < updatedTasks.length; i++) {
+          updatedTasks[i] = {
+            ...updatedTasks[i],
+            time: currentTime
+          };
+          currentTime = addMinutesToTime(currentTime, updatedTasks[i].duration);
+        }
+      }
+      // Case 2: Duration changed
+      else if (updatedTask.duration !== selectedTask.duration) {
+        updatedTasks[currentIndex] = updatedTask;
+        
+        // Adjust all subsequent tasks
+        let currentTime = addMinutesToTime(updatedTask.time, updatedTask.duration);
+        
+        // Update times for all tasks after the modified task
+        for (let i = currentIndex + 1; i < updatedTasks.length; i++) {
+          updatedTasks[i] = {
+            ...updatedTasks[i],
+            time: currentTime
+          };
+          currentTime = addMinutesToTime(currentTime, updatedTasks[i].duration);
+        }
+      }
+      // Case 3: Only name changed
+      else {
+        updatedTasks[currentIndex] = updatedTask;
+      }
 
       // Call updateSchedule with all tasks
       await updateSchedule(updatedTask.scheduleId, updatedTasks);
