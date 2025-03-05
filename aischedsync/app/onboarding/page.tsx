@@ -37,7 +37,8 @@ const OnboardingPage = () => {
         if (onboarding) {
           // Set onboarding completion cookie
           document.cookie = 'onboardingComplete=true; path=/';
-          router.push('/');
+          router.replace('/');
+          window.location.reload();
         } else {
           console.error('Failed to save onboarding data');
         }
