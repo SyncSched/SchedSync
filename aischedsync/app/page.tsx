@@ -307,7 +307,7 @@ export default function Home() {
       const currentIndex = mainTasks.findIndex(task => task.id === updatedTask.id);
       if (currentIndex === -1) return;
 
-      let updatedTasks = [...mainTasks];
+      const updatedTasks = [...mainTasks];
       
       // Case 1: Time changed
       if (updatedTask.time !== selectedTask.time) {
