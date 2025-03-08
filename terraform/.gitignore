@@ -1,0 +1,19 @@
+
+---
+
+### **5. Updated `.gitignore`**
+Ensure your `.gitignore` includes all sensitive/unnecessary files:
+
+```gitignore
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+terraform.tfvars
+*.auto.tfvars
+.env
+
+# IDE/OS Files
+.idea/
+.vscode/
+.DS_Store
