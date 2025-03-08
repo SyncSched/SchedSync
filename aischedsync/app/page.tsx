@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { getTodaySchedule, updateSchedule, getCurrentUser, type UserInfo, type Task } from '../api/lib'
 import { useAuth } from '@/contexts/AuthContext';
+import Loading from '../components/Loading';
 
 // Add these utility functions after the imports and before the Home component
 const parseTimeString = (timeStr: string): Date => {
@@ -63,6 +64,7 @@ const TimeDisplay = () => {
 export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [mainTasks, setMainTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [quickTasks, setQuickTasks] = useState([
     {
@@ -117,6 +119,7 @@ export default function Home() {
   // On mount, fetch today's schedule and current user info
   useEffect(() => {
     const fetchData = async () => {
+      setIsLoading(true);
       try {
         const schedule = await getTodaySchedule();
         console.log('Fetched schedule:', schedule);
@@ -126,6 +129,8 @@ export default function Home() {
         }
       } catch (error) {
         console.error('Error fetching schedule:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -642,7 +647,17 @@ export default function Home() {
               <div className="flex-1 bg-none p-3 md:p-4 rounded-lg min-h-[400px] md:min-h-[500px] overflow-y-auto max-h-[500px] scrollable">
                 {/* Kanban Cards */}
                 <div className="space-y-3 md:space-y-4">
-                  {mainTasks.map((task, index) => (
+                {isLoading ? (
+                  <div className="text-center py-8 text-gray-400">
+                    
+                    <Loading />
+                  </div>
+                ) : mainTasks.length === 0 ? (
+                  <div className="text-center py-8 text-gray-400">
+                     <Loading />
+                  </div>
+                ) : (
+                  mainTasks.map((task, index) => (
                     <div 
                       key={task.id} 
                       data-task-id={task.id}
@@ -659,7 +674,7 @@ export default function Home() {
                           const taskStart = parseTimeString(task.time);
                           const taskEnd = new Date(taskStart);
                           taskEnd.setMinutes(taskStart.getMinutes() + task.duration);
-                          return now > taskEnd ? 'blur-[1px] opacity-60 hover:blur-none hover:opacity-100 transition-all duration-200' : '';
+                          return now > taskEnd ? 'opacity-60 hover:opacity-100 transition-all duration-200' : '';
                         })()
                       }`}
                     >
@@ -694,8 +709,9 @@ export default function Home() {
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  )))
+                }
+              </div>
               </div>
 
               {/* Secondary Column (Quick Tasks) */}
@@ -718,8 +734,9 @@ export default function Home() {
                         <span className="text-xs text-[#95A5A6]">{task.time}</span>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  ))
+                }
+              </div>
                 <button 
                   onClick={() => setIsAddTaskModalOpen(true)}
                   className="bg-blue-500 mt-3 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors"

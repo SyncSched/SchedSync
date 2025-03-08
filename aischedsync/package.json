@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "@lottiefiles/dotlottie-react": "^0.13.2",
     "@types/js-cookie": "^3.0.6",
     "dotenv": "^16.4.7",
     "framer-motion": "^12.4.2",
