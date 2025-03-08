@@ -70,13 +70,19 @@ Use these values to interact with your deployed infrastructure.
 ---
 
 ## **Managing Infrastructure**
-| Command                 | Description                                  |
-|-------------------------|----------------------------------------------|
-| `terraform init`        | Initializes the Terraform project.           |
-| `terraform plan`        | Shows proposed changes before applying.      |
-| `terraform apply`       | Deploys infrastructure changes.              |
-| `terraform destroy`     | Destroys all resources (Use with caution).   |
-| `terraform state list`  | Lists resources managed by Terraform.        |
+| Command                      | Description                                      |
+|------------------------------|--------------------------------------------------|
+| `terraform init`             | Initializes the Terraform project.               |
+| `terraform plan`             | Shows proposed changes before applying.          |
+| `terraform apply`            | Deploys infrastructure changes.                  |
+| `terraform destroy`          | Destroys all resources (Use with caution).       |
+| `terraform state list`       | Lists resources managed by Terraform.            |
+| `terraform show`             | Displays the current Terraform state details.    |
+| `terraform delete`           | Deletes a specific resource from the state.      |
+| `terraform workspace list`   | Lists all available Terraform workspaces.        |
+| `terraform workspace select <name>` | Switches to a specified workspace.    |
+| `terraform workspace new <name>` | Creates a new workspace.               |
+| `terraform state rm <resource>` | Removes a resource from the state file. |
 
 ---
 
