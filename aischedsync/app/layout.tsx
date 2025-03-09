@@ -16,7 +16,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'SchedSync',
   description: 'AI-powered personal secretary to help manage your tasks, schedule, and life effortlessly.',
+  other: {
+    'google-site-verification': '_DpLsLw2ZcBy38Nj9u_6Oy6odc5K_3UXTzVnRSyQEzQ'
+  }
 };
+
 
 export default function RootLayout({
   children,
@@ -25,6 +29,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta name="google-site-verification" content="_DpLsLw2ZcBy38Nj9u_6Oy6odc5K_3UXTzVnRSyQEzQ" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
