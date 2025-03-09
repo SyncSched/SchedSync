@@ -48,6 +48,7 @@ model Schedule {
   id           String          @id @default(cuid())
   userId       String
   user         User            @relation(fields: [userId], references: [id] , onDelete: Cascade)
+  status       String          @default("pending") // "pending", "completed", "failed"
   originalData Task[]            // Aim to Store the AI-generated schedule
   createdAt    DateTime        @default(now())
 }

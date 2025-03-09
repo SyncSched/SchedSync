@@ -30,57 +30,89 @@ export const getScheduleHandler = async(req:AuthenticatedRequest,res:Response,ne
     }
 }
 
-export const generateScheduleHandler = async(req:AuthenticatedRequest , res:Response , next : NextFunction) : Promise<void> =>{
+export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     const userId = req.user?.id;
     if (!userId) {
         return next(new BadUserInputError({ message: "User ID is missing from request" }));
     }
 
-    // Fetch user onboarding data from the database
-    const onboardingData = await getOnboardingData(userId);
-    console.log("users ONBOARDING DATA" , onboardingData);
-
-    if (!onboardingData) {
-        return next(new EntityNotFoundError("Onboarding data not found. Please complete onboarding."));
-    }
-      
-      // Convert to a string
-    const userData = JSON.stringify(onboardingData);
-            
-
-    const generatedSchedule  = await generateSchedule(userData);
-    if (!generatedSchedule) {
-        return next(new EntityNotFoundError("Failed to generate schedule"));
-    }
-
-    console.log("Schedule generated successfully:", generatedSchedule);
-
-    let cleanedSchedule = generatedSchedule
-    .trim() // Remove leading/trailing spaces
-    .replace(/^```json/, "") // Remove starting ```json if present
-    .replace(/```$/, ""); // Remove ending ``` if present
-
-    let parsedSchedule;
     try {
-        parsedSchedule = JSON.parse(cleanedSchedule);
+        // Start transaction to check and set lock
+        const existingSchedule = await prisma.schedule.findFirst({
+            where: {
+                userId,
+                status: "pending",
+            },
+        });
+
+        if (existingSchedule) {
+            console.log("Schedule is already being generated.@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+            return next(new BadUserInputError({ message: "A schedule generation is already in progress" }));
+        }
+
+        // Create a new schedule with "pending" status to lock the process
+        const lockedSchedule = await prisma.schedule.create({
+            data: {
+                userId,
+                status: "pending",
+            },
+        });
+
+        // Fetch onboarding data
+        const onboardingData = await getOnboardingData(userId);
+        if (!onboardingData) {
+            await prisma.schedule.delete({ where: { id: lockedSchedule.id } }); // Release lock
+            return next(new EntityNotFoundError("Onboarding data not found. Please complete onboarding."));
+        }
+
+        // Convert to a string
+        const userData = JSON.stringify(onboardingData);
+
+        // Generate the schedule
+        const generatedSchedule = await generateSchedule(userData);
+        if (!generatedSchedule) {
+            await prisma.schedule.delete({ where: { id: lockedSchedule.id } }); // Release lock
+            return next(new EntityNotFoundError("Failed to generate schedule"));
+        }
+
+        // Clean the schedule response
+        let cleanedSchedule = generatedSchedule.trim().replace(/^```json/, "").replace(/```$/, "");
+
+        let parsedSchedule;
+        try {
+            parsedSchedule = JSON.parse(cleanedSchedule);
+        } catch (error) {
+            console.error("Error parsing generated schedule:", error);
+            await prisma.schedule.delete({ where: { id: lockedSchedule.id } }); // Release lock
+            return next(new BadUserInputError({ message: "Invalid schedule format received" }));
+        }
+
+        // Save the final schedule
+        const createdSchedule = await prisma.schedule.update({
+            where: { id: lockedSchedule.id },
+            data: {
+                originalData: {
+                    create: parsedSchedule.map((task: any) => ({
+                        name: task.name,
+                        time: task.time,
+                        duration: task.duration
+                    }))
+                },
+                status: "completed"
+            },
+            include: {
+                originalData: true,
+                user: true
+            }
+        });
+
+        res.status(201).json(createdSchedule);
     } catch (error) {
-      console.error("Error parsing generated schedule:", error);
-      return next(new BadUserInputError({ message: "Invalid schedule format received" }));
+        console.error("Error generating schedule:", error);
+        return next(new Error("Internal server error"));
     }
-  
-    const scheduleInput: CreateScheduleInput = {
-        originalData: parsedSchedule, // ✅ Now it's a Task[] instead of string
-        userId,
-    };
-    
+};
 
-    const createdSchedule = await createSchedule(scheduleInput);
-    if (!createdSchedule) {
-        return next(new EntityNotFoundError("Failed to save generated schedule"));
-    }
-
-    res.status(201).json(createdSchedule);
-}
 
 export const createScheduleHandler = async(req:AuthenticatedRequest , res:Response, next: NextFunction): Promise<void> => {
     try {
