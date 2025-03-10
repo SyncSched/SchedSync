@@ -13,16 +13,42 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model User {
-  id              String          @id @default(cuid())
-  email           String          @unique
-  name            String
-  avatarUrl       String
-  googleId        String          @unique
-  schedules       Schedule[]
-  onboardingData  OnboardingData? // One-to-one relation
-  createdAt       DateTime        @default(now())
+  id                String          @id @default(cuid())
+  email             String          @unique
+  name              String
+  avatarUrl         String
+  googleId          String          @unique
+  schedules         Schedule[]
+  onboardingData    OnboardingData? // One-to-one relation
+  createdAt         DateTime        @default(now())
+
+  // Notification Preferences
+  isEmailEnabled    Boolean        @default(false)
+  isWhatsAppEnabled Boolean        @default(false)
+  isTelegramEnabled Boolean        @default(false)
+  isCallEnabled     Boolean        @default(false)
+
+  //Notification available
+  phoneNumber        String?  @unique 
+  telegramChatId     String?
+  
+  notifyBeforeMinutes Int          @default(10) // Reminder time before task in minutes
+  
+  notifications      TaskNotification[]
+}
+
+model TaskNotification {
+  id         String   @id @default(uuid())
+  taskId     String
+  userId     String
+  channel    String   // "email" | "whatsapp" | "telegram" | "call"
+  status     String   @default("pending") // "pending", "sent", "failed"
+  notifyAt   DateTime // Exact time when notification should be sent
+  createdAt  DateTime @default(now())
+
+  task       Task     @relation(fields: [taskId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
 }
 
 model OnboardingData {
@@ -42,24 +68,27 @@ model OnboardingData {
   user             User     @relation(fields: [userId], references: [id] , onDelete: Cascade) // One-to-One Relationship
 }
 
-
-
 model Schedule {
-  id           String          @id @default(cuid())
+  id           String       @id @default(cuid())
   userId       String
-  user         User            @relation(fields: [userId], references: [id] , onDelete: Cascade)
-  status       String          @default("pending") // "pending", "completed", "failed"
-  originalData Task[]            // Aim to Store the AI-generated schedule
-  createdAt    DateTime        @default(now())
+  user         User         @relation(fields: [userId], references: [id] , onDelete: Cascade)
+  status       String       @default("pending") // "pending", "completed", "failed"
+  originalData Task[]       // AI-generated schedule
+  createdAt    DateTime     @default(now())
 }
-
 
 model Task {
-  id        String   @id @default(cuid())
-  name      String
-  time      String   
-  duration  Int
-  scheduleId String
-  schedule  Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
-}
+  id                String            @id @default(uuid())
+  name              String
+  time              String
+  duration          Int
+  scheduleId        String
+  isEmailEnabled    Boolean           @default(false)
+  isWhatsAppEnabled Boolean           @default(false)
+  isTelegramEnabled Boolean           @default(false)
+  isCallEnabled     Boolean           @default(false)
+  schedule          Schedule          @relation(fields: [scheduleId], references: [id])
+  notifications     TaskNotification[]
 
+  @@map("tasks")
+}

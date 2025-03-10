@@ -110,10 +110,26 @@ export default function Home() {
 
   // Add these new state variables at the top with other state declarations
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
-  const [newTask, setNewTask] = useState({
+  // First, define a proper interface for the task state
+  interface NewTaskState {
+    name: string;
+    time: string;
+    duration: number;
+    isEmailEnabled: boolean;
+    isWhatsAppEnabled: boolean;
+    isTelegramEnabled: boolean;
+    isCallEnabled: boolean;
+  }
+
+  // Initialize the state with proper types
+  const [newTask, setNewTask] = useState<NewTaskState>({
     name: '',
     time: '',
-    duration: 30
+    duration: 30,
+    isEmailEnabled: false,
+    isWhatsAppEnabled: false,
+    isTelegramEnabled: false,
+    isCallEnabled: false
   });
 
   // On mount, fetch today's schedule and current user info
@@ -411,36 +427,58 @@ export default function Home() {
     try {
       const scheduleId = mainTasks[0]?.scheduleId || '';
       
-      // Create new task object
+      // Create the task object with explicit boolean values
       const newTaskObject: Task = {
-        id: `temp-${Date.now()}`, // Temporary ID that will be replaced by the backend
+        id: `temp-${Date.now()}`,
         name: newTask.name,
         time: newTask.time,
-        duration: newTask.duration,
-        scheduleId: scheduleId
+        duration: Number(newTask.duration),
+        scheduleId: scheduleId,
+        isEmailEnabled: newTask.isEmailEnabled,
+        isWhatsAppEnabled: newTask.isWhatsAppEnabled,
+        isTelegramEnabled: newTask.isTelegramEnabled,
+        isCallEnabled: newTask.isCallEnabled
       };
 
-      // Add new task to existing tasks
+      // Debug logs
+      console.log('New task before API call:', newTaskObject);
+      
       const updatedTasks = [...mainTasks, newTaskObject];
+      const result = await updateSchedule(scheduleId, updatedTasks);
+      
+      console.log('API response:', result);
 
-      // Update schedule with all tasks including the new one
-      await updateSchedule(scheduleId, updatedTasks);
-
-      // Update local state
       setMainTasks(updatedTasks);
       setIsAddTaskModalOpen(false);
       showSuccessToast('Task added successfully!');
       
-      // Reset the form
+      // Reset form
       setNewTask({
         name: '',
         time: '',
-        duration: 30
+        duration: 30,
+        isEmailEnabled: false,
+        isWhatsAppEnabled: false,
+        isTelegramEnabled: false,
+        isCallEnabled: false
       });
     } catch (error) {
       console.error('Error adding task:', error);
       showErrorToast('Failed to add task');
     }
+  };
+
+  // Update the notification change handler to be more explicit
+  const handleNotificationChange = (setting: keyof NewTaskState) => {
+    console.log(`Changing ${setting} from ${newTask[setting]} to ${!newTask[setting]}`); // Debug log
+    setNewTask(prev => {
+      const updated = {
+        ...prev,
+        [setting]: !prev[setting]
+      };
+      console.log('Updated task state:', updated); // Debug log
+      return updated;
+    });
   };
 
   return (
@@ -491,7 +529,7 @@ export default function Home() {
             
             <button className="flex items-center space-x-3 px-3 py-2 text-white hover:bg-gray-800 rounded-lg">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
               </svg>
               <span>Tools</span>
             </button>
@@ -988,6 +1026,51 @@ export default function Home() {
                     onChange={(e) => setNewTask({...newTask, duration: parseInt(e.target.value)})}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">Notification Settings</label>
+                  <div className="space-y-2">
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={newTask.isEmailEnabled}
+                        onChange={() => handleNotificationChange('isEmailEnabled')}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">Email Notifications</span>
+                    </label>
+
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={newTask.isWhatsAppEnabled}
+                        onChange={() => handleNotificationChange('isWhatsAppEnabled')}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">WhatsApp Notifications</span>
+                    </label>
+
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={newTask.isTelegramEnabled}
+                        onChange={() => handleNotificationChange('isTelegramEnabled')}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">Telegram Notifications</span>
+                    </label>
+
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={newTask.isCallEnabled}
+                        onChange={() => handleNotificationChange('isCallEnabled')}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">Phone Call Notifications</span>
+                    </label>
+                  </div>
                 </div>
               </div>
               

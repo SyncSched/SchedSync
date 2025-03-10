@@ -33,8 +33,21 @@ export interface Schedule {
     time: string;    // Time in "HH:MM" format
     duration: number; // Duration in minutes
     scheduleId: string;
+    isEmailEnabled: boolean;
+    isWhatsAppEnabled: boolean;
+    isTelegramEnabled: boolean;
+    isCallEnabled: boolean;
   }
 
+  export interface TaskFormData {
+    name: string;
+    time: string;
+    duration: number;
+    isEmailEnabled: boolean;
+    isWhatsAppEnabled: boolean;
+    isTelegramEnabled: boolean;
+    isCallEnabled: boolean;
+  }
 
   // Define the OnboardingInput and Onboarding interfaces
   export interface OnboardingInput {
@@ -221,20 +234,29 @@ export const checkOnboardingStatus = async (token: string): Promise<boolean> => 
  */
 export const updateSchedule = async (scheduleId: string, tasks: Task[]): Promise<Schedule> => {
   try {
-    const res = await fetch(`${API_URL}/schedule/${scheduleId}/update`, {
+    const response = await fetch(`${API_URL}/schedule/${scheduleId}/update`, {
       method: 'PUT',
       headers: { 
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${getStoredAuthToken()}`
       },
-      body: JSON.stringify({ originalData: tasks })
+      body: JSON.stringify({ 
+        originalData: tasks.map(task => ({
+          ...task,
+          // Ensure boolean values are properly set
+          isEmailEnabled: task.isEmailEnabled === true,
+          isWhatsAppEnabled: task.isWhatsAppEnabled === true,
+          isTelegramEnabled: task.isTelegramEnabled === true,
+          isCallEnabled: task.isCallEnabled === true
+        }))
+      })
     });
 
-    if (!res.ok) {
+    if (!response.ok) {
       throw new Error('Failed to update schedule tasks');
     }
 
-    return res.json();
+    return response.json();
   } catch (error) {
     console.error('Error updating schedule:', error);
     throw error;

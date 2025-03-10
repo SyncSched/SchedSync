@@ -11,6 +11,7 @@ import { authMiddleware } from './middleware/authMiddleware';
 import { RouteNotFoundError } from './errors';
 import { handleError } from './middleware/error';
 import { initScheduleCron } from './cron/scheduleCron';
+import { initNotificationCron } from './cron/RemainderCron';
 
 import './utils/passportConfig';
 
@@ -71,5 +72,6 @@ app.use(handleError);
 
 // Initialize cron jobs
 initScheduleCron();
+initNotificationCron();
 
 export default app;

@@ -6,8 +6,12 @@ export interface Task {
     name: string;
     time: string;    // Time in "HH:MM" format
     duration: number; // Duration in minutes
-    scheduleId:string;
-  }
+    scheduleId: string;
+    isEmailEnabled: boolean;
+    isWhatsAppEnabled: boolean;
+    isTelegramEnabled: boolean;
+    isCallEnabled: boolean;
+}
   
   
   // For Prisma Schema interfaces
