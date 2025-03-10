@@ -1,3 +1,4 @@
+import { updateRemainderSettings } from '../controllers/notification.controller';
 import { checkOnboardingDataHandler, createOnboardingHandler } from '../controllers/onboarding.controller';
 import { createScheduleHandler, generateScheduleHandler, getScheduleHandler , updateScheduleHandler } from '../controllers/schedule.controller';
 import {getAllUsersHandler, getCurrentUser} from '../controllers/user.controller'
@@ -21,5 +22,6 @@ export const attachPrivateRoutes = (app:any) :void =>{
     app.get('/checkonboardingdata', checkOnboardingDataHandler);
 
     app.put('/schedule/:id/update', updateScheduleHandler);
+    app.put("/notifications/:userId", updateRemainderSettings);
 
 }
