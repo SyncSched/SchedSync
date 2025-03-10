@@ -4,17 +4,23 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const transporter = nodemailer.createTransport({
-  service: "Gmail", // Change if using AWS SES, SendGrid, etc.
+  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false, // true for 465, false for other ports
   auth: {
-    user: process.env.EMAIL_USER, // Your email
-    pass: process.env.EMAIL_PASS, // App password or SMTP password
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_APP_PASSWORD // Use App Password, not your regular Gmail password
   },
 });
 
 export const sendEmail = async (to: string, subject: string, text: string) => {
   try {
+    // Verify transporter configuration
+    await transporter.verify();
+    
     const info = await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+      from: `"SchedSync" <${process.env.EMAIL_USER}>`, // Add a friendly name
       to,
       subject,
       text,

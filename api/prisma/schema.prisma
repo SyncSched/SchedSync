@@ -78,12 +78,17 @@ model Schedule {
 }
 
 model Task {
-  id        String   @id @default(cuid())
-  name      String
-  time      String   
-  duration  Int
-  scheduleId String
-  schedule  Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  id                String            @id @default(uuid())
+  name              String
+  time              String
+  duration          Int
+  scheduleId        String
+  isEmailEnabled    Boolean           @default(false)
+  isWhatsAppEnabled Boolean           @default(false)
+  isTelegramEnabled Boolean           @default(false)
+  isCallEnabled     Boolean           @default(false)
+  schedule          Schedule          @relation(fields: [scheduleId], references: [id])
+  notifications     TaskNotification[]
 
-  notifications TaskNotification[]
+  @@map("tasks")
 }

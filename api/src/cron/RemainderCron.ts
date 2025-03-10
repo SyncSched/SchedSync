@@ -56,7 +56,7 @@ export async function processNotifications() {
       where: {
         status: "pending",
         notifyAt: {
-          lte: now // Only get notifications that should be sent by now
+          lte: now
         }
       },
       include: { 
@@ -68,9 +68,35 @@ export async function processNotifications() {
     for (const notification of notifications) {
       const { user, task, channel } = notification;
 
-      // Skip if the channel is disabled for the user
-      if (!isChannelEnabled(user, channel)) {
-        continue;
+      // Double check both user and task level notification settings
+      switch (channel.toLowerCase()) {
+        case 'email':
+          if (!user.isEmailEnabled || !task.isEmailEnabled || !user.email) {
+            console.log(`Email notifications disabled for user ${user.id} or task ${task.id}`);
+            continue;
+          }
+          break;
+        case 'whatsapp':
+          if (!user.isWhatsAppEnabled || !task.isWhatsAppEnabled || !user.phoneNumber) {
+            console.log(`WhatsApp notifications disabled for user ${user.id} or task ${task.id}`);
+            continue;
+          }
+          break;
+        case 'telegram':
+          if (!user.isTelegramEnabled || !task.isTelegramEnabled || !user.telegramChatId) {
+            console.log(`Telegram notifications disabled for user ${user.id} or task ${task.id}`);
+            continue;
+          }
+          break;
+        case 'call':
+          if (!user.isCallEnabled || !task.isCallEnabled || !user.phoneNumber) {
+            console.log(`Call notifications disabled for user ${user.id} or task ${task.id}`);
+            continue;
+          }
+          break;
+        default:
+          console.error(`Unknown notification channel: ${channel}`);
+          continue;
       }
 
       // Get the appropriate notification service
@@ -93,17 +119,10 @@ export async function processNotifications() {
 
       try {
         const sent = await notifier.send(recipient, subject, message);
-        if (sent) {
-          await prisma.taskNotification.update({
-            where: { id: notification.id },
-            data: { status: "sent" }
-          });
-        } else {
-          await prisma.taskNotification.update({
-            where: { id: notification.id },
-            data: { status: "failed" }
-          });
-        }
+        await prisma.taskNotification.update({
+          where: { id: notification.id },
+          data: { status: sent ? "sent" : "failed" }
+        });
       } catch (error) {
         console.error(`Failed to send ${channel} notification:`, error);
         await prisma.taskNotification.update({

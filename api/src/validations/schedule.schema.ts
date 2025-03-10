@@ -5,6 +5,10 @@ const originalDataSchema = z.object({
   name: z.string().min(1, "Name is required"),
   time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Time must be in HH:mm format"),
   duration: z.number().min(1, "Duration must be at least 1 minute"),
+  isEmailEnabled: z.boolean().optional(),
+  isWhatsAppEnabled: z.boolean().optional(),
+  isTelegramEnabled: z.boolean().optional(),
+  isCallEnabled: z.boolean().optional()
 });
 
 // Define the full validation schema for schedule creation
@@ -13,5 +17,5 @@ export const createScheduleSchema = z.object({
   originalData: z.array(originalDataSchema).min(1, "At least one task is required"),
 });
 
-// TypeScript type inference (Optional)
+// TypeScript type inference
 export type CreateScheduleInput = z.infer<typeof createScheduleSchema>;
