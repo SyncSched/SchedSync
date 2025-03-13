@@ -5,8 +5,9 @@ import { useState, useEffect } from "react";
 import { getTodaySchedule, updateSchedule, getCurrentUser, type UserInfo, type Task } from '../api/lib'
 import { useAuth } from '@/contexts/AuthContext';
 import Loading from '../components/Loading';
+import Modal from './components/ui/Modal';
+import { TaskForm } from './components/TaskForm';
 
-// Add these utility functions after the imports and before the Home component
 const parseTimeString = (timeStr: string): Date => {
   const [hours, minutes] = timeStr.split(':').map(Number);
   const date = new Date();
@@ -318,6 +319,22 @@ export default function Home() {
     setToastType('error');
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
+  };
+
+  const handleEditTaskSubmit = async (formData: any) => {
+    try {
+      if (!selectedTask) return;
+
+      const updatedTask = {
+        ...selectedTask,
+        ...formData
+      };
+
+      await handleTaskUpdate(updatedTask);
+    } catch (error) {
+      console.error('Error updating task:', error);
+      showErrorToast('Failed to update task');
+    }
   };
 
   // Add the handleTaskUpdate function
@@ -636,10 +653,19 @@ export default function Home() {
         <div className="p-4 md:p-8">
           {/* Header */}
           <div className="flex justify-between items-center mb-6 md:mb-8">
-            <h1 className="text-xl md:text-2xl font-semibold text-white">Schedule</h1>
+            <h1 className="text-xl md:text-2xl font-semibold text-white">Todays Schedule</h1>
             
             {/* User Actions */}
             <div className="flex items-center space-x-3 md:space-x-4">
+              <button 
+                onClick={() => setIsAddTaskModalOpen(true)}
+                className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                <span>Add New Task</span>
+              </button>
               <button className="p-1.5 md:p-2 hover:bg-none rounded-lg">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="white" className="size-6">
   <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0M3.124 7.5A8.969 8.969 0 0 1 5.292 3m13.416 0a8.969 8.969 0 0 1 2.168 4.5" />
@@ -713,9 +739,9 @@ export default function Home() {
 
           {/* Task List */}
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
+            {/* <div className="flex justify-between items-center">
               <h2 className="text-base md:text-lg font-medium text-white sticky top-0 bg-none z-10">Tasks</h2>
-            </div>
+            </div> */}
 
             {/* Main Kanban Column */}
             <div className="flex flex-col md:flex-row gap-4 md:gap-6">
@@ -826,80 +852,16 @@ export default function Home() {
 
       {/* Edit Modal */}
       {isEditModalOpen && selectedTask && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Edit Task</h3>
-              <button 
-                onClick={() => setIsEditModalOpen(false)}
-                className="text-gray-400 hover:text-gray-500"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              handleTaskUpdate({
-                ...selectedTask,
-                name: (e.currentTarget.elements.namedItem('name') as HTMLInputElement).value,
-                time: (e.currentTarget.elements.namedItem('time') as HTMLInputElement).value,
-                duration: parseInt((e.currentTarget.elements.namedItem('duration') as HTMLInputElement).value)
-              });
-            }}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Task Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    defaultValue={selectedTask.name}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Time</label>
-                  <input
-                    type="time"
-                    name="time"
-                    defaultValue={selectedTask.time}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-                       
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Duration (minutes)</label>
-                  <input
-                    type="number"
-                    name="duration"
-                    defaultValue={selectedTask.duration}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-              
-              <div className="mt-6 flex justify-between">
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteWarning(true)}
-                  className="inline-flex items-center px-4 py-2 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                >
-                  Delete
-                </button>
-                
-                <button
-                  type="submit"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <Modal
+          title="Edit Task"
+          onClose={() => setIsEditModalOpen(false)}
+          size="md"
+        >
+          <TaskForm
+            onSubmit={handleEditTaskSubmit}
+            onClose={() => setIsEditModalOpen(false)}
+          />
+        </Modal>
       )}
 
       {/* Delete Warning Dialog */}
