@@ -5,5 +5,6 @@ import app from './app';
 const server = serverless.createServer(app);
 
 export const handler = (event: APIGatewayProxyEvent, context: Context) => {
+  console.log('🔍 Event Received:', JSON.stringify(event, null, 2));
   return serverless.proxy(server, event, context);
 };
