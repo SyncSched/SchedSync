@@ -31,6 +31,20 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <meta name="google-site-verification" content="_DpLsLw2ZcBy38Nj9u_6Oy6odc5K_3UXTzVnRSyQEzQ" />
+        <link rel="icon" type="image/png" href="/favicon.ico" />
+
+        {/* Open Graph Meta Tags */}
+        <meta property="og:title" content="SchedSync - AI Task Scheduler" />
+        <meta property="og:description" content="Automate and personalize your daily schedule with AI-driven task management." />
+        <meta property="og:image" content="https://schedsync.com/favicon.ico" />
+        <meta property="og:url" content="https://schedsync.com" />
+        <meta property="og:type" content="website" />
+
+        {/* Twitter Card Meta Tags */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="SchedSync - AI Task Scheduler" />
+        <meta name="twitter:description" content="Automate and personalize your daily schedule with AI." />
+        <meta name="twitter:image" content="https://schedsync.com/favicon.ico" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

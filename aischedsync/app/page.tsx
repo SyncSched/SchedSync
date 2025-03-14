@@ -485,7 +485,16 @@ export default function Home() {
     <div className="flex flex-col md:flex-row h-screen bg-[#212121] overflow-hidden">
       {/* Mobile Header */}
       <div className="md:hidden flex items-center justify-between p-4 border-b border-gray-200">
-        <div className="text-xl text-white font-semibold">SchedSync</div>
+        <div className="flex items-center gap-2 text-xl text-white font-semibold">
+          <Image 
+            src="/favicon.ico"
+            width={36}
+            height={36}
+            alt="SchedSync Logo"
+            className="mix-blend-luminosity"
+          />
+          <span>SchedSync</span>
+        </div>
         <button 
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           className="p-2 hover:bg-gray-100 rounded-lg"
@@ -503,7 +512,16 @@ export default function Home() {
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         <div className="flex flex-col h-full p-4">
-          <div className="hidden md:block text-xl text-white font-semibold mb-8">SchedSync</div>
+          <div className="hidden md:flex md:items-center md:gap-2 text-xl text-white font-semibold mb-8">
+            <Image 
+              src="/favicon.ico"
+              width={36}
+              height={36}
+              alt="SchedSync Logo"
+              className="mix-blend-luminosity"
+            />
+            <span>SchedSync</span>
+          </div>
           
           <nav className="flex flex-col space-y-2 flex-grow">
             <button className="flex items-center space-x-3 px-3 py-2 text-white hover:bg-gray-800 rounded-lg">
