@@ -2,7 +2,7 @@
 
 SchedSync is an AI-powered personal secretary that helps manage your daily tasks, schedule, and life effortlessly. It uses cutting-edge Gen-AI to create personalized schedules that adapt to your lifestyle, work patterns, and preferences.
 
-![SchedSync Banner](public/assets/banner.png)
+![SchedSync Banner](public/favicon.ico)
 
 ⚠️ **PROPRIETARY SOFTWARE NOTICE**: This software is proprietary and confidential. Unauthorized copying, modification, distribution, or use of this software, via any medium, is strictly prohibited.
 
