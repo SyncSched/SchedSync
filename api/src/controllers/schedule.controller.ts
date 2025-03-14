@@ -10,19 +10,19 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export const getScheduleHandler = async(req:AuthenticatedRequest,res:Response,next:NextFunction) : Promise<void> =>{
+export const getScheduleHandler = async(req:AuthenticatedRequest, res:Response, next:NextFunction) : Promise<void> =>{
     try{
         const userId = req.user?.id;
-        const date = req.body.date;
+        const { date, timezoneOffset } = req.body;
 
-        if(!userId || !date){
-            return next(new BadUserInputError({message : "user Id or Date is not defined"}))
+        if(!userId || !date || timezoneOffset === undefined){
+            return next(new BadUserInputError({message : "User ID, date, or timezone offset is not defined"}))
         }
 
-        const requiredSchedule = await getSchedule(date,userId);
+        const requiredSchedule = await getSchedule(date, userId, timezoneOffset);
 
         if(!requiredSchedule)
-            return next(new EntityNotFoundError("Failed to retrive the schedule or it's not present"));
+            return next(new EntityNotFoundError("Failed to retrieve the schedule or it's not present"));
 
         res.status(201).json(requiredSchedule); 
     }catch(err){
@@ -32,6 +32,8 @@ export const getScheduleHandler = async(req:AuthenticatedRequest,res:Response,ne
 
 export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     const userId = req.user?.id;
+    const { date, timezoneOffset } = req.body;
+    console.log(date,timezoneOffset,"Use the users current **********LOCAL TIME*********** while Generating the Schedule")
     if (!userId) {
         return next(new BadUserInputError({ message: "User ID is missing from request" }));
     }
@@ -46,7 +48,7 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
         });
 
         if (existingSchedule) {
-            console.log("Schedule is already being generated.@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+            console.log("Schedule is already being generated.");
             return next(new BadUserInputError({ message: "A schedule generation is already in progress" }));
         }
 
@@ -108,7 +110,21 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
 
         res.status(201).json(createdSchedule);
     } catch (error) {
-        console.error("Error generating schedule:", error);
+        // Make sure to clean up the locked schedule in case of error
+        if (error instanceof Error) {
+            console.error("Error generating schedule:", error);
+            // Attempt to delete the locked schedule if it exists
+            try {
+                const lockedSchedule = await prisma.schedule.findFirst({
+                    where: { userId, status: "pending" }
+                });
+                if (lockedSchedule) {
+                    await prisma.schedule.delete({ where: { id: lockedSchedule.id } });
+                }
+            } catch (cleanupError) {
+                console.error("Error cleaning up locked schedule:", cleanupError);
+            }
+        }
         return next(new Error("Internal server error"));
     }
 };

@@ -205,27 +205,26 @@ export const createSchedule = async (
 
 export const getSchedule = async (
   date: string,
-  userId: string
+  userId: string,
+  timezoneOffset: number
 ): Promise<Partial<Schedule>> => {
-  
   if (!date || isNaN(Date.parse(date))) {
     throw new Error("Invalid date format received");
   }
 
-  const parsedDate = new Date(date);
+  // Create UTC midnight
+  const utcMidnight = new Date();
+  utcMidnight.setUTCHours(0, 0, 0, 0);
+  
+  // Add timezone offset to get UTC time corresponding to user's local midnight
+  const userLocalMidnightInUTC = new Date(utcMidnight.getTime() + (timezoneOffset * 60000));
 
-  const startDate = new Date(parsedDate);
-  startDate.setUTCHours(0, 0, 0, 0);
-
-  const endDate = new Date(parsedDate);
-  endDate.setUTCHours(23, 59, 59, 999);
-
+  console.log(userLocalMidnightInUTC,"#################")
   const schedule = await prisma.schedule.findFirst({
     where: {
       userId: userId,
       createdAt: {
-        gte: startDate, 
-        lte: endDate,  
+        gte: userLocalMidnightInUTC
       },
     },
     include: {

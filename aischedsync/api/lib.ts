@@ -85,44 +85,54 @@ export interface Schedule {
 
   export const getTodaySchedule = async (): Promise<Schedule> => {
     try {
+      const now = new Date();
+      const timezoneOffset = now.getTimezoneOffset();
+      
       const res = await fetch(`${API_URL}/getSchedule`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${getStoredAuthToken()}`
         },
-        body: JSON.stringify({ date: new Date().toISOString() })
+        body: JSON.stringify({ 
+          date: now.toISOString(),
+          timezoneOffset: timezoneOffset
+        })
       });
-  
+
       if (res.ok) {
         return res.json();
       }
-  
-      // If not found, try generating a new schedulee
+
+      // If not found, try generating a new schedule
       if (!isGeneratingSchedule) {
-        isGeneratingSchedule = true; // Lock to prevent duplicate calls
-  
+        isGeneratingSchedule = true;
+        
         const createRes = await fetch(`${API_URL}/generateSchedule`, {
-          method: 'GET',
+          method: 'POST',
           headers: { 
             'Content-Type': 'application/json', 
             'Authorization': `Bearer ${getStoredAuthToken()}`
-          }
+          },
+          body: JSON.stringify({ 
+            date: now.toISOString(),
+            timezoneOffset: timezoneOffset
+          })
         });
-  
-        isGeneratingSchedule = false; // Unlock after response
-  
+
+        isGeneratingSchedule = false;
+
         if (!createRes.ok) {
           throw new Error("Failed to create today's schedule");
         }
         return createRes.json();
       } else {
-        console.warn("Schedule generation already in progress. Skipping duplicate request.");
-        throw new Error("Duplicate schedule generation request blocked.");
+        console.warn("Schedule generation already in progress");
+        throw new Error("Duplicate schedule generation request blocked");
       }
     } catch (error) {
-      isGeneratingSchedule = false; // Ensure it's unlocked in case of errors
-      console.error("Error in getTodaySchedule:", error);
+      isGeneratingSchedule = false;
+      console.error('Error fetching schedule:', error);
       throw error;
     }
   };

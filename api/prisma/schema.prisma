@@ -47,8 +47,8 @@ model TaskNotification {
   notifyAt   DateTime // Exact time when notification should be sent
   createdAt  DateTime @default(now())
 
-  task       Task     @relation(fields: [taskId], references: [id])
-  user       User     @relation(fields: [userId], references: [id])
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model OnboardingData {
@@ -87,7 +87,7 @@ model Task {
   isWhatsAppEnabled Boolean           @default(false)
   isTelegramEnabled Boolean           @default(false)
   isCallEnabled     Boolean           @default(false)
-  schedule          Schedule          @relation(fields: [scheduleId], references: [id])
+  schedule          Schedule          @relation(fields: [scheduleId], references: [id],onDelete: Cascade)
   notifications     TaskNotification[]
 
   @@map("tasks")
