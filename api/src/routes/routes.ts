@@ -15,7 +15,7 @@ export const attachPrivateRoutes = (app:any) :void =>{
     
     app.post('/getSchedule',getScheduleHandler);
     //create a Schedule  -> Here we call AI to schedule that day , call only once per day , whenever person opens the website
-    app.get('/generateSchedule' , generateScheduleHandler);
+    app.post('/generateSchedule' , generateScheduleHandler);
     app.post('/createSchedule',createScheduleHandler);
 
     app.post('/createOnboarding', createOnboardingHandler);
