@@ -52,7 +52,7 @@ export const updateTaskNotificationSettings = async (req: Request, res: Response
         const notifications = [];
         const notifyAt = new Date(); // Calculate proper notification time
 
-        if (isEmailEnabled && user.email) {
+        if (isEmailEnabled && task.isEmailEnabled && user.email) {
             notifications.push({
                 taskId: task.id,
                 userId: user.id,
