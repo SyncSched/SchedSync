@@ -471,7 +471,13 @@ export const updateSchedule = async (
         const [hours, minutes] = task.time.split(':').map(Number);
         const taskDateTime = new Date();
         taskDateTime.setHours(hours, minutes, 0, 0);
-        const notifyAt = new Date(taskDateTime.getTime() - (schedule.user.notifyBeforeMinutes * 60000));
+        // Convert local time to UTC by creating ISO string and parsing it back to Date
+        const notifyAt = new Date(
+          new Date(taskDateTime.getTime() - (schedule.user.notifyBeforeMinutes * 60000))
+          .toISOString()
+        );
+
+        console.log('Notification time:', notifyAt);
 
         const notificationData = [];
 
