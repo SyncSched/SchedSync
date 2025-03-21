@@ -479,6 +479,7 @@ export const updateSchedule = async (
         
         console.log('Notification time (UTC):', notifyAtUTC.toISOString());
         
+        const notifyAt = notifyAtUTC;
 
         const notificationData = [];
 
