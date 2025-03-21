@@ -217,33 +217,33 @@ export const getSchedule = async (
 
   // Parse the date string to create a Date object for the requested date
   const requestedDate = new Date(date);
-  
+
   // Convert to user's local midnight by adjusting for timezone offset
-  // First, set the time to midnight in UTC
+  // First, set the time to midnight (12:00 AM) in UTC
   requestedDate.setUTCHours(0, 0, 0, 0);
-  
-  // Then adjust for the user's timezone offset
-  const userLocalMidnight = new Date(requestedDate.getTime() - (timezoneOffset * 60000));
-  
-  // Calculate the end of the day (next day's midnight)
+
+  // timezoneoffset is -330 for ist i.e we need to add the timezoneoffset...
+  const userLocalMidnight = new Date(requestedDate.getTime() + (timezoneOffset * 60000));
+
+  // Calculate the end of the day (12:00 AM of the next day in user's local timezone)
   const nextDay = new Date(userLocalMidnight);
-  nextDay.setDate(nextDay.getDate() + 1);
-  
+  nextDay.setDate(nextDay.getDate() + 1); // Add one day to get the next midnight
+
   console.log('Date Range:', userLocalMidnight, nextDay, "Timezone Offset:", timezoneOffset);
-  
+
   // Check if the user's local time is 12 AM (start of a new day)
   const now = new Date();
   const userLocalTime = new Date(now.getTime() - (timezoneOffset * 60000));
   const isStartOfDay = userLocalTime.getHours() === 0 && 
                        userLocalTime.getMinutes() < 5; // Give a small buffer of 5 minutes
-  
+
   // Find the schedule for the requested date
   const schedule = await prisma.schedule.findFirst({
     where: {
       userId: userId,
       createdAt: {
-        gte: userLocalMidnight,
-        lt: nextDay
+        gte: userLocalMidnight, // Start of the day in user's local timezone
+        lt: nextDay,            // End of the day in user's local timezone
       },
     },
     include: {
@@ -253,7 +253,7 @@ export const getSchedule = async (
       },
     },
   });
-  
+
   // If no schedule found and it's the start of a new day, we need to create one
   if (!schedule && isStartOfDay) {
     // Get the user's previous schedule to use as a template
@@ -270,14 +270,11 @@ export const getSchedule = async (
         }
       }
     });
-    
+
     // If there's a previous schedule, create a new one based on it
     if (previousSchedule) {
       // Create task data based on previous schedule's tasks
-      // We need to create proper Task objects that match the expected type
       const taskData = previousSchedule.originalData.map(task => {
-        // Create a task object that matches the Task interface
-        // We're creating a new task, so we omit id and scheduleId which will be generated
         return {
           name: task.name,
           time: task.time,
@@ -288,16 +285,16 @@ export const getSchedule = async (
           isCallEnabled: task.isCallEnabled
         } as Task; // Cast to Task to satisfy TypeScript
       });
-      
+
       // Create the input with the properly typed tasks
       const createInput: CreateScheduleInput = {
         userId,
         originalData: taskData
       };
-      
+
       // Create a new schedule using the existing function
       const newSchedule = await createSchedule(createInput);
-      
+
       return {
         ...newSchedule,
         originalData: newSchedule.originalData.map((task: TaskWithNotifications) => ({
