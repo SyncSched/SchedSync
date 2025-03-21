@@ -334,10 +334,8 @@ export default function Home() {
       if (updatedTask.time !== selectedTask.time) {
         updatedTasks[currentIndex] = updatedTask;
         
-        // Adjust all subsequent tasks based on the new time
         let currentTime = addMinutesToTime(updatedTask.time, updatedTask.duration);
         
-        // Update times for all tasks after the modified task
         for (let i = currentIndex + 1; i < updatedTasks.length; i++) {
           updatedTasks[i] = {
             ...updatedTasks[i],
@@ -350,10 +348,8 @@ export default function Home() {
       else if (updatedTask.duration !== selectedTask.duration) {
         updatedTasks[currentIndex] = updatedTask;
         
-        // Adjust all subsequent tasks
         let currentTime = addMinutesToTime(updatedTask.time, updatedTask.duration);
         
-        // Update times for all tasks after the modified task
         for (let i = currentIndex + 1; i < updatedTasks.length; i++) {
           updatedTasks[i] = {
             ...updatedTasks[i],
@@ -368,12 +364,18 @@ export default function Home() {
       }
 
       // Call updateSchedule with all tasks
-      await updateSchedule(updatedTask.scheduleId, updatedTasks);
+      const updatedSchedule = await updateSchedule(updatedTask.scheduleId, updatedTasks);
 
-      // Update local state
-      setMainTasks(updatedTasks);
+      // Update local state with the fresh data from the server
+      setMainTasks(updatedSchedule.originalData);
       setIsEditModalOpen(false);
       showSuccessToast('Task updated successfully!');
+
+      // Fetch the latest schedule to ensure consistency
+      const latestSchedule = await getTodaySchedule();
+      if (latestSchedule && latestSchedule.originalData) {
+        setMainTasks(latestSchedule.originalData);
+      }
     } catch (error) {
       showErrorToast('Failed to update task');
       console.error('Error updating task:', error);
@@ -427,7 +429,6 @@ export default function Home() {
     try {
       const scheduleId = mainTasks[0]?.scheduleId || '';
       
-      // Create the task object with explicit boolean values
       const newTaskObject: Task = {
         id: `temp-${Date.now()}`,
         name: newTask.name,
@@ -440,15 +441,17 @@ export default function Home() {
         isCallEnabled: newTask.isCallEnabled
       };
 
-      // Debug logs
       console.log('New task before API call:', newTaskObject);
       
       const updatedTasks = [...mainTasks, newTaskObject];
-      const result = await updateSchedule(scheduleId, updatedTasks);
-      
-      console.log('API response:', result);
+      await updateSchedule(scheduleId, updatedTasks);
 
-      setMainTasks(updatedTasks);
+      // Fetch the latest schedule to ensure consistency
+      const latestSchedule = await getTodaySchedule();
+      if (latestSchedule && latestSchedule.originalData) {
+        setMainTasks(latestSchedule.originalData);
+      }
+
       setIsAddTaskModalOpen(false);
       showSuccessToast('Task added successfully!');
       
