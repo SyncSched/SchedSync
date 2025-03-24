@@ -49,7 +49,11 @@ const notificationServices: Record<string, NotificationService> = {
 };
 
 export async function processNotifications() {
+  console.log('[NOTIFICATION_PROCESSOR] Starting notification processing job');
+  console.log('[NOTIFICATION_PROCESSOR] Current timestamp:', new Date().toISOString());
+
   const now = new Date();
+  console.log('[NOTIFICATION_PROCESSOR] Processing notifications due before:', now.toISOString());
 
   try {
     const notifications = await prisma.taskNotification.findMany({
@@ -65,14 +69,29 @@ export async function processNotifications() {
       }
     });
 
+    console.log('[NOTIFICATION_PROCESSOR] Found pending notifications:', notifications.length);
+
     for (const notification of notifications) {
       const { user, task, channel } = notification;
+      console.log('[NOTIFICATION_PROCESSOR] Processing notification:', {
+        notificationId: notification.id,
+        userId: user.id,
+        taskId: task.id,
+        channel,
+        scheduledFor: notification.notifyAt
+      });
 
-      // Double check both user and task level notification settings
+      // Channel-specific validation logs
       switch (channel.toLowerCase()) {
         case 'email':
+          console.log('[NOTIFICATION_PROCESSOR] Email validation:', {
+            userId: user.id,
+            emailEnabled: user.isEmailEnabled,
+            taskEmailEnabled: task.isEmailEnabled,
+            hasEmail: !!user.email
+          });
           if (!user.isEmailEnabled || !task.isEmailEnabled || !user.email) {
-            console.log(`Email notifications disabled for user ${user.id} or task ${task.id}`);
+            console.log('[NOTIFICATION_PROCESSOR] Skipping email notification - disabled or missing email');
             continue;
           }
           break;
@@ -99,32 +118,55 @@ export async function processNotifications() {
           continue;
       }
 
-      // Get the appropriate notification service
       const notifier = notificationServices[channel.toLowerCase()];
       if (!notifier) {
-        console.error(`Unknown notification channel: ${channel}`);
+        console.error('[NOTIFICATION_PROCESSOR] Invalid channel configuration:', {
+          channel,
+          notificationId: notification.id
+        });
         continue;
       }
 
-      // Prepare notification content
       const subject = `Reminder: ${task.name}`;
       const message = formatMessage(task, channel);
-
-      // Get the appropriate recipient address based on channel
       const recipient = getRecipientAddress(user, channel);
+
+      console.log('[NOTIFICATION_PROCESSOR] Attempting to send notification:', {
+        channel,
+        recipient: recipient ? 'valid' : 'missing',
+        taskName: task.name
+      });
+
       if (!recipient) {
-        console.error(`No ${channel} address found for user ${user.id}`);
+        console.error('[NOTIFICATION_PROCESSOR] Missing recipient address:', {
+          userId: user.id,
+          channel,
+          notificationId: notification.id
+        });
         continue;
       }
 
       try {
         const sent = await notifier.send(recipient, subject, message);
+        console.log('[NOTIFICATION_PROCESSOR] Notification delivery status:', {
+          notificationId: notification.id,
+          status: sent ? 'sent' : 'failed',
+          channel,
+          timestamp: new Date().toISOString()
+        });
+
         await prisma.taskNotification.update({
           where: { id: notification.id },
           data: { status: sent ? "sent" : "failed" }
         });
       } catch (error) {
-        console.error(`Failed to send ${channel} notification:`, error);
+        console.error('[NOTIFICATION_PROCESSOR] Notification delivery failed:', {
+          notificationId: notification.id,
+          channel,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          timestamp: new Date().toISOString()
+        });
+
         await prisma.taskNotification.update({
           where: { id: notification.id },
           data: { status: "failed" }
@@ -132,9 +174,18 @@ export async function processNotifications() {
       }
     }
 
+    console.log('[NOTIFICATION_PROCESSOR] Completed processing notifications:', {
+      totalProcessed: notifications.length,
+      timestamp: new Date().toISOString()
+    });
+
     return { success: true, message: "Notifications processed successfully" };
   } catch (error) {
-    console.error("Error processing notifications:", error);
+    console.error('[NOTIFICATION_PROCESSOR] Critical error in notification processing:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString()
+    });
     return { success: false, message: "Error processing notifications" };
   }
 }
