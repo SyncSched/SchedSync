@@ -4,15 +4,24 @@ import { X } from 'lucide-react';
 
 interface TimeInputProps {
   value: Date;
-  onChange: (time: Date) => void;
+  onChange: (date: Date) => void;
   className?: string;
 }
 
-const TimeInput: React.FC<TimeInputProps> = ({ value, onChange, className }) => {
+const TimeInput: React.FC<TimeInputProps> = ({ value, onChange, className = '' }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<'AM' | 'PM'>(
     value.getHours() >= 12 ? 'PM' : 'AM'
   );
+
+  // Format the time for display
+  const formatTimeForDisplay = (date: Date) => {
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
 
   const hours = Array.from({ length: 12 }, (_, i) => i + 1);
   const minutes = Array.from({ length: 4 }, (_, i) => i * 15);
@@ -21,36 +30,26 @@ const TimeInput: React.FC<TimeInputProps> = ({ value, onChange, className }) => 
   const currentMinute = Math.floor(value.getMinutes() / 15) * 15;
 
   const handleTimeChange = (hour: number, minute: number, period: 'AM' | 'PM') => {
-    // Create a new date object with the current date
-    const newDate = new Date();
-    
-    // Convert to 24-hour format
-    const hours24 = period === 'PM' ? 
+    const newDate = new Date(value);
+    let hours24 = period === 'PM' ? 
       (hour === 12 ? 12 : hour + 12) : 
       (hour === 12 ? 0 : hour);
     
-    // Set the hours and minutes
     newDate.setHours(hours24, minute, 0, 0);
-    
-    // Call onChange with the new date
     onChange(newDate);
-    
-    // Don't close modal here - let the Confirm button do that
   };
 
   return (
     <>
       <button
+        type="button"
         onClick={() => setIsOpen(true)}
-        className={`w-full flex items-center justify-between px-4 py-3 bg-white border-2 border-gray-200 
-          rounded-xl hover:border-indigo-500 transition-colors duration-200 ${className}`}
+        className={`w-full flex items-center justify-between px-4 py-3 bg-white border-2 
+          border-gray-200 rounded-xl hover:border-indigo-500 transition-colors 
+          duration-200 ${className}`}
       >
         <span className="text-xl font-semibold text-gray-700">
-          {value.toLocaleTimeString('en-US', { 
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true 
-          })}
+          {formatTimeForDisplay(value)}
         </span>
         <span className="text-gray-400">↓</span>
       </button>

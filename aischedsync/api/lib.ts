@@ -30,7 +30,7 @@ export interface Schedule {
   export interface Task {
     id: string;
     name: string;
-    time: Date;    // Changed from string to Date
+    time: string;    // ISO format string
     duration: number;
     scheduleId: string;
     isEmailEnabled: boolean;

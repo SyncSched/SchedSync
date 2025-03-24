@@ -263,24 +263,29 @@ export const getSchedule = async (
     include: {
       user: true,
       originalData: {
-        select: taskSelect
+        select: taskSelect,
+        orderBy: {
+          time: 'asc'  // Sort tasks by time in ascending order
+        }
       },
     },
   });
 
   if (schedule) {
-    // Convert UTC times back to user's timezone and ensure time is a Date object
-    schedule.originalData = schedule.originalData.map(task => ({
-      id: task.id,
-      name: task.name,
-      time: new Date(toZonedTime(new Date(task.time), user.timezone)),
-      duration: task.duration,
-      scheduleId: task.scheduleId,
-      isEmailEnabled: task.isEmailEnabled,
-      isWhatsAppEnabled: task.isWhatsAppEnabled,
-      isTelegramEnabled: task.isTelegramEnabled,
-      isCallEnabled: task.isCallEnabled
-    }));
+    // Sort tasks by time before returning
+    schedule.originalData = schedule.originalData
+      .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
+      .map(task => ({
+        id: task.id,
+        name: task.name,
+        time: task.time,
+        duration: task.duration,
+        scheduleId: task.scheduleId,
+        isEmailEnabled: task.isEmailEnabled,
+        isWhatsAppEnabled: task.isWhatsAppEnabled,
+        isTelegramEnabled: task.isTelegramEnabled,
+        isCallEnabled: task.isCallEnabled
+      }));
   }
 
   // If no schedule found and it's the start of a new day, we need to create one
@@ -295,7 +300,10 @@ export const getSchedule = async (
       },
       include: {
         originalData: {
-          select: taskSelect
+          select: taskSelect,
+          orderBy: {
+            time: 'asc'  // Sort tasks by time in ascending order
+          }
         }
       }
     });
