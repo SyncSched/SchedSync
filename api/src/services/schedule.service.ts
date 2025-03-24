@@ -476,13 +476,15 @@ export const updateSchedule = async (
       const existingTask = existingTasks.find(et => et.id === task.id);
       
       // Check if task time or notification settings changed
-      const timeChanged = existingTask && existingTask.time !== task.time;
+      const timeChanged = existingTask && 
+        new Date(existingTask.time).getTime() !== new Date(task.time).getTime();
       const settingsChanged = existingTask && (
         existingTask.isEmailEnabled !== task.isEmailEnabled ||
         existingTask.isWhatsAppEnabled !== task.isWhatsAppEnabled ||
         existingTask.isTelegramEnabled !== task.isTelegramEnabled ||
         existingTask.isCallEnabled !== task.isCallEnabled
       );
+
 
       // Only update notifications if task is new or has changes
       if (!existingTask || timeChanged || settingsChanged) {
