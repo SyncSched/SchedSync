@@ -165,7 +165,16 @@ export default function Home() {
   const handleEditTaskSubmit = async (formData: TaskFormData) => {
     try {
       if (!selectedTask) return;
-      const updatedTask = { ...selectedTask, ...formData };
+      const updatedTask: Task = {
+        ...selectedTask,
+        name: formData.name,
+        time: formData.time,
+        duration: formData.duration,
+        isEmailEnabled: formData.isEmailEnabled,
+        isWhatsAppEnabled: formData.isWhatsAppEnabled,
+        isTelegramEnabled: formData.isTelegramEnabled,
+        isCallEnabled: formData.isCallEnabled
+      };
       await handleTaskUpdate(updatedTask);
     } catch (error) {
       console.error('Error updating task:', error);
@@ -399,6 +408,15 @@ export default function Home() {
           <TaskForm
             onSubmit={handleEditTaskSubmit}
             onClose={() => setIsEditModalOpen(false)}
+            initialTask={{
+              name: selectedTask.name,
+              time: selectedTask.time,
+              duration: selectedTask.duration,
+              isEmailEnabled: selectedTask.isEmailEnabled,
+              isWhatsAppEnabled: selectedTask.isWhatsAppEnabled,
+              isTelegramEnabled: selectedTask.isTelegramEnabled,
+              isCallEnabled: selectedTask.isCallEnabled
+            }}
           />
         </Modal>
       )}

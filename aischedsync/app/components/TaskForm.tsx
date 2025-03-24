@@ -5,6 +5,15 @@ import { Paperclip, ChevronDown } from 'lucide-react';
 interface TaskFormProps {
   onSubmit: (task: TaskFormData) => void;
   onClose: () => void;
+  initialTask?: {
+    name?: string;
+    time?: string;
+    duration?: number;
+    isEmailEnabled?: boolean;
+    isWhatsAppEnabled?: boolean;
+    isTelegramEnabled?: boolean;
+    isCallEnabled?: boolean;
+  };
 }
 
 export interface TaskFormData {
@@ -21,19 +30,19 @@ export interface TaskFormData {
   isCallEnabled: boolean;
 }
 
-export const TaskForm: React.FC<TaskFormProps> = ({ onSubmit, onClose }) => {
+export const TaskForm: React.FC<TaskFormProps> = ({ onSubmit, onClose, initialTask }) => {
   const [formData, setFormData] = useState<TaskFormData>({
-    name: '',
+    name: initialTask?.name || '',
     description: '',
-    time: '',
-    duration: 30,
+    time: initialTask?.time || '',
+    duration: initialTask?.duration || 30,
     endTime: '',
     priority: 'medium',
     status: 'pending',
-    isEmailEnabled: false,
-    isWhatsAppEnabled: false,
-    isTelegramEnabled: false,
-    isCallEnabled: false
+    isEmailEnabled: initialTask?.isEmailEnabled || false,
+    isWhatsAppEnabled: initialTask?.isWhatsAppEnabled || false,
+    isTelegramEnabled: initialTask?.isTelegramEnabled || false,
+    isCallEnabled: initialTask?.isCallEnabled || false
   });
 
   const [showAttachments, setShowAttachments] = useState(false);
