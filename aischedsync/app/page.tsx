@@ -65,7 +65,6 @@ export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [mainTasks, setMainTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
   const [quickTasks, setQuickTasks] = useState([
     {
       id: 1,
@@ -92,6 +91,21 @@ export default function Home() {
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [showTaskStatusModal, setShowTaskStatusModal] = useState(false);
   const [selectedPastTask, setSelectedPastTask] = useState<Task | null>(null);
+
+  useEffect(() => {
+    // Get timezone information
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const date = new Date();
+    const offset = date.getTimezoneOffset();
+    const offsetHours = Math.abs(Math.floor(offset / 60));
+    const offsetMinutes = Math.abs(offset % 60);
+    const offsetString = `${offset <= 0 ? '+' : '-'}${offsetHours.toString().padStart(2, '0')}:${offsetMinutes.toString().padStart(2, '0')}`;
+
+    console.log('🌍 Timezone Details:');
+    console.log('Timezone:', timezone);
+    console.log('UTC Offset:', offsetString);
+    console.log('Current Local Time:', date.toLocaleString());
+  }, []);
 
   // Add this useEffect after other useEffect hooks
   useEffect(() => {

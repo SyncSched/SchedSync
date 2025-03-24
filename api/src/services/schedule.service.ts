@@ -1,6 +1,7 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import { CreateScheduleInput, Task, Schedule } from '../models/schedule.model';
 import { createScheduleSchema } from '../validations/schedule.schema';
+import { toZonedTime } from 'date-fns-tz';
 
 // Define the task select type
 const taskSelect = {
@@ -38,12 +39,14 @@ async function createNotificationsForTask(taskId: string, userId: string, taskTi
     }
 
     // Convert task time string to Date object
-    const [hours, minutes] = taskTime.split(':').map(Number);
-    const taskDateTime = new Date();
-    taskDateTime.setHours(hours, minutes, 0, 0);
+    const taskDate = new Date(taskTime);
+    const hours = taskDate.getHours();
+    const minutes = taskDate.getMinutes();
+    const scheduledTime = new Date();
+    scheduledTime.setHours(hours, minutes, 0, 0);
 
     // Calculate notification time based on user's preference
-    const notifyAt = new Date(taskDateTime.getTime() - (user.notifyBeforeMinutes * 60000));
+    const notifyAt = new Date(scheduledTime.getTime() - (user.notifyBeforeMinutes * 60000));
 
     // Create notifications for each enabled channel
     const notifications = [];
@@ -146,10 +149,12 @@ export const createSchedule = async (
 
     // Create notifications for each task
     for (const task of schedule.originalData) {
-      const [hours, minutes] = task.time.split(':').map(Number);
-      const taskDateTime = new Date();
-      taskDateTime.setHours(hours, minutes, 0, 0);
-      const notifyAt = new Date(taskDateTime.getTime() - (user.notifyBeforeMinutes * 60000));
+      const taskDate = new Date(task.time);
+      const hours = taskDate.getHours();
+      const minutes = taskDate.getMinutes();
+      const scheduledTime = new Date();
+      scheduledTime.setHours(hours, minutes, 0, 0);
+      const notifyAt = new Date(scheduledTime.getTime() - (user.notifyBeforeMinutes * 60000));
 
       const notificationData = [];
 
@@ -211,6 +216,15 @@ export const getSchedule = async (
   userId: string,
   timezoneOffset: number
 ): Promise<Partial<Schedule>> => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { timezone: true }
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
   if (!date || isNaN(Date.parse(date))) {
     throw new Error("Invalid date format received");
   }
@@ -253,6 +267,21 @@ export const getSchedule = async (
       },
     },
   });
+
+  if (schedule) {
+    // Convert UTC times back to user's timezone and ensure time is a Date object
+    schedule.originalData = schedule.originalData.map(task => ({
+      id: task.id,
+      name: task.name,
+      time: new Date(toZonedTime(new Date(task.time), user.timezone)),
+      duration: task.duration,
+      scheduleId: task.scheduleId,
+      isEmailEnabled: task.isEmailEnabled,
+      isWhatsAppEnabled: task.isWhatsAppEnabled,
+      isTelegramEnabled: task.isTelegramEnabled,
+      isCallEnabled: task.isCallEnabled
+    }));
+  }
 
   // If no schedule found and it's the start of a new day, we need to create one
   if (!schedule && isStartOfDay) {
@@ -465,21 +494,12 @@ export const updateSchedule = async (
         }
 
         // Create new notifications
-        const [hours, minutes] = task.time.split(':').map(Number);
-
-        // Create a Date object in local time
-        const taskDateTime = new Date();
-        taskDateTime.setHours(hours, minutes, 0, 0);
-        
-        // Convert to UTC
-        const taskDateTimeUTC = new Date(taskDateTime.getTime() - (taskDateTime.getTimezoneOffset() * 60000));
-        
-        // Adjust for notification offset (notifyBeforeMinutes)
-        const notifyAtUTC = new Date(taskDateTimeUTC.getTime() - (schedule.user.notifyBeforeMinutes * 60000));
-        
-        console.log('Notification time (UTC):', notifyAtUTC.toISOString());
-        
-        const notifyAt = notifyAtUTC;
+        const taskDate = new Date(task.time);
+        const hours = taskDate.getHours();
+        const minutes = taskDate.getMinutes();
+        const scheduledTime = new Date();
+        scheduledTime.setHours(hours, minutes, 0, 0);
+        const notifyAt = new Date(scheduledTime.getTime() - (schedule.user.notifyBeforeMinutes * 60000));
 
         const notificationData = [];
 
