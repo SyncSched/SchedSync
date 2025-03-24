@@ -19,6 +19,7 @@ model User {
   name              String
   avatarUrl         String
   googleId          String          @unique
+  timezone          String          @default("UTC")
   schedules         Schedule[]
   onboardingData    OnboardingData? // One-to-one relation
   createdAt         DateTime        @default(now())
@@ -80,7 +81,7 @@ model Schedule {
 model Task {
   id                String            @id @default(uuid())
   name              String
-  time              String
+  time              DateTime          // Changed from String to DateTime
   duration          Int
   scheduleId        String
   isEmailEnabled    Boolean           @default(false)

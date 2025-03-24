@@ -53,6 +53,7 @@ export async function processNotifications() {
   console.log('[NOTIFICATION_PROCESSOR] Current timestamp:', new Date().toISOString());
 
   const now = new Date();
+  const nowUTC = new Date(now.toISOString()); 
   console.log('[NOTIFICATION_PROCESSOR] Processing notifications due before:', now.toISOString());
 
   try {
@@ -60,7 +61,7 @@ export async function processNotifications() {
       where: {
         status: "pending",
         notifyAt: {
-          lte: now
+          lte: nowUTC
         }
       },
       include: { 

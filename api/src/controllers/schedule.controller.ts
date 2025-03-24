@@ -1,4 +1,4 @@
-import { Request, Response , NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { createSchedule, getSchedule, updateSchedule } from '../services/schedule.service';
 import { BadUserInputError, EntityNotFoundError } from '../errors';
 import { CreateScheduleInput } from '../models/schedule.model';
@@ -6,7 +6,7 @@ import { generateSchedule } from '../workflow';
 import { getOnboardingData } from '../services/onboarding.service';
 import { AuthenticatedRequest } from '../types/request';
 import { PrismaClient } from '@prisma/client';
-
+import { formatInTimeZone } from 'date-fns-tz';
 
 const prisma = new PrismaClient();
 
@@ -31,14 +31,25 @@ export const getScheduleHandler = async(req:AuthenticatedRequest, res:Response, 
 }
 
 export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
-    const userId = req.user?.id;
-    const { date, timezoneOffset } = req.body;
-    console.log(date,timezoneOffset,"Use the users current **********LOCAL TIME*********** while Generating the Schedule")
-    if (!userId) {
-        return next(new BadUserInputError({ message: "User ID is missing from request" }));
-    }
-
     try {
+        const userId = req.user?.id;
+        if (!userId) {
+            return next(new BadUserInputError({ message: "User ID is missing from request" }));
+        }
+
+        // Get user with timezone
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                timezone: true
+            }
+        });
+
+        if (!user) {
+            return next(new BadUserInputError({ message: "User not found" }));
+        }
+
         // Start transaction to check and set lock
         const existingSchedule = await prisma.schedule.findFirst({
             where: {
@@ -52,7 +63,7 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
             return next(new BadUserInputError({ message: "A schedule generation is already in progress" }));
         }
 
-        // Create a new schedule with "pending" status to lock the process
+        // Create a new schedule with "pending" status
         const lockedSchedule = await prisma.schedule.create({
             data: {
                 userId,
@@ -63,42 +74,59 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
         // Fetch onboarding data
         const onboardingData = await getOnboardingData(userId);
         if (!onboardingData) {
-            await prisma.schedule.delete({ where: { id: lockedSchedule.id } }); // Release lock
+            await prisma.schedule.delete({ where: { id: lockedSchedule.id } });
             return next(new EntityNotFoundError("Onboarding data not found. Please complete onboarding."));
         }
 
-        // Convert to a string
         const userData = JSON.stringify(onboardingData);
 
         // Generate the schedule
         const generatedSchedule = await generateSchedule(userData);
         if (!generatedSchedule) {
-            await prisma.schedule.delete({ where: { id: lockedSchedule.id } }); // Release lock
+            await prisma.schedule.delete({ where: { id: lockedSchedule.id } });
             return next(new EntityNotFoundError("Failed to generate schedule"));
         }
 
-        // Clean the schedule response
+        // Clean and parse the schedule
         let cleanedSchedule = generatedSchedule.trim().replace(/^```json/, "").replace(/```$/, "");
+        let parsedSchedule = JSON.parse(cleanedSchedule);
 
-        let parsedSchedule;
-        try {
-            parsedSchedule = JSON.parse(cleanedSchedule);
-        } catch (error) {
-            console.error("Error parsing generated schedule:", error);
-            await prisma.schedule.delete({ where: { id: lockedSchedule.id } }); // Release lock
-            return next(new BadUserInputError({ message: "Invalid schedule format received" }));
-        }
+        // Convert time strings to UTC DateTime format
+        const formattedTasks = parsedSchedule.map((task: any) => {
+            // Get user's timezone from the database
+            const userTimezone = user.timezone; // assuming 'Asia/Kolkata' for IST
+
+            // Create a date object in user's local timezone
+            const [hours, minutes] = task.time.split(':');
+            const localDate = new Date();
+            
+            // First, set the time in user's local timezone
+            const localDateTime = formatInTimeZone(
+                localDate,
+                userTimezone,
+                `yyyy-MM-dd'T'${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00.000XXX`
+            );
+
+            // Convert local time to UTC
+            const utcTime = new Date(localDateTime);
+
+            return {
+                name: task.name,
+                time: utcTime, // This will now store the correct UTC time
+                duration: task.duration,
+                isEmailEnabled: task.isEmailEnabled,
+                isWhatsAppEnabled: task.isWhatsAppEnabled,
+                isTelegramEnabled: task.isTelegramEnabled,
+                isCallEnabled: task.isCallEnabled
+            };
+        });
 
         // Save the final schedule
         const createdSchedule = await prisma.schedule.update({
             where: { id: lockedSchedule.id },
             data: {
                 originalData: {
-                    create: parsedSchedule.map((task: any) => ({
-                        name: task.name,
-                        time: task.time,
-                        duration: task.duration
-                    }))
+                    create: formattedTasks
                 },
                 status: "completed"
             },
@@ -110,13 +138,16 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
 
         res.status(201).json(createdSchedule);
     } catch (error) {
-        // Make sure to clean up the locked schedule in case of error
+        // Error handling with proper userId scope
+        const currentUserId = req.user?.id;
         if (error instanceof Error) {
             console.error("Error generating schedule:", error);
-            // Attempt to delete the locked schedule if it exists
             try {
                 const lockedSchedule = await prisma.schedule.findFirst({
-                    where: { userId, status: "pending" }
+                    where: { 
+                        userId: currentUserId, 
+                        status: "pending" 
+                    }
                 });
                 if (lockedSchedule) {
                     await prisma.schedule.delete({ where: { id: lockedSchedule.id } });
@@ -125,7 +156,7 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
                 console.error("Error cleaning up locked schedule:", cleanupError);
             }
         }
-        return next(new Error("Internal server error"));
+        next(new Error("Internal server error"));
     }
 };
 

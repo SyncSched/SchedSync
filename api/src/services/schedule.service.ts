@@ -1,6 +1,7 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import { CreateScheduleInput, Task, Schedule } from '../models/schedule.model';
 import { createScheduleSchema } from '../validations/schedule.schema';
+import { toZonedTime } from 'date-fns-tz';
 
 // Define the task select type
 const taskSelect = {
@@ -38,12 +39,14 @@ async function createNotificationsForTask(taskId: string, userId: string, taskTi
     }
 
     // Convert task time string to Date object
-    const [hours, minutes] = taskTime.split(':').map(Number);
-    const taskDateTime = new Date();
-    taskDateTime.setHours(hours, minutes, 0, 0);
+    const taskDate = new Date(taskTime);
+    const hours = taskDate.getHours();
+    const minutes = taskDate.getMinutes();
+    const scheduledTime = new Date();
+    scheduledTime.setHours(hours, minutes, 0, 0);
 
     // Calculate notification time based on user's preference
-    const notifyAt = new Date(taskDateTime.getTime() - (user.notifyBeforeMinutes * 60000));
+    const notifyAt = new Date(scheduledTime.getTime() - (user.notifyBeforeMinutes * 60000));
 
     // Create notifications for each enabled channel
     const notifications = [];
@@ -146,10 +149,12 @@ export const createSchedule = async (
 
     // Create notifications for each task
     for (const task of schedule.originalData) {
-      const [hours, minutes] = task.time.split(':').map(Number);
-      const taskDateTime = new Date();
-      taskDateTime.setHours(hours, minutes, 0, 0);
-      const notifyAt = new Date(taskDateTime.getTime() - (user.notifyBeforeMinutes * 60000));
+      const taskDate = new Date(task.time);
+      const hours = taskDate.getHours();
+      const minutes = taskDate.getMinutes();
+      const scheduledTime = new Date();
+      scheduledTime.setHours(hours, minutes, 0, 0);
+      const notifyAt = new Date(scheduledTime.getTime() - (user.notifyBeforeMinutes * 60000));
 
       const notificationData = [];
 
@@ -211,49 +216,78 @@ export const getSchedule = async (
   userId: string,
   timezoneOffset: number
 ): Promise<Partial<Schedule>> => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { timezone: true }
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
   if (!date || isNaN(Date.parse(date))) {
     throw new Error("Invalid date format received");
   }
 
   // Parse the date string to create a Date object for the requested date
   const requestedDate = new Date(date);
-  
+
   // Convert to user's local midnight by adjusting for timezone offset
-  // First, set the time to midnight in UTC
+  // First, set the time to midnight (12:00 AM) in UTC
   requestedDate.setUTCHours(0, 0, 0, 0);
-  
-  // Then adjust for the user's timezone offset
-  const userLocalMidnight = new Date(requestedDate.getTime() - (timezoneOffset * 60000));
-  
-  // Calculate the end of the day (next day's midnight)
+
+  // timezoneoffset is -330 for ist i.e we need to add the timezoneoffset...
+  const userLocalMidnight = new Date(requestedDate.getTime() + (timezoneOffset * 60000));
+
+  // Calculate the end of the day (12:00 AM of the next day in user's local timezone)
   const nextDay = new Date(userLocalMidnight);
-  nextDay.setDate(nextDay.getDate() + 1);
-  
+  nextDay.setDate(nextDay.getDate() + 1); // Add one day to get the next midnight
+
   console.log('Date Range:', userLocalMidnight, nextDay, "Timezone Offset:", timezoneOffset);
-  
+
   // Check if the user's local time is 12 AM (start of a new day)
   const now = new Date();
   const userLocalTime = new Date(now.getTime() - (timezoneOffset * 60000));
   const isStartOfDay = userLocalTime.getHours() === 0 && 
                        userLocalTime.getMinutes() < 5; // Give a small buffer of 5 minutes
-  
+
   // Find the schedule for the requested date
   const schedule = await prisma.schedule.findFirst({
     where: {
       userId: userId,
       createdAt: {
-        gte: userLocalMidnight,
-        lt: nextDay
+        gte: userLocalMidnight, // Start of the day in user's local timezone
+        lt: nextDay,            // End of the day in user's local timezone
       },
     },
     include: {
       user: true,
       originalData: {
-        select: taskSelect
+        select: taskSelect,
+        orderBy: {
+          time: 'asc'  // Sort tasks by time in ascending order
+        }
       },
     },
   });
-  
+
+  if (schedule) {
+    // Sort tasks by time before returning
+    schedule.originalData = schedule.originalData
+      .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
+      .map(task => ({
+        id: task.id,
+        name: task.name,
+        time: task.time,
+        duration: task.duration,
+        scheduleId: task.scheduleId,
+        isEmailEnabled: task.isEmailEnabled,
+        isWhatsAppEnabled: task.isWhatsAppEnabled,
+        isTelegramEnabled: task.isTelegramEnabled,
+        isCallEnabled: task.isCallEnabled
+      }));
+  }
+
   // If no schedule found and it's the start of a new day, we need to create one
   if (!schedule && isStartOfDay) {
     // Get the user's previous schedule to use as a template
@@ -266,18 +300,18 @@ export const getSchedule = async (
       },
       include: {
         originalData: {
-          select: taskSelect
+          select: taskSelect,
+          orderBy: {
+            time: 'asc'  // Sort tasks by time in ascending order
+          }
         }
       }
     });
-    
+
     // If there's a previous schedule, create a new one based on it
     if (previousSchedule) {
       // Create task data based on previous schedule's tasks
-      // We need to create proper Task objects that match the expected type
       const taskData = previousSchedule.originalData.map(task => {
-        // Create a task object that matches the Task interface
-        // We're creating a new task, so we omit id and scheduleId which will be generated
         return {
           name: task.name,
           time: task.time,
@@ -288,16 +322,16 @@ export const getSchedule = async (
           isCallEnabled: task.isCallEnabled
         } as Task; // Cast to Task to satisfy TypeScript
       });
-      
+
       // Create the input with the properly typed tasks
       const createInput: CreateScheduleInput = {
         userId,
         originalData: taskData
       };
-      
+
       // Create a new schedule using the existing function
       const newSchedule = await createSchedule(createInput);
-      
+
       return {
         ...newSchedule,
         originalData: newSchedule.originalData.map((task: TaskWithNotifications) => ({
@@ -442,13 +476,15 @@ export const updateSchedule = async (
       const existingTask = existingTasks.find(et => et.id === task.id);
       
       // Check if task time or notification settings changed
-      const timeChanged = existingTask && existingTask.time !== task.time;
+      const timeChanged = existingTask && 
+        new Date(existingTask.time).getTime() !== new Date(task.time).getTime();
       const settingsChanged = existingTask && (
         existingTask.isEmailEnabled !== task.isEmailEnabled ||
         existingTask.isWhatsAppEnabled !== task.isWhatsAppEnabled ||
         existingTask.isTelegramEnabled !== task.isTelegramEnabled ||
         existingTask.isCallEnabled !== task.isCallEnabled
       );
+
 
       // Only update notifications if task is new or has changes
       if (!existingTask || timeChanged || settingsChanged) {
@@ -468,10 +504,12 @@ export const updateSchedule = async (
         }
 
         // Create new notifications
-        const [hours, minutes] = task.time.split(':').map(Number);
-        const taskDateTime = new Date();
-        taskDateTime.setHours(hours, minutes, 0, 0);
-        const notifyAt = new Date(taskDateTime.getTime() - (schedule.user.notifyBeforeMinutes * 60000));
+        const taskDate = new Date(task.time);
+        const hours = taskDate.getHours();
+        const minutes = taskDate.getMinutes();
+        const scheduledTime = new Date();
+        scheduledTime.setHours(hours, minutes, 0, 0);
+        const notifyAt = new Date(scheduledTime.getTime() - (schedule.user.notifyBeforeMinutes * 60000));
 
         const notificationData = [];
 

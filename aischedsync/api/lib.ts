@@ -30,8 +30,8 @@ export interface Schedule {
   export interface Task {
     id: string;
     name: string;
-    time: string;    // Time in "HH:MM" format
-    duration: number; // Duration in minutes
+    time: string;    // ISO format string
+    duration: number;
     scheduleId: string;
     isEmailEnabled: boolean;
     isWhatsAppEnabled: boolean;

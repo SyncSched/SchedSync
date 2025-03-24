@@ -4,7 +4,7 @@ import { User } from "./user.model";
 export interface Task {
     id: string;
     name: string;
-    time: string;    // Time in "HH:MM" format
+    time: Date;    // Changed from string to Date
     duration: number; // Duration in minutes
     scheduleId: string;
     isEmailEnabled: boolean;
