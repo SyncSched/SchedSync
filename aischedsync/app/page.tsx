@@ -1,16 +1,19 @@
 'use client';
 
 import { useState, useEffect } from "react";
+import dynamic from 'next/dynamic';
 import { getTodaySchedule, updateSchedule, getCurrentUser, type UserInfo, type Task } from '../api/lib';
 import { useAuth } from '@/contexts/AuthContext';
 import Modal from './components/ui/Modal';
 import { TaskForm } from './components/TaskForm';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
-import TaskList from './components/TaskList';
-import QuickTasks from './components/QuickTasks';
 import { recalculateTaskTimes } from './utils/taskUtils';
-import Goals from './components/Goals';
+
+// Disable SSR for components that need to be client-side only
+const DynamicQuickTasks = dynamic(() => import('./components/QuickTasks'), { ssr: false });
+const DynamicTaskList = dynamic(() => import('./components/TaskList'), { ssr: false });
+const DynamicGoals = dynamic(() => import('./components/Goals'), { ssr: false });
 
 export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -189,8 +192,8 @@ export default function Home() {
       if (currentIndex === -1) return;
 
       const updatedTasks = [...mainTasks];
-      updatedTasks[currentIndex] = updatedTask;
-
+        updatedTasks[currentIndex] = updatedTask;
+        
       await updateSchedule(updatedTask.scheduleId, updatedTasks);
       setMainTasks(updatedTasks);
       setIsEditModalOpen(false);
@@ -247,7 +250,7 @@ export default function Home() {
         isTelegramEnabled: newTask.isTelegramEnabled,
         isCallEnabled: newTask.isCallEnabled
       };
-
+      
       const updatedTasks = [...mainTasks, newTaskObject];
       await updateSchedule(scheduleId, updatedTasks);
       setMainTasks(updatedTasks);
@@ -270,8 +273,8 @@ export default function Home() {
 
   const handleNotificationChange = (setting: keyof NewTaskState) => {
     setNewTask(prev => ({
-      ...prev,
-      [setting]: !prev[setting]
+        ...prev,
+        [setting]: !prev[setting]
     }));
   };
 
@@ -304,33 +307,33 @@ export default function Home() {
       {/* Mobile Header */}
       <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white">
         <div className="flex items-center gap-3">
-          <button 
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        <button 
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className="p-1.5 hover:bg-gray-100 rounded-lg text-black"
-          >
+        >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/>
-            </svg>
-          </button>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
           <div>
             <h1 className="text-lg font-semibold text-gray-900">Today&apos;s Schedule</h1>
             <p className="text-xs text-gray-500">Plan your day effectively</p>
           </div>
-        </div>
+      </div>
         <div className="flex items-center gap-3">
-          <button 
+              <button 
             onClick={() => setIsAddTaskModalOpen(true)}
             className="px-3 py-1.5 bg-black text-white text-sm rounded-lg hover:bg-gray-800 transition-colors"
           >
             Add New Task
-          </button>
+              </button>
           <button className="p-1.5 hover:bg-gray-100 rounded-lg text-black">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-            </svg>
-          </button>
-        </div>
-      </div>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
 
       <Sidebar 
         isSidebarOpen={isSidebarOpen}
@@ -365,18 +368,18 @@ export default function Home() {
           {/* Task List and Side Cards */}
           <div className="space-y-4">
             <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-              <TaskList 
+              <DynamicTaskList 
                 tasks={mainTasks}
                 isLoading={isLoading}
                 onTaskClick={handleTaskClick}
                 onDragStart={handleDragStart}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
               />
 
               <div className="space-y-4">
-                <Goals
+                <DynamicGoals
                   goals={goals}
                   onGoalAdd={handleGoalAdd}
                   onGoalDelete={handleGoalDelete}
@@ -384,11 +387,11 @@ export default function Home() {
                   onGoalToggle={handleGoalToggle}
                 />
                 
-                <QuickTasks 
+                <DynamicQuickTasks 
                   tasks={quickTasks}
                   onDragStart={handleDragStart}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
                   onAddTask={() => setIsAddTaskModalOpen(true)}
                 />

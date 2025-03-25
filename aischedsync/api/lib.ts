@@ -272,3 +272,32 @@ export const updateSchedule = async (scheduleId: string, tasks: Task[]): Promise
     throw error;
   }
 };
+
+export interface UserPreferences {
+  isEmailEnabled: boolean;
+  isWhatsAppEnabled: boolean;
+  isTelegramEnabled: boolean;
+  isCallEnabled: boolean;
+  timezone: string;
+}
+
+export async function updateUserPreferences(preferences: UserPreferences): Promise<void> {
+  try {
+    const response = await fetch(`${API_URL}/user/preferences`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getStoredAuthToken()}`
+      },
+      body: JSON.stringify(preferences),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to update preferences');
+    }
+  } catch (error) {
+    console.error('Error updating preferences:', error);
+    throw error;
+  }
+}

@@ -49,6 +49,7 @@ export default function QuickTasks({
 
       <div className="sticky bottom-0 pt-2">
         <button
+          type="button"
           onClick={onAddTask}
           className="w-full bg-black text-white rounded-xl py-3 text-sm font-medium hover:bg-gray-800 transition-colors"
         >
