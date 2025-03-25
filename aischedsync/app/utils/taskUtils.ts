@@ -1,5 +1,5 @@
 import { Task } from '@/api/lib';
-import { addMinutesToTime, getTimeDifferenceInMinutes } from './dateUtils';
+import { addMinutesToTime, getTimeDifferenceInMinutes, formatToHHMM } from './dateUtils';
 
 export const recalculateTaskTimes = (
   tasks: Task[],
@@ -17,57 +17,57 @@ export const recalculateTaskTimes = (
   const endIndex = Math.max(sourceIndex, targetIndex);
   
   // Store the original start time of the first task and end time of last task in range
-  const originalStartTime = tasks[startIndex].time;
+  const originalStartDate = new Date(tasks[startIndex].time);
   const lastTask = tasks[endIndex];
-  const originalEndTime = addMinutesToTime(lastTask.time, lastTask.duration);
+  const lastTaskDate = new Date(lastTask.time);
+  const originalEndDate = new Date(lastTaskDate.getTime() + (lastTask.duration * 60000));
   
   if (isMovingUp) {
     // Moving task earlier in schedule
-    let currentTime = originalStartTime; // Always start with original start time
+    let currentDate = new Date(originalStartDate);
     
     // Place moved task at target position
-    movedTask.time = currentTime;
-    currentTime = addMinutesToTime(currentTime, movedTask.duration);
+    movedTask.time = currentDate.toISOString();
+    currentDate = new Date(currentDate.getTime() + (movedTask.duration * 60000));
     
     // Shift affected tasks after moved task
     for (let i = targetIndex; i < sourceIndex; i++) {
       const nextTask = { ...tasks[i] };
-      nextTask.time = currentTime;
-      currentTime = addMinutesToTime(currentTime, nextTask.duration);
+      nextTask.time = currentDate.toISOString();
+      currentDate = new Date(currentDate.getTime() + (nextTask.duration * 60000));
       updatedTasks[i + 1] = nextTask;
     }
     
     updatedTasks[targetIndex] = movedTask;
   } else {
     // Moving task later in schedule
-    let currentTime = originalStartTime; // Always start with original start time
+    let currentDate = new Date(originalStartDate);
     
     // Shift affected tasks up first
     for (let i = startIndex; i < targetIndex; i++) {
       const task = { ...tasks[i + 1] };
-      task.time = currentTime;
-      currentTime = addMinutesToTime(currentTime, task.duration);
+      task.time = currentDate.toISOString();
+      currentDate = new Date(currentDate.getTime() + (task.duration * 60000));
       updatedTasks[i] = task;
     }
     
     // Place moved task at target position
-    movedTask.time = currentTime;
+    movedTask.time = currentDate.toISOString();
     updatedTasks[targetIndex] = movedTask;
   }
 
   // Verify and adjust to maintain the original time window
   const newLastTask = updatedTasks[endIndex];
-  const newEndTime = addMinutesToTime(newLastTask.time, newLastTask.duration);
+  const newLastTaskDate = new Date(newLastTask.time);
+  const newEndDate = new Date(newLastTaskDate.getTime() + (newLastTask.duration * 60000));
   
-  if (newEndTime !== originalEndTime) {
+  const timeDiff = getTimeDifferenceInMinutes(originalEndDate, newEndDate);
+  if (timeDiff !== 0) {
     // If there's any drift, adjust all tasks proportionally
-    const timeDiff = getTimeDifferenceInMinutes(originalEndTime, newEndTime);
-    if (timeDiff !== 0) {        
-      let currentTime = originalStartTime;
-      for (let i = startIndex; i <= endIndex; i++) {
-        updatedTasks[i].time = currentTime;
-        currentTime = addMinutesToTime(currentTime, updatedTasks[i].duration);
-      }
+    let currentDate = new Date(originalStartDate);
+    for (let i = startIndex; i <= endIndex; i++) {
+      updatedTasks[i].time = currentDate.toISOString();
+      currentDate = new Date(currentDate.getTime() + (updatedTasks[i].duration * 60000));
     }
   }
 

@@ -152,32 +152,39 @@ export default function Home() {
 
   const handleDrop = async (e: React.DragEvent, targetColumnType: 'main' | 'quick', targetIndex: number) => {
     e.preventDefault();
-    const target = e.target as HTMLElement;
-    const dragCard = target.closest('[data-draggable="true"]');
-    if (dragCard) {
-      dragCard.classList.remove('bg-blue-50');
-    }
+    
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+      const { columnType: sourceColumnType, index: sourceIndex } = data;
 
-    const data = JSON.parse(e.dataTransfer.getData('text/plain'));
-    const { columnType: sourceColumnType, index: sourceIndex } = data;
-
-    if (sourceColumnType === targetColumnType) {
-      try {
-        if (sourceColumnType === 'main') {
-          const updatedTasks = recalculateTaskTimes(mainTasks, sourceIndex, targetIndex);
+      if (sourceColumnType === targetColumnType && sourceColumnType === 'main') {
+        // Create a copy of the tasks
+        const tasksCopy = [...mainTasks];
+        
+        // Recalculate times
+        const updatedTasks = recalculateTaskTimes(tasksCopy, sourceIndex, targetIndex);
+        
+        // Update the state first
+        setMainTasks(updatedTasks);
+        
+        try {
+          // Then update the backend
           await updateSchedule(updatedTasks[0].scheduleId, updatedTasks);
-          setMainTasks(updatedTasks);
           showSuccessToast('Schedule updated successfully');
-        } else {
-          const newTasks = [...quickTasks];
-          const [movedTask] = newTasks.splice(sourceIndex, 1);
-          newTasks.splice(targetIndex, 0, movedTask);
-          setQuickTasks(newTasks);
+        } catch (error) {
+          // If backend update fails, revert the state
+          setMainTasks(tasksCopy);
+          showErrorToast('Failed to save changes. Please try again.');
         }
-      } catch (error) {
-        console.error('Error updating task order:', error);
-        showErrorToast('Failed to update schedule');
+      } else if (sourceColumnType === targetColumnType && sourceColumnType === 'quick') {
+        const newTasks = [...quickTasks];
+        const [movedTask] = newTasks.splice(sourceIndex, 1);
+        newTasks.splice(targetIndex, 0, movedTask);
+        setQuickTasks(newTasks);
       }
+    } catch (error) {
+      console.error('Error in handleDrop:', error);
+      showErrorToast('Failed to update task order. Please try again.');
     }
   };
 
