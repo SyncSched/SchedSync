@@ -38,3 +38,77 @@ export const updateUserTimezone = async (userId: string, timezone: string) => {
     }
   });
 };
+
+interface UpdateUserSettingsInput {
+  timezone?: string;
+  notificationPreferences?: {
+    isEmailEnabled?: boolean;
+    isWhatsAppEnabled?: boolean;
+    isTelegramEnabled?: boolean;
+    isCallEnabled?: boolean;
+    notifyBeforeMinutes?: number;
+    phoneNumber?: string | null;
+    telegramChatId?: string | null;
+  };
+  onboardingData?: {
+    profession: string;
+    hobbies: string[];
+    sleepingHours: number;
+    sleepingStart: string;
+    sleepingEnd: string;
+    workingHours: number;
+    workingStart: string;
+    workingEnd: string;
+  };
+}
+
+export const updateUserSettings = async (
+  userId: string,
+  data: UpdateUserSettingsInput
+) => {
+  if (!userId) {
+    throw new BadUserInputError({ message: 'User ID is required' });
+  }
+
+  return await prisma.$transaction(async (tx) => {
+    // Update user's basic settings and notification preferences
+    const userUpdate = await tx.user.update({
+      where: { id: userId },
+      data: {
+        ...(data.timezone && { timezone: data.timezone }),
+        ...(data.notificationPreferences && {
+          isEmailEnabled: data.notificationPreferences.isEmailEnabled,
+          isWhatsAppEnabled: data.notificationPreferences.isWhatsAppEnabled,
+          isTelegramEnabled: data.notificationPreferences.isTelegramEnabled,
+          isCallEnabled: data.notificationPreferences.isCallEnabled,
+          notifyBeforeMinutes: data.notificationPreferences.notifyBeforeMinutes,
+          phoneNumber: data.notificationPreferences.phoneNumber,
+          telegramChatId: data.notificationPreferences.telegramChatId,
+        }),
+      },
+      include: {
+        onboardingData: true
+      }
+    });
+
+    // Update onboarding data if provided
+    if (data.onboardingData) {
+      await tx.onboardingData.upsert({
+        where: { userId },
+        create: {
+          userId,
+          ...data.onboardingData
+        },
+        update: data.onboardingData
+      });
+    }
+
+    // Fetch final user state with all relations
+    return await tx.user.findUnique({
+      where: { id: userId },
+      include: {
+        onboardingData: true
+      }
+    });
+  });
+};

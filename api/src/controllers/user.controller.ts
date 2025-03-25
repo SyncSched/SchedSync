@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { getAllUsers, updateUserTimezone } from '../services/user.service';
+import { getAllUsers, updateUserTimezone, updateUserSettings } from '../services/user.service';
 import { AuthenticatedRequest } from '../types/request';
   
   export const getAllUsersHandler = async (req: Request, res: Response): Promise<void> => {
@@ -36,6 +36,37 @@ import { AuthenticatedRequest } from '../types/request';
       }
 
       const updatedUser = await updateUserTimezone(userId, timezone);
+      res.status(200).json(updatedUser);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  export const updateUserSettingsHandler = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const userId = req.user?.id;
+      const {
+        timezone,
+        notificationPreferences,
+        onboardingData
+      } = req.body;
+
+      if (!userId) {
+        res.status(401).json({ error: 'User not authenticated' });
+        return;
+      }
+
+      // Update user settings
+      const updatedUser = await updateUserSettings(userId, {
+        timezone,
+        notificationPreferences,
+        onboardingData
+      });
+
       res.status(200).json(updatedUser);
     } catch (error) {
       next(error);
