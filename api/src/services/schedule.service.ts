@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient, TaskStatus, Priority } from '@prisma/client';
 import { CreateScheduleInput, Task, Schedule } from '../models/schedule.model';
 import { createScheduleSchema } from '../validations/schedule.schema';
 import { toZonedTime } from 'date-fns-tz';
@@ -7,13 +7,21 @@ import { toZonedTime } from 'date-fns-tz';
 const taskSelect = {
   id: true,
   name: true,
+  description: true,
+  notes: true,
   time: true,
   duration: true,
+  status: true,
+  priority: true,
+  location: true,
   scheduleId: true,
   isEmailEnabled: true,
   isWhatsAppEnabled: true,
   isTelegramEnabled: true,
-  isCallEnabled: true
+  isCallEnabled: true,
+  createdAt: true,
+  updatedAt: true,
+  completedAt: true
 } as const;
 
 type TaskWithNotifications = Prisma.TaskGetPayload<{
@@ -125,17 +133,24 @@ export const createSchedule = async (
     const schedule = await tx.schedule.create({
       data: {
         userId,
-        status: 'completed',
+        status: 'PENDING',
         originalData: {
-          create: originalData.map((task: Task) => ({
+          create: originalData.map((task) => ({
             name: task.name,
+            description: task.description ?? "",
+            notes: task.notes ?? "",
             time: task.time,
             duration: task.duration,
-            // Use task-specific settings if provided, otherwise use user defaults
+            status: TaskStatus.PENDING,
+            priority: task.priority ?? Priority.MEDIUM,
+            location: task.location ?? null,
             isEmailEnabled: task.isEmailEnabled ?? user.isEmailEnabled,
             isWhatsAppEnabled: task.isWhatsAppEnabled ?? user.isWhatsAppEnabled,
             isTelegramEnabled: task.isTelegramEnabled ?? user.isTelegramEnabled,
-            isCallEnabled: task.isCallEnabled ?? user.isCallEnabled
+            isCallEnabled: task.isCallEnabled ?? user.isCallEnabled,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            completedAt: null
           }))
         }
       },
@@ -278,13 +293,21 @@ export const getSchedule = async (
       .map(task => ({
         id: task.id,
         name: task.name,
+        description: task.description,
+        notes: task.notes,
         time: task.time,
         duration: task.duration,
+        status: task.status,
+        priority: task.priority,
+        location: task.location,
         scheduleId: task.scheduleId,
         isEmailEnabled: task.isEmailEnabled,
         isWhatsAppEnabled: task.isWhatsAppEnabled,
         isTelegramEnabled: task.isTelegramEnabled,
-        isCallEnabled: task.isCallEnabled
+        isCallEnabled: task.isCallEnabled,
+        createdAt: task.createdAt,
+        updatedAt: task.updatedAt,
+        completedAt: task.completedAt
       }));
   }
 
@@ -337,13 +360,21 @@ export const getSchedule = async (
         originalData: newSchedule.originalData.map((task: TaskWithNotifications) => ({
           id: task.id,
           name: task.name,
+          description: task.description,
+          notes: task.notes,
           time: task.time,
           duration: task.duration,
+          status: task.status,
+          priority: task.priority,
+          location: task.location,
           scheduleId: task.scheduleId,
           isEmailEnabled: task.isEmailEnabled,
           isWhatsAppEnabled: task.isWhatsAppEnabled,
           isTelegramEnabled: task.isTelegramEnabled,
-          isCallEnabled: task.isCallEnabled
+          isCallEnabled: task.isCallEnabled,
+          createdAt: task.createdAt,
+          updatedAt: task.updatedAt,
+          completedAt: task.completedAt
         }))
       };
     } else {
@@ -359,13 +390,21 @@ export const getSchedule = async (
     originalData: schedule.originalData.map((task: TaskWithNotifications) => ({
       id: task.id,
       name: task.name,
+      description: task.description,
+      notes: task.notes,
       time: task.time,
       duration: task.duration,
+      status: task.status,
+      priority: task.priority,
+      location: task.location,
       scheduleId: task.scheduleId,
       isEmailEnabled: task.isEmailEnabled,
       isWhatsAppEnabled: task.isWhatsAppEnabled,
       isTelegramEnabled: task.isTelegramEnabled,
-      isCallEnabled: task.isCallEnabled
+      isCallEnabled: task.isCallEnabled,
+      createdAt: task.createdAt,
+      updatedAt: task.updatedAt,
+      completedAt: task.completedAt
     }))
   };
 };
