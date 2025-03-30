@@ -327,3 +327,24 @@ export const getUserSettings = async (): Promise<UserSettings> => {
 
   return await response.json();
 };
+
+export const updateUserTimezone = async (timezone: string): Promise<void> => {
+  const token = getStoredAuthToken();
+  
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/user/timezone`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ timezone })
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to update timezone');
+  }
+};

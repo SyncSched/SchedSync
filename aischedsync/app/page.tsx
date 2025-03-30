@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { getTodaySchedule, updateSchedule, getCurrentUser, type UserInfo, type Task } from '../api/lib';
+import { getTodaySchedule, updateSchedule, getCurrentUser, updateUserTimezone, type UserInfo, type Task } from '../api/lib';
 import { useAuth } from '@/contexts/AuthContext';
 import Modal from './components/ui/Modal';
 import { TaskForm } from './components/TaskForm';
@@ -35,21 +35,23 @@ export default function Home() {
   const [selectedPastTask, setSelectedPastTask] = useState<Task | null>(null);
 
   useEffect(() => {
-    // Get timezone information
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const date = new Date();
-    const offset = date.getTimezoneOffset();
-    const offsetHours = Math.abs(Math.floor(offset / 60));
-    const offsetMinutes = Math.abs(offset % 60);
-    const offsetString = `${offset <= 0 ? '+' : '-'}${offsetHours.toString().padStart(2, '0')}:${offsetMinutes.toString().padStart(2, '0')}`;
+    const updateTimezoneInfo = async () => {
+      try {
+        // Get timezone information
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        
+        if (isAuthenticated) {
+          await updateUserTimezone(timezone);
+          console.log('✅ Timezone updated successfully:', timezone);
+        }
+      } catch (error) {
+        console.error('Failed to update timezone:', error);
+      }
+    };
 
-    console.log('🌍 Timezone Details:');
-    console.log('Timezone:', timezone);
-    console.log('UTC Offset:', offsetString);
-    console.log('Current Local Time:', date.toLocaleString());
-  }, []);
+    updateTimezoneInfo();
+  }, [isAuthenticated]); // Run when authentication state changes
 
-  // Add this useEffect after other useEffect hooks
   useEffect(() => {
     // Find the first active task
     const activeTask = mainTasks.find(task => isTaskActive(task.time, task.duration));
