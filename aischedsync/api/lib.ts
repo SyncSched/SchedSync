@@ -303,3 +303,27 @@ export const updateUserSettings = async (settings: NotificationSettings): Promis
     throw new Error('Failed to update settings');
   }
 };
+
+/**
+ * Gets the user's settings
+ */
+export const getUserSettings = async (): Promise<UserSettings> => {
+  const token = getStoredAuthToken();
+  
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/user/settings`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch user settings');
+  }
+
+  return await response.json();
+};

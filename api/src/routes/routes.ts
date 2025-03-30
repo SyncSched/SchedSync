@@ -1,7 +1,13 @@
 import { updateRemainderSettings } from '../controllers/notification.controller';
 import { checkOnboardingDataHandler, createOnboardingHandler } from '../controllers/onboarding.controller';
 import { createScheduleHandler, generateScheduleHandler, getScheduleHandler, updateScheduleHandler } from '../controllers/schedule.controller';
-import { getAllUsersHandler, getCurrentUser, updateUserTimezoneHandler, updateUserSettingsHandler } from '../controllers/user.controller';
+import { 
+    getAllUsersHandler, 
+    getCurrentUser, 
+    updateUserTimezoneHandler, 
+    updateUserSettingsHandler,
+    getUserSettingsHandler 
+} from '../controllers/user.controller';
 import { updateTaskNotificationSettings } from '../controllers/task.controller';
 import { getUpcomingNotificationsHandler , updateNotificationTimeHandler, deleteNotificationHandler } from '../controllers/notification.controller';
 
@@ -25,8 +31,10 @@ export const attachPrivateRoutes = (app: any): void => {
 
     app.patch('/task/:taskId/notifications', updateTaskNotificationSettings);
 
-    app.put('/user/timezone', updateUserTimezoneHandler);
+    // User settings routes
+    app.get('/user/settings', getUserSettingsHandler);
     app.put('/user/settings', updateUserSettingsHandler);
+    app.put('/user/timezone', updateUserTimezoneHandler);
 
     // Notification routes
     app.get('/notifications/upcoming', getUpcomingNotificationsHandler);

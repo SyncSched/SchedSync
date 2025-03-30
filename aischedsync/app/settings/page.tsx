@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
-import { UserInfo, getCurrentUser, NotificationSettings, updateUserSettings } from '@/api/lib';
+import { UserInfo, getCurrentUser, UserSettings, updateUserSettings, getUserSettings } from '@/api/lib';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface ExtendedUserInfo extends UserInfo {
@@ -16,34 +16,29 @@ export default function Settings() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
-  const [settings, setSettings] = useState<NotificationSettings>({
-    isEmailEnabled: false,
-    isWhatsAppEnabled: false,
-    isTelegramEnabled: false,
-    isCallEnabled: false
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    timezone: '',
+    notificationPreferences: {
+      isEmailEnabled: false,
+      isWhatsAppEnabled: false,
+      isTelegramEnabled: false,
+      isCallEnabled: false,
+      notifyBeforeMinutes: 15,
+      phoneNumber: '',
+    },
+    onboardingData: {
+      profession: '',
+      hobbies: [] as string[],
+      sleepingHours: 8,
+      sleepingStart: '',
+      sleepingEnd: '',
+      workingHours: 8,
+      workingStart: '',
+      workingEnd: ''
+    }
   });
-
-  // Fetch user data and settings when component mounts
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (isAuthenticated) {
-        try {
-          const userData = await getCurrentUser();
-          const extendedUserData = userData as ExtendedUserInfo;
-          setUser(extendedUserData);
-          // Initialize settings with user preferences if available
-          if (extendedUserData.notificationSettings) {
-            setSettings(extendedUserData.notificationSettings);
-          }
-        } catch (err) {
-          console.error('Failed to fetch user data:', err);
-          showErrorToast('Failed to load user settings');
-        }
-      }
-    };
-
-    fetchUserData();
-  }, [isAuthenticated]);
+  const [originalFormData, setOriginalFormData] = useState(formData);
 
   const showSuccessToast = (message: string) => {
     setToastMessage(message);
@@ -59,24 +54,83 @@ export default function Settings() {
     setTimeout(() => setShowToast(false), 3000);
   };
 
-  const handleSettingChange = async (setting: keyof NotificationSettings) => {
-    try {
-      const newSettings = {
-        ...settings,
-        [setting]: !settings[setting]
-      };
-      
-      // Update local state immediately for responsive UI
-      setSettings(newSettings);
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (isAuthenticated) {
+        try {
+          const userData = await getCurrentUser();
+          const userSettingsData = await getUserSettings();
+          setUser(userData as ExtendedUserInfo);
+          
+          // Initialize form data with current settings
+          const initialData = {
+            timezone: userSettingsData.timezone,
+            notificationPreferences: {
+              isEmailEnabled: userSettingsData.isEmailEnabled,
+              isWhatsAppEnabled: userSettingsData.isWhatsAppEnabled,
+              isTelegramEnabled: userSettingsData.isTelegramEnabled,
+              isCallEnabled: userSettingsData.isCallEnabled,
+              notifyBeforeMinutes: userSettingsData.notifyBeforeMinutes,
+              phoneNumber: userSettingsData.phoneNumber || '',
+            },
+            onboardingData: userSettingsData.onboardingData || {
+              profession: '',
+              hobbies: [],
+              sleepingHours: 8,
+              sleepingStart: '',
+              sleepingEnd: '',
+              workingHours: 8,
+              workingStart: '',
+              workingEnd: ''
+            }
+          };
+          
+          setFormData(initialData);
+          setOriginalFormData(initialData); // Store original data
+        } catch (err) {
+          console.error('Failed to fetch user data:', err);
+          showErrorToast('Failed to load user settings');
+        }
+      }
+    };
 
-      // Make API call to update settings
-      await updateUserSettings(newSettings);
+    fetchUserData();
+  }, [isAuthenticated]);
+
+  const handleInputChange = (section: string, field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section as keyof typeof prev],
+        [field]: value
+      }
+    }));
+  };
+
+  const handleHobbiesChange = (hobbiesString: string) => {
+    const hobbiesArray = hobbiesString.split(',').map(hobby => hobby.trim());
+    setFormData(prev => ({
+      ...prev,
+      onboardingData: {
+        ...prev.onboardingData,
+        hobbies: hobbiesArray
+      }
+    }));
+  };
+
+  const handleSubmit = async () => {
+    try {
+      await updateUserSettings(formData);
       showSuccessToast('Settings updated successfully');
-    } catch (error: unknown) {
-      // Revert the local state change if API call fails
-      setSettings(settings);
-      showErrorToast(error instanceof Error ? error.message : 'Failed to update settings');
+      setIsEditing(false);
+    } catch (error) {
+      showErrorToast('Failed to update settings');
     }
+  };
+
+  const handleCancel = () => {
+    setFormData(originalFormData); // Revert to original data
+    setIsEditing(false);
   };
 
   return (
@@ -118,83 +172,171 @@ export default function Settings() {
             {/* Notification Settings Card */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-1">Notification Settings</h2>
-                <p className="text-sm text-gray-500 mb-6">Choose how you want to receive notifications</p>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-lg font-semibold text-gray-900">Settings</h2>
+                  <div className="flex gap-2">
+                    {isEditing ? (
+                      <>
+                        <button
+                          onClick={handleCancel}
+                          className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleSubmit}
+                          className="px-4 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600"
+                        >
+                          Save Changes
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => setIsEditing(true)}
+                        className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600"
+                      >
+                        Edit Settings
+                      </button>
+                    )}
+                  </div>
+                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {[
-                    {
-                      name: 'isWhatsAppEnabled',
-                      label: 'WhatsApp',
-                      icon: (
-                        <span className="[&>svg]:h-7 [&>svg]:w-7 [&>svg]:fill-[#128c7e]">
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 448 512">
-                            <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7 .9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/>
-                          </svg>
-                        </span>
-                      ),
-                    },
-                    {
-                      name: 'isTelegramEnabled',
-                      label: 'Telegram',
-                      icon: (
-                        <span className="[&>svg]:h-7 [&>svg]:w-7 [&>svg]:fill-[#0088cc]">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512">
-                            <path d="M248 8C111 8 0 119 0 256S111 504 248 504 496 393 496 256 385 8 248 8zM363 176.7c-3.7 39.2-19.9 134.4-28.1 178.3-3.5 18.6-10.3 24.8-16.9 25.4-14.4 1.3-25.3-9.5-39.3-18.7-21.8-14.3-34.2-23.2-55.3-37.2-24.5-16.1-8.6-25 5.3-39.5 3.7-3.8 67.1-61.5 68.3-66.7 .2-.7 .3-3.1-1.2-4.4s-3.6-.8-5.1-.5q-3.3 .7-104.6 69.1-14.8 10.2-26.9 9.9c-8.9-.2-25.9-5-38.6-9.1-15.5-5-27.9-7.7-26.8-16.3q.8-6.7 18.5-13.7 108.4-47.2 144.6-62.3c68.9-28.6 83.2-33.6 92.5-33.8 2.1 0 6.6 .5 9.6 2.9a10.5 10.5 0 0 1 3.5 6.7A43.8 43.8 0 0 1 363 176.7z"/>
-                          </svg>
-                        </span>
-                      ),
-                    },
-                    {
-                      name: 'isEmailEnabled',
-                      label: 'Email',
-                      icon: (
-                        <span className="[&>svg]:h-7 [&>svg]:w-7 [&>svg]">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
-                            <path fill="#4caf50" d="M45,16.2l-5,2.75l-5,4.75L35,40h7c1.657,0,3-1.343,3-3V16.2z"/>
-                            <path fill="#1e88e5" d="M3,16.2l3.614,1.71L13,23.7V40H6c-1.657,0-3-1.343-3-3V16.2z"/>
-                            <polygon fill="#e53935" points="35,11.2 24,19.45 13,11.2 12,17 13,23.7 24,31.95 35,23.7 36,17"/>
-                            <path fill="#c62828" d="M3,12.298V16.2l10,7.5V11.2L9.876,8.859C9.132,8.301,8.228,8,7.298,8h0C4.924,8,3,9.924,3,12.298z"/>
-                            <path fill="#fbc02d" d="M45,12.298V16.2l-10,7.5V11.2l3.124-2.341C38.868,8.301,39.772,8,40.702,8h0 C43.076,8,45,9.924,45,12.298z"/>
-                          </svg>
-                        </span>
-                      ),
-                    },
-                    {
-                      name: 'isCallEnabled',
-                      label: 'Phone Call',
-                      icon: (
-                        <span className="[&>svg]:h-7 [&>svg]:w-7 [&>svg]:fill-[#0088cc]">
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 9.75v-4.5m0 4.5h4.5m-4.5 0 6-6m-3 18c-8.284 0-15-6.716-15-15V4.5A2.25 2.25 0 0 1 4.5 2.25h1.372c.516 0 .966.351 1.091.852l1.106 4.423c.11.44-.054.902-.417 1.173l-1.293.97a1.062 1.062 0 0 0-.38 1.21 12.035 12.035 0 0 0 7.143 7.143c.441.162.928-.004 1.21-.38l.97-1.293a1.125 1.125 0 0 1 1.173-.417l4.423 1.106c.5.125.852.575.852 1.091V19.5a2.25 2.25 0 0 1-2.25 2.25h-2.25Z"/>
-                          </svg>
-                        </span>
-                      ),
-                    },
-                  ].map(({ name, label, icon }) => (
-                    <label key={name} className="flex flex-col sm:flex-row items-center p-4 border border-gray-200 rounded-xl hover:bg-white/80 hover:border-blue-100 hover:shadow-sm transition-all duration-200 cursor-pointer group">
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center">
-                          <div className="relative inline-block w-11 mr-3 align-middle flex-shrink-0">
-                            <input
-                              type="checkbox"
-                              name={name}
-                              checked={settings[name as keyof NotificationSettings]}
-                              onChange={() => handleSettingChange(name as keyof NotificationSettings)}
-                              className="peer sr-only"
-                            />
-                            <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-100 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
-                          </div>
-                          <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">{label}</span>
+                <div className="space-y-6">
+                  {/* Timezone Section */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Timezone</label>
+                    <select
+                      disabled={!isEditing}
+                      value={formData.timezone}
+                      onChange={(e) => handleInputChange('timezone', '', e.target.value)}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    >
+                      {Intl.supportedValuesOf('timeZone').map((tz) => (
+                        <option key={tz} value={tz}>{tz}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Notification Preferences */}
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-3">Notification Preferences</h3>
+                    <div className="space-y-4">
+                      {Object.entries({
+                        isEmailEnabled: 'Email',
+                        isWhatsAppEnabled: 'WhatsApp',
+                        isTelegramEnabled: 'Telegram',
+                        isCallEnabled: 'Phone Call'
+                      }).map(([key, label]) => (
+                        <div key={key} className="flex items-center">
+                          <input
+                            type="checkbox"
+                            disabled={!isEditing}
+                            checked={formData.notificationPreferences[key as keyof typeof formData.notificationPreferences] as boolean}
+                            onChange={(e) => handleInputChange('notificationPreferences', key, e.target.checked)}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                          <label className="ml-2 text-sm text-gray-700">{label}</label>
                         </div>
-                        <div className="ml-auto">
-                          <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-white shadow-md shadow-gray-200 group-hover:shadow-gray-300 transition-all duration-300">
-                            {icon}
-                          </div>
-                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Phone Number */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+                    <input
+                      type="tel"
+                      disabled={!isEditing}
+                      value={formData.notificationPreferences.phoneNumber}
+                      onChange={(e) => handleInputChange('notificationPreferences', 'phoneNumber', e.target.value)}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    />
+                  </div>
+
+                  {/* Notification Timing */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Notify Before (minutes)</label>
+                    <select
+                      disabled={!isEditing}
+                      value={formData.notificationPreferences.notifyBeforeMinutes}
+                      onChange={(e) => handleInputChange('notificationPreferences', 'notifyBeforeMinutes', Number(e.target.value))}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    >
+                      {[5, 10, 15, 30, 60].map((minutes) => (
+                        <option key={minutes} value={minutes}>{minutes} minutes</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Onboarding Data */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-gray-700">Profile Information</h3>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Profession</label>
+                      <input
+                        type="text"
+                        disabled={!isEditing}
+                        value={formData.onboardingData.profession}
+                        onChange={(e) => handleInputChange('onboardingData', 'profession', e.target.value)}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Hobbies (comma-separated)</label>
+                      <input
+                        type="text"
+                        disabled={!isEditing}
+                        value={formData.onboardingData.hobbies.join(', ')}
+                        onChange={(e) => handleHobbiesChange(e.target.value)}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Working Start Time</label>
+                        <input
+                          type="time"
+                          disabled={!isEditing}
+                          value={formData.onboardingData.workingStart}
+                          onChange={(e) => handleInputChange('onboardingData', 'workingStart', e.target.value)}
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                        />
                       </div>
-                    </label>
-                  ))}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Working End Time</label>
+                        <input
+                          type="time"
+                          disabled={!isEditing}
+                          value={formData.onboardingData.workingEnd}
+                          onChange={(e) => handleInputChange('onboardingData', 'workingEnd', e.target.value)}
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Sleeping Start Time</label>
+                        <input
+                          type="time"
+                          disabled={!isEditing}
+                          value={formData.onboardingData.sleepingStart}
+                          onChange={(e) => handleInputChange('onboardingData', 'sleepingStart', e.target.value)}
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Sleeping End Time</label>
+                        <input
+                          type="time"
+                          disabled={!isEditing}
+                          value={formData.onboardingData.sleepingEnd}
+                          onChange={(e) => handleInputChange('onboardingData', 'sleepingEnd', e.target.value)}
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -204,9 +346,11 @@ export default function Settings() {
 
       {/* Toast Notification */}
       {showToast && (
-        <div className={`fixed bottom-4 right-4 px-4 py-2 rounded-lg text-white ${
-          toastType === 'success' ? 'bg-green-500' : 'bg-red-500'
-        } transition-opacity duration-300`}>
+        <div 
+          className={`fixed bottom-4 right-4 px-4 py-2 rounded-lg text-white ${
+            toastType === 'success' ? 'bg-green-500' : 'bg-red-500'
+          } transition-opacity duration-300`}
+        >
           {toastMessage}
         </div>
       )}
