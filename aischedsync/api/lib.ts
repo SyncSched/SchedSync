@@ -272,3 +272,34 @@ export const updateSchedule = async (scheduleId: string, tasks: Task[]): Promise
     throw error;
   }
 };
+
+export interface NotificationSettings {
+  isEmailEnabled: boolean;
+  isWhatsAppEnabled: boolean;
+  isTelegramEnabled: boolean;
+  isCallEnabled: boolean;
+}
+
+/**
+ * Updates the user's notification settings
+ */
+export const updateUserSettings = async (settings: NotificationSettings): Promise<void> => {
+  const token = getStoredAuthToken();
+  
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/user/settings`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(settings)
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to update settings');
+  }
+};

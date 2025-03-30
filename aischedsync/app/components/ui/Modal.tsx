@@ -25,16 +25,15 @@ const Modal: React.FC<ModalProps> = ({ children, onClose, size = 'md', title }) 
         transition={{ type: 'spring', duration: 0.5, bounce: 0.2 }}
         className={`relative bg-white rounded-2xl shadow-2xl w-[98%] ${sizeClasses[size]} overflow-hidden border border-gray-100`}
       >
-        <div className="flex items-center justify-between px-6 py-4 lg:px-8 lg:py-4 border-b border-gray-100 bg-white/50">
-          {title && <h2 className="text-xl font-semibold text-gray-900  tracking-tight">{title}</h2>}
+        <div className="flex justify-end px-4 pt-3">
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100/80 rounded-lg transition-all duration-200 -mr-2 group"
+            className="p-1.5 hover:bg-gray-100/80 rounded-lg transition-all duration-200 group"
           >
-            <X className="w-5 h-5 text-gray-500 group-hover:text-gray-700 group-hover:scale-110 transition-all" />
+            <X className="w-4 h-4 text-gray-500 group-hover:text-gray-700 group-hover:scale-110 transition-all" />
           </button>
         </div>
-        <div className="p-6 lg:p-8 max-h-[calc(100vh-12rem)] overflow-y-auto custom-scrollbar">
+        <div className="px-4 pb-4 lg:px-6 lg:pb-6 max-h-[calc(100vh-12rem)] overflow-y-auto custom-scrollbar">
           {children}
         </div>
       </motion.div>

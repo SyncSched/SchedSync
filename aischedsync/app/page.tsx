@@ -537,35 +537,27 @@ export default function Home() {
       </main>
 
       {/* Modals */}
-      {isEditModalOpen && selectedTask && (
+      {isEditModalOpen && (
         <Modal
           title="Edit Task"
           onClose={() => setIsEditModalOpen(false)}
           size="md"
         >
-          <div className="flex flex-col">
-            <div className="flex justify-end mb-4">
-              <button
-                onClick={() => setShowDeleteWarning(true)}
-                className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 focus:outline-none"
-              >
-                Delete Task
-              </button>
-            </div>
-            <TaskForm
-              onSubmit={handleEditTaskSubmit}
-              onClose={() => setIsEditModalOpen(false)}
-              initialTask={{
-                name: selectedTask.name,
-                time: renderTaskTime(selectedTask),
-                duration: selectedTask.duration,
-                isEmailEnabled: selectedTask.isEmailEnabled,
-                isWhatsAppEnabled: selectedTask.isWhatsAppEnabled,
-                isTelegramEnabled: selectedTask.isTelegramEnabled,
-                isCallEnabled: selectedTask.isCallEnabled
-              }}
-            />
-          </div>
+          <TaskForm
+            mode="edit"
+            onSubmit={handleEditTaskSubmit}
+            onClose={() => setIsEditModalOpen(false)}
+            onDelete={() => setShowDeleteWarning(true)}
+            initialTask={{
+              name: selectedTask.name,
+              time: renderTaskTime(selectedTask),
+              duration: selectedTask.duration,
+              isEmailEnabled: selectedTask.isEmailEnabled,
+              isWhatsAppEnabled: selectedTask.isWhatsAppEnabled,
+              isTelegramEnabled: selectedTask.isTelegramEnabled,
+              isCallEnabled: selectedTask.isCallEnabled
+            }}
+          />
         </Modal>
       )}
 
