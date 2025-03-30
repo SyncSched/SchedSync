@@ -47,7 +47,7 @@ const HobbiesStep = ({ value, onChange }: { value: string[]; onChange: (value: s
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900">What are your hobbies?</h1>
+        <h1 className="text-2xl font-bold text-gray-900">What are Regular Activities?</h1>
         <p className="mt-2 text-gray-600">Select all that apply</p>
       </div>
 
