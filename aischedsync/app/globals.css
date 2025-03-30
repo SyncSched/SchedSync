@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Global scrollbar hiding for all elements */
+* {
+  -ms-overflow-style: none;  /* Hide scrollbar for IE and Edge */
+  scrollbar-width: none;  /* Hide scrollbar for Firefox */
+}
+
+*::-webkit-scrollbar {
+  display: none;  /* Hide scrollbar for Chrome, Safari and Opera */
+}
+
+/* Custom scrollbar styles if needed for specific elements */
+.custom-scrollbar {
+  -ms-overflow-style: auto;  /* Show scrollbar for IE and Edge */
+  scrollbar-width: thin;  /* Show thin scrollbar for Firefox */
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  display: none;  /* Hide scrollbar for Chrome */
+}
+

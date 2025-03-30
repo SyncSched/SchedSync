@@ -27,6 +27,6 @@ There is no direct command to revert a migration. However, you can manually crea
 ## Applying Migrations in Production
 To deploy migrations in a production environment, use:
 ```bash
-npm run migration:production
+npm run migrate:production
 ```
 

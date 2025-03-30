@@ -1,23 +1,6 @@
-import { Request, Response } from 'express';
-import { createUser , getAllUsers } from '../services/user.service';
-
-
-export const createUserHandler = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const { email, name } = req.body;
-  
-      if (!email || !name) {
-        res.status(400).json({ error: 'Email and name are required' });
-        return;
-      }
-  
-      const newUser = await createUser({ email, name });
-      res.status(201).json(newUser);
-    } catch (error) {
-      console.error('Error creating user:', error);
-      res.status(500).json({ error: 'Failed to create user' });
-    }
-  };
+import { Request, Response, NextFunction } from 'express';
+import { getAllUsers, updateUserTimezone, updateUserSettings } from '../services/user.service';
+import { AuthenticatedRequest } from '../types/request';
   
   export const getAllUsersHandler = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -26,5 +9,66 @@ export const createUserHandler = async (req: Request, res: Response): Promise<vo
     } catch (error) {
       console.error('Error retrieving users:', error);
       res.status(500).json({ error: 'Failed to retrieve users' });
+    }
+  };
+
+  export const getCurrentUser = (req: AuthenticatedRequest, res: Response): void => {
+    res.json({ currentUser: req.user });
+  };
+
+  export const updateUserTimezoneHandler = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const userId = req.user?.id;
+      const { timezone } = req.body;
+
+      if (!userId) {
+        res.status(401).json({ error: 'User not authenticated' });
+        return;
+      }
+
+      if (!timezone) {
+        res.status(400).json({ error: 'Timezone is required' });
+        return;
+      }
+
+      const updatedUser = await updateUserTimezone(userId, timezone);
+      res.status(200).json(updatedUser);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  export const updateUserSettingsHandler = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const userId = req.user?.id;
+      const {
+        timezone,
+        notificationPreferences,
+        onboardingData
+      } = req.body;
+
+      if (!userId) {
+        res.status(401).json({ error: 'User not authenticated' });
+        return;
+      }
+
+      // Update user settings
+      const updatedUser = await updateUserSettings(userId, {
+        timezone,
+        notificationPreferences,
+        onboardingData
+      });
+
+      res.status(200).json(updatedUser);
+    } catch (error) {
+      next(error);
     }
   };

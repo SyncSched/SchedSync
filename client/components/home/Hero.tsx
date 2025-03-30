@@ -99,9 +99,10 @@ export default function Component() {
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  >
-                  <button onClick={()=>signIn()}
-                    
+                >
+                  <Link
+                    href="http://ai.schedsync.com/login"
+                    // href="http://localhost:8080/login"
                     className="group relative inline-flex items-center justify-center px-8 py-3 font-medium rounded-full text-white bg-gradient-to-r from-indigo-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 transition-all duration-300"
                     >
                     <span className="absolute w-full h-full rounded-full bg-white/10 group-hover:scale-110 transition-transform duration-300" />

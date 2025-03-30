@@ -1,0 +1,10 @@
+types -> env.d.ts
+
+prismaorm.ts -> we create entity -> not mandotory but for better entity creation , updation and deletion under utils folder
+
+validation.ts -> why , where , what... comes under utils folder
+
+serializers folder containing Partial<Entity> , is there any user??
+
+Make use of Enums Where ever necessary -> Make Better Runtime by removing unexpected Erros 
+Constants Folder to Organize all Enums....
