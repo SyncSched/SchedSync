@@ -249,37 +249,30 @@ export const getSchedule = async (
     throw new Error("Invalid date format received");
   }
 
-  // Since frontend sends UTC time, this is already in UTC
+ // Since frontend sends UTC time, this is already in UTC
   const utcDate = new Date(date);
-  
+
   // Calculate the start and end times in UTC
   const utcStartTime = new Date(utcDate);
-  utcStartTime.setUTCHours(0, 0, 0, 0);  // Start of UTC day
+  utcStartTime.setUTCHours(0, 0, 0, 0); // Start of UTC day
 
   const utcEndTime = new Date(utcDate);
-  utcEndTime.setUTCHours(24, 0, 0, 0);   // End of UTC day
+  utcEndTime.setUTCHours(23, 59, 59, 999); // End of UTC day (fixing 24:00 issue)
 
-  // Calculate local times for logging
+  // Determine user timezone and offset
   const userTimezone = user.timezone || 'UTC';
   const calculatedOffset = getTimezoneOffset(user.timezone, utcDate);
-  const localStartTime = new Date(utcStartTime.getTime() + (calculatedOffset * 60000));
-  const localEndTime = new Date(utcEndTime.getTime() + (calculatedOffset * 60000));
 
-  if(calculatedOffset<0){
-    localStartTime.setDate(utcDate.getDate());
-    localEndTime.setDate(utcDate.getDate() + 1);
-  }
-  else{
-    localStartTime.setDate(utcDate.getDate() - 1);
-    localEndTime.setDate(utcDate.getDate());
-  }
+  // Convert to local time after adjusting for UTC
+  const localStartTime = new Date(utcStartTime.getTime() + calculatedOffset * 60000);
+  const localEndTime = new Date(utcEndTime.getTime() + calculatedOffset * 60000);
 
   console.log('Schedule Query Range:', {
     userTimezone,
     calculatedOffset,
     date,
-    localStartTime: localStartTime.toISOString(), // Will show local time (e.g., 05:30 IST for 00:00 UTC)
-    localEndTime: localEndTime.toISOString(),     // Will show local time (e.g., 05:30 IST next day)
+    localStartTime: localStartTime.toISOString(),
+    localEndTime: localEndTime.toISOString(),
   });
 
   // Find the schedule for the requested UTC date
