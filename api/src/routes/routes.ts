@@ -1,22 +1,26 @@
 import { updateRemainderSettings } from '../controllers/notification.controller';
 import { checkOnboardingDataHandler, createOnboardingHandler } from '../controllers/onboarding.controller';
-import { createScheduleHandler, generateScheduleHandler, getScheduleHandler , updateScheduleHandler } from '../controllers/schedule.controller';
-import {getAllUsersHandler, getCurrentUser} from '../controllers/user.controller';
+import { createScheduleHandler, generateScheduleHandler, getScheduleHandler, updateScheduleHandler } from '../controllers/schedule.controller';
+import { 
+    getAllUsersHandler, 
+    getCurrentUser, 
+    updateUserTimezoneHandler, 
+    updateUserSettingsHandler,
+    getUserSettingsHandler 
+} from '../controllers/user.controller';
 import { updateTaskNotificationSettings } from '../controllers/task.controller';
+import { getUpcomingNotificationsHandler , updateNotificationTimeHandler, deleteNotificationHandler } from '../controllers/notification.controller';
 
-export const attachPublicRoutes = (app:any) : void =>{
-    app.get('/users',getAllUsersHandler); //This route is not required but working fine
+export const attachPublicRoutes = (app: any): void => {
+    app.get('/users', getAllUsersHandler);
 }
 
-export const attachPrivateRoutes = (app:any) :void =>{
+export const attachPrivateRoutes = (app: any): void => {
+    app.get('/currentUser', getCurrentUser);
     
-    
-    app.get('/currentUser',getCurrentUser);
-    
-    app.post('/getSchedule',getScheduleHandler);
-    //create a Schedule  -> Here we call AI to schedule that day , call only once per day , whenever person opens the website
-    app.post('/generateSchedule' , generateScheduleHandler);
-    app.post('/createSchedule',createScheduleHandler);
+    app.post('/getSchedule', getScheduleHandler);
+    app.post('/generateSchedule', generateScheduleHandler);
+    app.post('/createSchedule', createScheduleHandler);
 
     app.post('/createOnboarding', createOnboardingHandler);
 
@@ -26,4 +30,14 @@ export const attachPrivateRoutes = (app:any) :void =>{
     app.put("/notifications/:userId", updateRemainderSettings);
 
     app.patch('/task/:taskId/notifications', updateTaskNotificationSettings);
+
+    // User settings routes
+    app.get('/user/settings', getUserSettingsHandler);
+    app.put('/user/settings', updateUserSettingsHandler);
+    app.put('/user/timezone', updateUserTimezoneHandler);
+
+    // Notification routes
+    app.get('/notifications/upcoming', getUpcomingNotificationsHandler);
+    app.put('/notifications/:notificationId', updateNotificationTimeHandler);
+    app.delete('/notifications/:notificationId', deleteNotificationHandler);
 }

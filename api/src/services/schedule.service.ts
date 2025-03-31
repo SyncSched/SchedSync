@@ -1,18 +1,27 @@
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient, TaskStatus, Priority } from '@prisma/client';
 import { CreateScheduleInput, Task, Schedule } from '../models/schedule.model';
 import { createScheduleSchema } from '../validations/schedule.schema';
+import { toZonedTime, formatInTimeZone } from 'date-fns-tz';
 
 // Define the task select type
 const taskSelect = {
   id: true,
   name: true,
+  description: true,
+  notes: true,
   time: true,
   duration: true,
+  status: true,
+  priority: true,
+  location: true,
   scheduleId: true,
   isEmailEnabled: true,
   isWhatsAppEnabled: true,
   isTelegramEnabled: true,
-  isCallEnabled: true
+  isCallEnabled: true,
+  createdAt: true,
+  updatedAt: true,
+  completedAt: true
 } as const;
 
 type TaskWithNotifications = Prisma.TaskGetPayload<{
@@ -26,6 +35,11 @@ export type ScheduleWithRelations = Prisma.ScheduleGetPayload<{
 
 const prisma = new PrismaClient();
 
+function getTimezoneOffset(timezone: string, date: Date): number {
+  const localDate = new Date(date.toLocaleString('en-US', { timeZone: timezone }));
+  const utcDate = new Date(date.toLocaleString('en-US', { timeZone: 'UTC' }));
+  return (utcDate.getTime() - localDate.getTime()) / 60000; // Convert ms to minutes
+}
 
 async function createNotificationsForTask(taskId: string, userId: string, taskTime: string) {
   try {
@@ -38,12 +52,14 @@ async function createNotificationsForTask(taskId: string, userId: string, taskTi
     }
 
     // Convert task time string to Date object
-    const [hours, minutes] = taskTime.split(':').map(Number);
-    const taskDateTime = new Date();
-    taskDateTime.setHours(hours, minutes, 0, 0);
+    const taskDate = new Date(taskTime);
+    const hours = taskDate.getHours();
+    const minutes = taskDate.getMinutes();
+    const scheduledTime = new Date();
+    scheduledTime.setHours(hours, minutes, 0, 0);
 
     // Calculate notification time based on user's preference
-    const notifyAt = new Date(taskDateTime.getTime() - (user.notifyBeforeMinutes * 60000));
+    const notifyAt = new Date(scheduledTime.getTime() - (user.notifyBeforeMinutes * 60000));
 
     // Create notifications for each enabled channel
     const notifications = [];
@@ -122,17 +138,24 @@ export const createSchedule = async (
     const schedule = await tx.schedule.create({
       data: {
         userId,
-        status: 'completed',
+        status: 'PENDING',
         originalData: {
-          create: originalData.map((task: Task) => ({
+          create: originalData.map((task) => ({
             name: task.name,
+            description: task.description ?? "",
+            notes: task.notes ?? "",
             time: task.time,
             duration: task.duration,
-            // Use task-specific settings if provided, otherwise use user defaults
+            status: TaskStatus.PENDING,
+            priority: task.priority ?? Priority.MEDIUM,
+            location: task.location ?? null,
             isEmailEnabled: task.isEmailEnabled ?? user.isEmailEnabled,
             isWhatsAppEnabled: task.isWhatsAppEnabled ?? user.isWhatsAppEnabled,
             isTelegramEnabled: task.isTelegramEnabled ?? user.isTelegramEnabled,
-            isCallEnabled: task.isCallEnabled ?? user.isCallEnabled
+            isCallEnabled: task.isCallEnabled ?? user.isCallEnabled,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            completedAt: null
           }))
         }
       },
@@ -146,10 +169,12 @@ export const createSchedule = async (
 
     // Create notifications for each task
     for (const task of schedule.originalData) {
-      const [hours, minutes] = task.time.split(':').map(Number);
-      const taskDateTime = new Date();
-      taskDateTime.setHours(hours, minutes, 0, 0);
-      const notifyAt = new Date(taskDateTime.getTime() - (user.notifyBeforeMinutes * 60000));
+      const taskDate = new Date(task.time);
+      const hours = taskDate.getHours();
+      const minutes = taskDate.getMinutes();
+      const scheduledTime = new Date();
+      scheduledTime.setHours(hours, minutes, 0, 0);
+      const notifyAt = new Date(scheduledTime.getTime() - (user.notifyBeforeMinutes * 60000));
 
       const notificationData = [];
 
@@ -207,55 +232,103 @@ export const createSchedule = async (
 
 
 export const getSchedule = async (
-  date: string,
+  date: string, // This is UTC date string from frontend
   userId: string,
-  timezoneOffset: number
+  timezoneOffset: number // Offset in minutes
 ): Promise<Partial<Schedule>> => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { timezone: true }
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
   if (!date || isNaN(Date.parse(date))) {
     throw new Error("Invalid date format received");
   }
 
-  // Parse the date string to create a Date object for the requested date
-  const requestedDate = new Date(date);
+  // Since frontend sends UTC time, this is already in UTC
+  const utcDate = new Date(date);
+  
+  // Calculate the start and end times in UTC
+  const utcStartTime = new Date(utcDate);
+  utcStartTime.setUTCHours(0, 0, 0, 0);  // Start of UTC day
 
-  // Convert to user's local midnight by adjusting for timezone offset
-  // First, set the time to midnight (12:00 AM) in UTC
-  requestedDate.setUTCHours(0, 0, 0, 0);
+  const utcEndTime = new Date(utcDate);
+  utcEndTime.setUTCHours(24, 0, 0, 0);   // End of UTC day
 
-  // timezoneoffset is -330 for ist i.e we need to add the timezoneoffset...
-  const userLocalMidnight = new Date(requestedDate.getTime() + (timezoneOffset * 60000));
+  // Calculate local times for logging
+  const userTimezone = user.timezone || 'UTC';
+  const calculatedOffset = getTimezoneOffset(user.timezone, utcDate);
+  const localStartTime = new Date(utcStartTime.getTime() + (calculatedOffset * 60000));
+  const localEndTime = new Date(utcEndTime.getTime() + (calculatedOffset * 60000));
 
-  // Calculate the end of the day (12:00 AM of the next day in user's local timezone)
-  const nextDay = new Date(userLocalMidnight);
-  nextDay.setDate(nextDay.getDate() + 1); // Add one day to get the next midnight
+  if(calculatedOffset<0){
+    localStartTime.setDate(utcDate.getDate());
+    localEndTime.setDate(utcDate.getDate() + 1);
+  }
+  else{
+    localStartTime.setDate(utcDate.getDate() - 1);
+    localEndTime.setDate(utcDate.getDate());
+  }
 
-  console.log('Date Range:', userLocalMidnight, nextDay, "Timezone Offset:", timezoneOffset);
+  console.log('Schedule Query Range:', {
+    userTimezone,
+    calculatedOffset,
+    date,
+    localStartTime: localStartTime.toISOString(), // Will show local time (e.g., 05:30 IST for 00:00 UTC)
+    localEndTime: localEndTime.toISOString(),     // Will show local time (e.g., 05:30 IST next day)
+  });
 
-  // Check if the user's local time is 12 AM (start of a new day)
-  const now = new Date();
-  const userLocalTime = new Date(now.getTime() - (timezoneOffset * 60000));
-  const isStartOfDay = userLocalTime.getHours() === 0 && 
-                       userLocalTime.getMinutes() < 5; // Give a small buffer of 5 minutes
-
-  // Find the schedule for the requested date
+  // Find the schedule for the requested UTC date
   const schedule = await prisma.schedule.findFirst({
     where: {
       userId: userId,
       createdAt: {
-        gte: userLocalMidnight, // Start of the day in user's local timezone
-        lt: nextDay,            // End of the day in user's local timezone
+        gte: localStartTime, // 00:00 UTC
+        lt: localEndTime,    // 00:00 UTC next day
       },
     },
     include: {
       user: true,
       originalData: {
-        select: taskSelect
+        select: taskSelect,
+        orderBy: {
+          time: 'asc'
+        }
       },
     },
   });
 
+  if (schedule) {
+    // Sort tasks by time before returning
+    schedule.originalData = schedule.originalData
+      .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
+      .map(task => ({
+        id: task.id,
+        name: task.name,
+        description: task.description,
+        notes: task.notes,
+        time: task.time,
+        duration: task.duration,
+        status: task.status,
+        priority: task.priority,
+        location: task.location,
+        scheduleId: task.scheduleId,
+        isEmailEnabled: task.isEmailEnabled,
+        isWhatsAppEnabled: task.isWhatsAppEnabled,
+        isTelegramEnabled: task.isTelegramEnabled,
+        isCallEnabled: task.isCallEnabled,
+        createdAt: task.createdAt,
+        updatedAt: task.updatedAt,
+        completedAt: task.completedAt
+      }));
+  }
+
   // If no schedule found and it's the start of a new day, we need to create one
-  if (!schedule && isStartOfDay) {
+  if (!schedule) {
     // Get the user's previous schedule to use as a template
     const previousSchedule = await prisma.schedule.findFirst({
       where: {
@@ -266,7 +339,10 @@ export const getSchedule = async (
       },
       include: {
         originalData: {
-          select: taskSelect
+          select: taskSelect,
+          orderBy: {
+            time: 'asc'  // Sort tasks by time in ascending order
+          }
         }
       }
     });
@@ -300,13 +376,21 @@ export const getSchedule = async (
         originalData: newSchedule.originalData.map((task: TaskWithNotifications) => ({
           id: task.id,
           name: task.name,
+          description: task.description,
+          notes: task.notes,
           time: task.time,
           duration: task.duration,
+          status: task.status,
+          priority: task.priority,
+          location: task.location,
           scheduleId: task.scheduleId,
           isEmailEnabled: task.isEmailEnabled,
           isWhatsAppEnabled: task.isWhatsAppEnabled,
           isTelegramEnabled: task.isTelegramEnabled,
-          isCallEnabled: task.isCallEnabled
+          isCallEnabled: task.isCallEnabled,
+          createdAt: task.createdAt,
+          updatedAt: task.updatedAt,
+          completedAt: task.completedAt
         }))
       };
     } else {
@@ -322,13 +406,21 @@ export const getSchedule = async (
     originalData: schedule.originalData.map((task: TaskWithNotifications) => ({
       id: task.id,
       name: task.name,
+      description: task.description,
+      notes: task.notes,
       time: task.time,
       duration: task.duration,
+      status: task.status,
+      priority: task.priority,
+      location: task.location,
       scheduleId: task.scheduleId,
       isEmailEnabled: task.isEmailEnabled,
       isWhatsAppEnabled: task.isWhatsAppEnabled,
       isTelegramEnabled: task.isTelegramEnabled,
-      isCallEnabled: task.isCallEnabled
+      isCallEnabled: task.isCallEnabled,
+      createdAt: task.createdAt,
+      updatedAt: task.updatedAt,
+      completedAt: task.completedAt
     }))
   };
 };
@@ -439,13 +531,15 @@ export const updateSchedule = async (
       const existingTask = existingTasks.find(et => et.id === task.id);
       
       // Check if task time or notification settings changed
-      const timeChanged = existingTask && existingTask.time !== task.time;
+      const timeChanged = existingTask && 
+        new Date(existingTask.time).getTime() !== new Date(task.time).getTime();
       const settingsChanged = existingTask && (
         existingTask.isEmailEnabled !== task.isEmailEnabled ||
         existingTask.isWhatsAppEnabled !== task.isWhatsAppEnabled ||
         existingTask.isTelegramEnabled !== task.isTelegramEnabled ||
         existingTask.isCallEnabled !== task.isCallEnabled
       );
+
 
       // Only update notifications if task is new or has changes
       if (!existingTask || timeChanged || settingsChanged) {
@@ -465,16 +559,12 @@ export const updateSchedule = async (
         }
 
         // Create new notifications
-        const [hours, minutes] = task.time.split(':').map(Number);
-        const taskDateTime = new Date();
-        taskDateTime.setHours(hours, minutes, 0, 0);
-        // Convert local time to UTC by creating ISO string and parsing it back to Date
-        const notifyAt = new Date(
-          new Date(taskDateTime.getTime() - (schedule.user.notifyBeforeMinutes * 60000))
-          .toISOString()
-        );
-
-        console.log('Notification time:', notifyAt);
+        const taskDate = new Date(task.time);
+        const hours = taskDate.getHours();
+        const minutes = taskDate.getMinutes();
+        const scheduledTime = new Date();
+        scheduledTime.setHours(hours, minutes, 0, 0);
+        const notifyAt = new Date(scheduledTime.getTime() - (schedule.user.notifyBeforeMinutes * 60000));
 
         const notificationData = [];
 

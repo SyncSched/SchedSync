@@ -100,7 +100,18 @@ export const createTask = async (
 
 function calculateNotificationTime(timeString: string, notifyBeforeMinutes: number): Date {
     const [hours, minutes] = timeString.split(':').map(Number);
-    const taskDateTime = new Date();
-    taskDateTime.setHours(hours, minutes, 0, 0);
-    return new Date(taskDateTime.getTime() - (notifyBeforeMinutes * 60000));
+    const localDateTime = new Date();
+    localDateTime.setHours(hours, minutes, 0, 0);
+    
+    // Convert to UTC
+    const utcDateTime = new Date(Date.UTC(
+        localDateTime.getFullYear(),
+        localDateTime.getMonth(),
+        localDateTime.getDate(),
+        localDateTime.getHours(),
+        localDateTime.getMinutes(),
+        0
+    ));
+    
+    return new Date(utcDateTime.getTime() - (notifyBeforeMinutes * 60000));
 }

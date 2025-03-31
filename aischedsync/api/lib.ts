@@ -30,8 +30,8 @@ export interface Schedule {
   export interface Task {
     id: string;
     name: string;
-    time: string;    // Time in "HH:MM" format
-    duration: number; // Duration in minutes
+    time: string;    // ISO format string
+    duration: number;
     scheduleId: string;
     isEmailEnabled: boolean;
     isWhatsAppEnabled: boolean;
@@ -270,5 +270,81 @@ export const updateSchedule = async (scheduleId: string, tasks: Task[]): Promise
   } catch (error) {
     console.error('Error updating schedule:', error);
     throw error;
+  }
+};
+
+export interface NotificationSettings {
+  isEmailEnabled: boolean;
+  isWhatsAppEnabled: boolean;
+  isTelegramEnabled: boolean;
+  isCallEnabled: boolean;
+}
+
+/**
+ * Updates the user's notification settings
+ */
+export const updateUserSettings = async (settings: NotificationSettings): Promise<void> => {
+  const token = getStoredAuthToken();
+  
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/user/settings`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(settings)
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to update settings');
+  }
+};
+
+/**
+ * Gets the user's settings
+ */
+export const getUserSettings = async (): Promise<UserSettings> => {
+  const token = getStoredAuthToken();
+  
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/user/settings`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch user settings');
+  }
+
+  return await response.json();
+};
+
+export const updateUserTimezone = async (timezone: string): Promise<void> => {
+  const token = getStoredAuthToken();
+  
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/user/timezone`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ timezone })
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to update timezone');
   }
 };
