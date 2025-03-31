@@ -3,6 +3,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import AnimatedBackground from '@/components/layout/AnimatedBackground';
 import './globals.css';
+import SessionWrapper  from '@/components/Session/SessionWrapper';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -18,13 +19,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <SessionWrapper>
+
       <body className={inter.className}>
-        <AnimatedBackground>
-          <Navbar />
+        
           {children}
-          <Footer />
-        </AnimatedBackground>
+      
       </body>
+      </SessionWrapper>
     </html>
   );
 }
