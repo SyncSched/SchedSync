@@ -10,7 +10,7 @@ import Header from './components/Header';
 import TaskList from './components/TaskList';
 import QuickTasks from './components/QuickTasks';
 import { recalculateTaskTimes } from './utils/taskUtils';
-import { isTaskActive, formatToHHMM, addMinutesToTime , formatTimeString } from '@/app/utils/dateUtils';
+import { isTaskActive, formatToHHMM } from '@/app/utils/dateUtils';
 import Goals from './components/Goals';
 
 export default function Home() {
@@ -108,8 +108,9 @@ export default function Home() {
         if (schedule && schedule.originalData) {
           setMainTasks(schedule.originalData);
         }
-      } catch (error) {
-        console.error('Error fetching schedule:', error);
+      } catch (err) { // Change 'error' to 'err' and use it
+        console.error('Error fetching schedule:', err);
+        showErrorToast('Failed to fetch schedule');
       } finally {
         setIsLoading(false);
       }
@@ -120,8 +121,9 @@ export default function Home() {
         try {
           const userData = await getCurrentUser();
           setUser(userData);
-        } catch (error) {
-          console.error('Failed to fetch user data:', error);
+        } catch (err) { // Change 'error' to 'err' and use it
+          console.error('Failed to fetch user data:', err);
+          showErrorToast('Failed to fetch user data');
         }
       }
     };
@@ -173,10 +175,11 @@ export default function Home() {
           // Then update the backend
           await updateSchedule(updatedTasks[0].scheduleId, updatedTasks);
           showSuccessToast('Schedule updated successfully');
-        } catch (error) {
+        } catch (err) {
           // If backend update fails, revert the state
           setMainTasks(tasksCopy);
           showErrorToast('Failed to save changes. Please try again.');
+          console.log(err)
         }
       } else if (sourceColumnType === targetColumnType && sourceColumnType === 'quick') {
         const newTasks = [...quickTasks];
@@ -309,6 +312,11 @@ export default function Home() {
       setSelectedTask(task);
       setIsEditModalOpen(true);
     }
+  };
+
+  const handleCloseModal = () => {
+    setIsEditModalOpen(false);
+    setSelectedTask(null);
   };
 
   const handleAddTask = async (e: React.FormEvent) => {
@@ -539,16 +547,16 @@ export default function Home() {
       </main>
 
       {/* Modals */}
-      {isEditModalOpen && (
+      {isEditModalOpen && selectedTask && ( // Add selectedTask check here
         <Modal
           title="Edit Task"
-          onClose={() => setIsEditModalOpen(false)}
+          onClose={handleCloseModal}
           size="md"
         >
           <TaskForm
             mode="edit"
             onSubmit={handleEditTaskSubmit}
-            onClose={() => setIsEditModalOpen(false)}
+            onClose={handleCloseModal}
             onDelete={() => setShowDeleteWarning(true)}
             initialTask={{
               name: selectedTask.name,

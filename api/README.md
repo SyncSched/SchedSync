@@ -30,3 +30,4 @@ To deploy migrations in a production environment, use:
 npm run migrate:production
 ```
 
+Update the Migrations guidlines for production

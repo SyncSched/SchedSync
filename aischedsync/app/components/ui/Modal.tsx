@@ -15,7 +15,7 @@ const Modal: React.FC<ModalProps> = ({ children, onClose, size = 'md', title }) 
     md: 'max-w-6xl',
     lg: 'max-w-9xl'
   };
-
+  console.log(title)
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 sm:p-6 lg:p-8">
       <motion.div
