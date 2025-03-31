@@ -1,6 +1,26 @@
 import Cookies from 'js-cookie';
-import { UserSettings } from '../../api/src/models/user.model';
-// /lib/api.ts
+
+export interface UserSettings {
+  timezone: string;
+  isEmailEnabled: boolean;
+  isWhatsAppEnabled: boolean;
+  isTelegramEnabled: boolean;
+  isCallEnabled: boolean;
+  notifyBeforeMinutes: number;
+  phoneNumber?: string | null;
+  telegramChatId?: string | null;
+  onboardingData?: {
+    profession: string;
+    hobbies: string[];
+    sleepingHours: number;
+    sleepingStart: string;
+    sleepingEnd: string;
+    workingHours: number;
+    workingStart: string;
+    workingEnd: string;
+  } | null;
+}
+
 export interface User {
     id?: string;
     email: string;
