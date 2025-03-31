@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { sendEmail } from "../utils/email";
+import { sendTelegram } from "../utils/telegram";
 import cron from 'node-cron';
 
 const prisma = new PrismaClient();
@@ -26,9 +27,7 @@ class WhatsAppNotifier implements NotificationService {
 
 class TelegramNotifier implements NotificationService {
   async send(to: string, _subject: string, message: string): Promise<boolean> {
-    // TODO: Implement Telegram notification
-    console.log(`Telegram notification to ${to}: ${message}`);
-    return true;
+    return sendTelegram(to, message);
   }
 }
 

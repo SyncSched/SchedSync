@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Sidebar from '../components/Sidebar';
-import { UserInfo, getCurrentUser, updateUserSettings, getUserSettings, NotificationSettings } from '@/api/lib';
+import { UserInfo, getCurrentUser, updateUserSettings, getUserSettings, NotificationSettings, getTelegramAuthLink } from '@/api/lib';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface ExtendedUserInfo extends UserInfo {
@@ -18,6 +18,7 @@ interface FormData {
     isCallEnabled: boolean;
     notifyBeforeMinutes: number;
     phoneNumber: string;
+    telegramChatId?: string;
   };
   onboardingData: {
     profession: string;
@@ -97,6 +98,7 @@ export default function Settings() {
           isCallEnabled: userSettingsData.isCallEnabled || false,
           notifyBeforeMinutes: userSettingsData.notifyBeforeMinutes || 15,
           phoneNumber: userSettingsData.phoneNumber || '',
+          telegramChatId: userSettingsData.telegramChatId || undefined,
         },
         onboardingData: {
           profession: userSettingsData.onboardingData?.profession || '',
@@ -185,6 +187,20 @@ export default function Settings() {
   const handleCancel = () => {
     setFormData(originalFormData);
     setIsEditing(false);
+  };
+
+  const handleTelegramConnect = async () => {
+    try {
+      if (!user?.id) {
+        throw new Error('User ID not found');
+      }
+
+      const { authLink } = await getTelegramAuthLink(user.id);
+      window.open(authLink, '_blank');
+    } catch (error) {
+      console.error('Error generating Telegram auth link:', error);
+      showToastMessage('Failed to generate Telegram link', 'error');
+    }
   };
 
   if (isLoading) {
@@ -302,6 +318,30 @@ export default function Settings() {
                     </div>
                   </div>
 
+                  <div className="p-3 md:p-8">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                      <div className="p-6">
+                        <div className="flex justify-between items-center mb-6">
+                          <h2 className="text-lg font-semibold text-gray-900">Get notified from Telegram</h2>
+                          <div className="flex flex-col items-end gap-1">
+                            <button
+                              onClick={handleTelegramConnect}
+                              disabled={!isEditing || !!formData.notificationPreferences.telegramChatId}
+                              className="px-4 py-2 text-sm rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-300"
+                            >
+                              {formData.notificationPreferences.telegramChatId ? 'Telegram Connected' : 'Connect Telegram'}
+                            </button>
+                            <span className="text-xs text-gray-500">
+                              {formData.notificationPreferences.telegramChatId 
+                                ? 'You will receive notifications from Telegram'
+                                : 'Click button to get notifications from Telegram'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Phone Number */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Phone Number</label>
@@ -407,7 +447,10 @@ export default function Settings() {
             </div>
           </div>
         </div>
+        
       </main>
+
+      {/* Telegram Connect Button */}
 
       {/* Toast Notification */}
       {showToast && (

@@ -5,7 +5,8 @@ import {
     getUpcomingNotifications, 
     updateNotificationTime, 
     deleteNotification 
-} from '../services/notification.service'
+} from '../services/notification.service';
+import { generateTelegramAuthLink } from '../utils/telegram';
 
 const prisma = new PrismaClient();
 
@@ -88,4 +89,18 @@ export const deleteNotificationHandler = async (
     } catch (error) {
         res.status(500).json({ error: "Failed to delete notification" });
     }
+};
+
+export const getTelegramAuthLink = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const authLink = generateTelegramAuthLink(userId);
+    
+    return res.json({ 
+      authLink,
+      expiresIn: '30 minutes'
+    });
+  } catch (error) {
+    return res.status(500).json({ error: "Error generating Telegram auth link" });
+  }
 };
