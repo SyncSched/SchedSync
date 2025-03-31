@@ -134,6 +134,9 @@ export const createSchedule = async (
       throw new Error('User not found');
     }
 
+    console.log("Node.js Timezone:", Intl.DateTimeFormat().resolvedOptions().timeZone);
+    console.log("Current UTC Time:", new Date().toISOString());
+
     // First, create the schedule with tasks
     const schedule = await tx.schedule.create({
       data: {
