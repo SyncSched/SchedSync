@@ -134,9 +134,6 @@ export const createSchedule = async (
       throw new Error('User not found');
     }
 
-    console.log("Node.js Timezone:", Intl.DateTimeFormat().resolvedOptions().timeZone);
-    console.log("Current UTC Time:", new Date().toISOString());
-
     // First, create the schedule with tasks
     const schedule = await tx.schedule.create({
       data: {
@@ -277,6 +274,9 @@ export const getSchedule = async (
     localStartTime: localStartTime.toISOString(),
     localEndTime: localEndTime.toISOString(),
   });
+
+  console.log("Node.js Timezone:", Intl.DateTimeFormat().resolvedOptions().timeZone);
+  console.log("Current UTC Time:", new Date().toISOString());
 
   // Find the schedule for the requested UTC date
   const schedule = await prisma.schedule.findFirst({
