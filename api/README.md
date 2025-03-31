@@ -30,4 +30,14 @@ To deploy migrations in a production environment, use:
 npm run migrate:production
 ```
 
-Update the Migrations guidlines for production
+## Important Alert
+Whenever you create an SQL command, **never unnecessarily drop tables or columns**, or else the migrations in production may fail.
+
+## Troubleshooting Production Migration Issues
+If migrations in production don’t work:
+1. Manually run the specific migration SQL command via:
+   ```bash
+   psql db_url_in_env_production
+   ```
+2. Navigate to the `prisma_migrations` table in the database and update the particular migration manually.
+
