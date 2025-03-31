@@ -2,12 +2,36 @@
 
 import { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
-import { UserInfo, getCurrentUser, UserSettings, updateUserSettings, getUserSettings } from '@/api/lib';
+import { UserInfo, getCurrentUser, updateUserSettings, getUserSettings , NotificationSettings } from '@/api/lib';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface ExtendedUserInfo extends UserInfo {
   notificationSettings?: NotificationSettings;
 }
+
+type FormData = {
+  timezone: string;
+  notificationPreferences: {
+    isEmailEnabled: boolean;
+    isWhatsAppEnabled: boolean;
+    isTelegramEnabled: boolean;
+    isCallEnabled: boolean;
+    notifyBeforeMinutes: number;
+    phoneNumber: string;
+  };
+  onboardingData: {
+    profession: string;
+    hobbies: string[];
+    sleepingHours: number;
+    sleepingStart: string;
+    sleepingEnd: string;
+    workingHours: number;
+    workingStart: string;
+    workingEnd: string;
+  };
+};
+
+type InputValue = string | boolean | number | string[];
 
 export default function Settings() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -54,57 +78,72 @@ export default function Settings() {
     setTimeout(() => setShowToast(false), 3000);
   };
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (isAuthenticated) {
-        try {
-          const userData = await getCurrentUser();
-          const userSettingsData = await getUserSettings();
-          setUser(userData as ExtendedUserInfo);
-          
-          // Initialize form data with current settings
-          const initialData = {
-            timezone: userSettingsData.timezone,
-            notificationPreferences: {
-              isEmailEnabled: userSettingsData.isEmailEnabled,
-              isWhatsAppEnabled: userSettingsData.isWhatsAppEnabled,
-              isTelegramEnabled: userSettingsData.isTelegramEnabled,
-              isCallEnabled: userSettingsData.isCallEnabled,
-              notifyBeforeMinutes: userSettingsData.notifyBeforeMinutes,
-              phoneNumber: userSettingsData.phoneNumber || '',
-            },
-            onboardingData: userSettingsData.onboardingData || {
-              profession: '',
-              hobbies: [],
-              sleepingHours: 8,
-              sleepingStart: '',
-              sleepingEnd: '',
-              workingHours: 8,
-              workingStart: '',
-              workingEnd: ''
-            }
-          };
-          
-          setFormData(initialData);
-          setOriginalFormData(initialData); // Store original data
-        } catch (err) {
-          console.error('Failed to fetch user data:', err);
-          showErrorToast('Failed to load user settings');
-        }
+  const fetchUserData = async () => {
+    if (isAuthenticated) {
+      try {
+        const userData = await getCurrentUser();
+        const userSettingsData = await getUserSettings();
+        setUser(userData as ExtendedUserInfo);
+        
+        const initialData = {
+          timezone: userSettingsData.timezone,
+          notificationPreferences: {
+            isEmailEnabled: userSettingsData.isEmailEnabled,
+            isWhatsAppEnabled: userSettingsData.isWhatsAppEnabled,
+            isTelegramEnabled: userSettingsData.isTelegramEnabled,
+            isCallEnabled: userSettingsData.isCallEnabled,
+            notifyBeforeMinutes: userSettingsData.notifyBeforeMinutes,
+            phoneNumber: userSettingsData.phoneNumber || '',
+          },
+          onboardingData: userSettingsData.onboardingData || {
+            profession: '',
+            hobbies: [],
+            sleepingHours: 8,
+            sleepingStart: '',
+            sleepingEnd: '',
+            workingHours: 8,
+            workingStart: '',
+            workingEnd: ''
+          }
+        };
+        
+        setFormData(initialData);
+        setOriginalFormData(initialData);
+      } catch (err) {
+        console.error('Failed to fetch user data:', err);
+        showErrorToast('Failed to load user settings');
       }
-    };
+    }
+  };
 
+  useEffect(() => {
     fetchUserData();
   }, [isAuthenticated]);
 
-  const handleInputChange = (section: string, field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section as keyof typeof prev],
-        [field]: value
+  const handleInputChange = (
+    section: keyof FormData,
+    field: string,
+    value: InputValue
+  ) => {
+    setFormData((prev) => {
+      // Special case for timezone since it's a string, not an object
+      if (section === 'timezone') {
+        return {
+          ...prev,
+          timezone: value as string
+        };
       }
-    }));
+
+      // For notificationPreferences and onboardingData
+      const sectionData = prev[section] as Record<string, InputValue>;
+      return {
+        ...prev,
+        [section]: {
+          ...sectionData,
+          [field]: value
+        }
+      };
+    });
   };
 
   const handleHobbiesChange = (hobbiesString: string) => {
@@ -120,10 +159,23 @@ export default function Settings() {
 
   const handleSubmit = async () => {
     try {
-      await updateUserSettings(formData);
+      const settingsData: NotificationSettings = {
+        timezone: formData.timezone,
+        isEmailEnabled: formData.notificationPreferences.isEmailEnabled,
+        isWhatsAppEnabled: formData.notificationPreferences.isWhatsAppEnabled,
+        isTelegramEnabled: formData.notificationPreferences.isTelegramEnabled,
+        isCallEnabled: formData.notificationPreferences.isCallEnabled,
+        notifyBeforeMinutes: formData.notificationPreferences.notifyBeforeMinutes,
+        phoneNumber: formData.notificationPreferences.phoneNumber,
+        onboardingData: formData.onboardingData
+      };
+
+      await updateUserSettings(settingsData);
+      await fetchUserData(); // Refresh the data after successful update
       showSuccessToast('Settings updated successfully');
       setIsEditing(false);
-    } catch (error) {
+    } catch (err) {
+      console.error('Failed to update settings:', err);
       showErrorToast('Failed to update settings');
     }
   };

@@ -1,5 +1,5 @@
 import { Task } from '@/api/lib';
-import { addMinutesToTime, getTimeDifferenceInMinutes, formatToHHMM } from './dateUtils';
+import {  getTimeDifferenceInMinutes } from './dateUtils';
 
 export const recalculateTaskTimes = (
   tasks: Task[],

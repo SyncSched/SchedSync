@@ -1,4 +1,5 @@
 import Cookies from 'js-cookie';
+import { UserSettings } from '../../api/src/models/user.model';
 // /lib/api.ts
 export interface User {
     id?: string;
@@ -274,10 +275,23 @@ export const updateSchedule = async (scheduleId: string, tasks: Task[]): Promise
 };
 
 export interface NotificationSettings {
+  timezone: string;
   isEmailEnabled: boolean;
   isWhatsAppEnabled: boolean;
   isTelegramEnabled: boolean;
   isCallEnabled: boolean;
+  notifyBeforeMinutes: number;
+  phoneNumber?: string;
+  onboardingData?: {
+    profession: string;
+    hobbies: string[];
+    sleepingHours: number;
+    sleepingStart: string;
+    sleepingEnd: string;
+    workingHours: number;
+    workingStart: string;
+    workingEnd: string;
+  };
 }
 
 /**
@@ -296,12 +310,26 @@ export const updateUserSettings = async (settings: NotificationSettings): Promis
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
     },
-    body: JSON.stringify(settings)
+    body: JSON.stringify({
+      timezone: settings.timezone,
+      notificationPreferences: {
+        isEmailEnabled: settings.isEmailEnabled,
+        isWhatsAppEnabled: settings.isWhatsAppEnabled,
+        isTelegramEnabled: settings.isTelegramEnabled,
+        isCallEnabled: settings.isCallEnabled,
+        notifyBeforeMinutes: settings.notifyBeforeMinutes,
+        phoneNumber: settings.phoneNumber
+      },
+      onboardingData: settings.onboardingData
+    })
   });
 
   if (!response.ok) {
-    throw new Error('Failed to update settings');
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to update settings');
   }
+
+  return await response.json();
 };
 
 /**
