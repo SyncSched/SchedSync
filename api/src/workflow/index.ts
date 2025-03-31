@@ -167,7 +167,7 @@ export const generateSchedule = async (data:string) => {
 2. **Do NOT explicitly include tasks like "Sleep Start" or "Go to Sleep."** Instead, generate tasks naturally until the user's sleep start time is reached.  
 3. Activities should be structured logically with appropriate time slots and durations.  
 4. Work hours must strictly follow the user’s professional schedule.  
-5. Personal hobbies, meals, and relaxation should be included in free time.  
+5. Personal hobbies, meals, and relaxation should be included in free time.   
 6. **NO overlapping time slots.**  
 7. The schedule should be balanced, ensuring productivity, breaks, and personal time.  
 8. The generated schedule should be **context-aware** and dynamically adapt based on retrieved context data.  
