@@ -396,3 +396,20 @@ export const updateUserTimezone = async (timezone: string): Promise<void> => {
     throw new Error('Failed to update timezone');
   }
 };
+
+export const getTelegramAuthLink = async (userId: string): Promise<{ authLink: string }> => {
+  const response = await fetch(`${API_URL}/users/${userId}/telegram-auth`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${getStoredAuthToken()}`
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to generate Telegram auth link');
+  }
+
+  return response.json();
+};

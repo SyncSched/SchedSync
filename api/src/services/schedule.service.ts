@@ -471,8 +471,13 @@ export const updateSchedule = async (
           where: { id: task.id },
           data: {
             name: task.name,
+            description: task.description,
+            notes: task.notes,
             time: task.time,
             duration: task.duration,
+            status: task.status,
+            priority: task.priority,
+            location: task.location,
             isEmailEnabled: task.isEmailEnabled,
             isWhatsAppEnabled: task.isWhatsAppEnabled,
             isTelegramEnabled: task.isTelegramEnabled,
@@ -484,8 +489,13 @@ export const updateSchedule = async (
         return tx.task.create({
           data: {
             name: task.name,
+            description: task.description,
+            notes: task.notes,
             time: task.time,
             duration: task.duration,
+            status: 'PENDING',
+            priority: task.priority,
+            location: task.location,
             isEmailEnabled: task.isEmailEnabled,
             isWhatsAppEnabled: task.isWhatsAppEnabled,
             isTelegramEnabled: task.isTelegramEnabled,
