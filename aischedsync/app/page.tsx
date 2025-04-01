@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { getTodaySchedule, updateSchedule, getCurrentUser, type UserInfo, type Task } from '../api/lib';
+import { getTodaySchedule, updateSchedule, getCurrentUser, updateUserTimezone, type UserInfo, type Task } from '../api/lib';
 import { useAuth } from '@/contexts/AuthContext';
 import Modal from './components/ui/Modal';
 import { TaskForm } from './components/TaskForm';
 import TaskList from './components/TaskList';
 import QuickTasks from './components/QuickTasks';
 import { recalculateTaskTimes } from './utils/taskUtils';
-import { isTaskActive, formatToHHMM, addMinutesToTime , formatTimeString } from '@/app/utils/dateUtils';
+import { isTaskActive, formatToHHMM } from '@/app/utils/dateUtils';
 import Goals from './components/Goals';
 
 interface NewTaskState {
@@ -42,21 +42,23 @@ export default function Home() {
   const [goals, setGoals] = useState<{ id: number; title: string; isCompleted: boolean; }[]>([]);
 
   useEffect(() => {
-    // Get timezone information
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const date = new Date();
-    const offset = date.getTimezoneOffset();
-    const offsetHours = Math.abs(Math.floor(offset / 60));
-    const offsetMinutes = Math.abs(offset % 60);
-    const offsetString = `${offset <= 0 ? '+' : '-'}${offsetHours.toString().padStart(2, '0')}:${offsetMinutes.toString().padStart(2, '0')}`;
+    const updateTimezoneInfo = async () => {
+      try {
+        // Get timezone information
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        
+        if (isAuthenticated) {
+          await updateUserTimezone(timezone);
+          console.log('✅ Timezone updated successfully:', timezone);
+        }
+      } catch (error) {
+        console.error('Failed to update timezone:', error);
+      }
+    };
 
-    console.log('🌍 Timezone Details:');
-    console.log('Timezone:', timezone);
-    console.log('UTC Offset:', offsetString);
-    console.log('Current Local Time:', date.toLocaleString());
-  }, []);
+    updateTimezoneInfo();
+  }, [isAuthenticated]); // Run when authentication state changes
 
-  // Add this useEffect after other useEffect hooks
   useEffect(() => {
     // Find the first active task
     const activeTask = mainTasks.find(task => isTaskActive(task.time, task.duration));
@@ -102,8 +104,9 @@ export default function Home() {
         if (schedule && schedule.originalData) {
           setMainTasks(schedule.originalData);
         }
-      } catch {
-        console.error('Error fetching schedule');
+      } catch (err) { // Change 'error' to 'err' and use it
+        console.error('Error fetching schedule:', err);
+        showErrorToast('Failed to fetch schedule');
       } finally {
         setIsLoading(false);
       }
@@ -114,8 +117,9 @@ export default function Home() {
         try {
           const userData = await getCurrentUser();
           setUser(userData);
-        } catch {
-          console.error('Failed to fetch user data');
+        } catch (err) { // Change 'error' to 'err' and use it
+          console.error('Failed to fetch user data:', err);
+          showErrorToast('Failed to fetch user data');
         }
       }
     };
@@ -167,10 +171,11 @@ export default function Home() {
           // Then update the backend
           await updateSchedule(updatedTasks[0].scheduleId, updatedTasks);
           showSuccessToast('Schedule updated successfully');
-        } catch {
+        } catch (err) {
           // If backend update fails, revert the state
           setMainTasks(tasksCopy);
           showErrorToast('Failed to save changes. Please try again.');
+          console.log(err)
         }
       } else if (sourceColumnType === targetColumnType && sourceColumnType === 'quick') {
         const newTasks = [...quickTasks];
@@ -303,6 +308,11 @@ export default function Home() {
       setSelectedTask(task);
       setIsEditModalOpen(true);
     }
+  };
+
+  const handleCloseModal = () => {
+    setIsEditModalOpen(false);
+    setSelectedTask(null);
   };
 
   const handleAddTask = async (e: React.FormEvent) => {
@@ -474,16 +484,16 @@ export default function Home() {
       </div>
 
       {/* Modals */}
-      {isEditModalOpen && (
+      {isEditModalOpen && selectedTask && ( // Add selectedTask check here
         <Modal
           title="Edit Task"
-          onClose={() => setIsEditModalOpen(false)}
+          onClose={handleCloseModal}
           size="md"
         >
           <TaskForm
             mode="edit"
             onSubmit={handleEditTaskSubmit}
-            onClose={() => setIsEditModalOpen(false)}
+            onClose={handleCloseModal}
             onDelete={() => setShowDeleteWarning(true)}
             initialTask={{
               name: selectedTask!.name,

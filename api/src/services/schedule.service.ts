@@ -1,7 +1,7 @@
 import { Prisma, PrismaClient, TaskStatus, Priority } from '@prisma/client';
 import { CreateScheduleInput, Task, Schedule } from '../models/schedule.model';
 import { createScheduleSchema } from '../validations/schedule.schema';
-import { toZonedTime } from 'date-fns-tz';
+import { toZonedTime, formatInTimeZone } from 'date-fns-tz';
 
 // Define the task select type
 const taskSelect = {
@@ -35,6 +35,11 @@ export type ScheduleWithRelations = Prisma.ScheduleGetPayload<{
 
 const prisma = new PrismaClient();
 
+function getTimezoneOffset(timezone: string, date: Date): number {
+  const localDate = new Date(date.toLocaleString('en-US', { timeZone: timezone }));
+  const utcDate = new Date(date.toLocaleString('en-US', { timeZone: 'UTC' }));
+  return (utcDate.getTime() - localDate.getTime()) / 60000; // Convert ms to minutes
+}
 
 async function createNotificationsForTask(taskId: string, userId: string, taskTime: string) {
   try {
@@ -227,9 +232,9 @@ export const createSchedule = async (
 
 
 export const getSchedule = async (
-  date: string,
+  date: string, // This is UTC date string from frontend
   userId: string,
-  timezoneOffset: number
+  timezoneOffset: number // Offset in minutes
 ): Promise<Partial<Schedule>> => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -244,35 +249,42 @@ export const getSchedule = async (
     throw new Error("Invalid date format received");
   }
 
-  // Parse the date string to create a Date object for the requested date
-  const requestedDate = new Date(date);
+ // Since frontend sends UTC time, this is already in UTC
+  const utcDate = new Date(date);
 
-  // Convert to user's local midnight by adjusting for timezone offset
-  // First, set the time to midnight (12:00 AM) in UTC
-  requestedDate.setUTCHours(0, 0, 0, 0);
+  // Calculate the start and end times in UTC
+  const utcStartTime = new Date(utcDate);
+  utcStartTime.setUTCHours(0, 0, 0, 0); // Start of UTC day
 
-  // timezoneoffset is -330 for ist i.e we need to add the timezoneoffset...
-  const userLocalMidnight = new Date(requestedDate.getTime() + (timezoneOffset * 60000));
+  const utcEndTime = new Date(utcDate);
+  utcEndTime.setUTCHours(23, 59, 59, 999); // End of UTC day (fixing 24:00 issue)
 
-  // Calculate the end of the day (12:00 AM of the next day in user's local timezone)
-  const nextDay = new Date(userLocalMidnight);
-  nextDay.setDate(nextDay.getDate() + 1); // Add one day to get the next midnight
+  // Determine user timezone and offset
+  const userTimezone = user.timezone || 'UTC';
+  const calculatedOffset = getTimezoneOffset(user.timezone, utcDate);
 
-  console.log('Date Range:', userLocalMidnight, nextDay, "Timezone Offset:", timezoneOffset);
+  // Convert to local time after adjusting for UTC
+  const localStartTime = new Date(utcStartTime.getTime() + calculatedOffset * 60000);
+  const localEndTime = new Date(utcEndTime.getTime() + calculatedOffset * 60000);
 
-  // Check if the user's local time is 12 AM (start of a new day)
-  const now = new Date();
-  const userLocalTime = new Date(now.getTime() - (timezoneOffset * 60000));
-  const isStartOfDay = userLocalTime.getHours() === 0 && 
-                       userLocalTime.getMinutes() < 5; // Give a small buffer of 5 minutes
+  console.log('Schedule Query Range:', {
+    userTimezone,
+    calculatedOffset,
+    date,
+    localStartTime: localStartTime.toISOString(),
+    localEndTime: localEndTime.toISOString(),
+  });
 
-  // Find the schedule for the requested date
+  console.log("Node.js Timezone:", Intl.DateTimeFormat().resolvedOptions().timeZone);
+  console.log("Current UTC Time:", new Date().toISOString());
+
+  // Find the schedule for the requested UTC date
   const schedule = await prisma.schedule.findFirst({
     where: {
       userId: userId,
       createdAt: {
-        gte: userLocalMidnight, // Start of the day in user's local timezone
-        lt: nextDay,            // End of the day in user's local timezone
+        gte: localStartTime, // 00:00 UTC
+        lt: localEndTime,    // 00:00 UTC next day
       },
     },
     include: {
@@ -280,7 +292,7 @@ export const getSchedule = async (
       originalData: {
         select: taskSelect,
         orderBy: {
-          time: 'asc'  // Sort tasks by time in ascending order
+          time: 'asc'
         }
       },
     },
@@ -312,7 +324,7 @@ export const getSchedule = async (
   }
 
   // If no schedule found and it's the start of a new day, we need to create one
-  if (!schedule && isStartOfDay) {
+  if (!schedule) {
     // Get the user's previous schedule to use as a template
     const previousSchedule = await prisma.schedule.findFirst({
       where: {
@@ -459,8 +471,13 @@ export const updateSchedule = async (
           where: { id: task.id },
           data: {
             name: task.name,
+            description: task.description,
+            notes: task.notes,
             time: task.time,
             duration: task.duration,
+            status: task.status,
+            priority: task.priority,
+            location: task.location,
             isEmailEnabled: task.isEmailEnabled,
             isWhatsAppEnabled: task.isWhatsAppEnabled,
             isTelegramEnabled: task.isTelegramEnabled,
@@ -472,8 +489,13 @@ export const updateSchedule = async (
         return tx.task.create({
           data: {
             name: task.name,
+            description: task.description,
+            notes: task.notes,
             time: task.time,
             duration: task.duration,
+            status: 'PENDING',
+            priority: task.priority,
+            location: task.location,
             isEmailEnabled: task.isEmailEnabled,
             isWhatsAppEnabled: task.isWhatsAppEnabled,
             isTelegramEnabled: task.isTelegramEnabled,

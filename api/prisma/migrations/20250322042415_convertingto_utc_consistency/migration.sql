@@ -1,9 +1,15 @@
-/*
-  Warnings:
+-- Step 1: Temporarily allow NULL values
+ALTER TABLE tasks ALTER COLUMN time DROP NOT NULL;
 
-  - Changed the type of `time` on the `tasks` table. No cast exists, the column would be dropped and recreated, which cannot be done if there is data, since the column is required.
+-- Step 2: Drop the existing column
+ALTER TABLE tasks DROP COLUMN time;
 
-*/
--- AlterTable
-ALTER TABLE "tasks" DROP COLUMN "time",
-ADD COLUMN     "time" TIMESTAMP(3) NOT NULL;
+-- Step 3: Add a new column with the correct type
+ALTER TABLE tasks ADD COLUMN time TIMESTAMP(3);
+
+-- Step 4: Restore the NOT NULL constraint
+ALTER TABLE tasks ALTER COLUMN time SET NOT NULL;
+
+
+
+-- I have done this migration MANUALLY because of inconsistencies
