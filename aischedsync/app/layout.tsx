@@ -169,8 +169,8 @@ function MainLayout({ children }: MainLayoutProps) {
     }
   };
 
-  // Don't show sidebar on login page
-  if (pathname === '/login') {
+  // Don't show sidebar and header on login and onboarding pages
+  if (pathname === '/login' || pathname === '/onboarding') {
     return <>{children}</>;
   }
 

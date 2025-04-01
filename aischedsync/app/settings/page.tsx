@@ -203,215 +203,314 @@ export default function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent"></div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-white overflow-hidden">
-
-      <main className="flex-1 overflow-auto w-full bg-gray-50">
-        <div className="max-w-5xl mx-auto p-4 md:p-8">
-          {/* Desktop Header - Enhanced */}
-          <div className="hidden md:flex items-center justify-between mb-8">
-
-          <div className="space-y-6 -mt-16">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <div className="flex gap-2">
-                    {isEditing ? (
-                      <>
-                        <button
-                          onClick={handleCancel}
-                          className="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors duration-200 font-medium"
-                          disabled={isSubmitting}
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={handleSubmit}
-                          className="px-5 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200 font-medium disabled:opacity-70"
-                          disabled={isSubmitting}
-                        >
-                          {isSubmitting ? (
-                            <span className="flex items-center gap-2">
-                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                              Saving...
-                            </span>
-                          ) : 'Save Changes'}
-                        </button>
-                      </>
+    <div className="min-h-screen -mt-[80px]">
+      <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+        
+        {/* Settings Card - Apple Style */}
+        <div className="bg-white backdrop-blur-xl bg-opacity-80 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-[#e2e2e7] overflow-hidden">
+          
+          {/* Card Body with Form Fields */}
+          <div className="p-8">
+            {/* Action Buttons at the top */}
+            <div className="flex justify-end mb-8">
+              {isEditing ? (
+                <>
+                  <button
+                    onClick={handleCancel}
+                    className="px-5 py-2.5 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors duration-200 font-medium text-sm flex items-center gap-1.5 mr-3"
+                    disabled={isSubmitting}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    className="px-5 py-2.5 rounded-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200 font-medium text-sm flex items-center gap-1.5 disabled:opacity-70 shadow-sm"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <span className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Saving...
+                      </span>
                     ) : (
-                      <button
-                        onClick={() => setIsEditing(true)}
-                        className="px-5 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200 font-medium"
-                      >
-                        Edit Settings
-                      </button>
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Save Changes
+                      </>
                     )}
-                  </div>
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="px-5 py-2.5 rounded-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200 font-medium text-sm flex items-center gap-1.5 shadow-sm"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                  Edit Settings
+                </button>
+              )}
+            </div>
+
+            <div className="space-y-10">
+              {/* Timezone Section */}
+              <div className="bg-[#f9f9fc] p-6 rounded-2xl border border-[#e8e8ed]">
+                <h3 className="text-md font-semibold text-gray-900 mb-5 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Time Zone Settings
+                </h3>
+                <div className="form-group">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Your Time Zone</label>
+                  <select
+                    disabled={!isEditing}
+                    value={formData.timezone}
+                    onChange={(e) => handleInputChange('timezone', '', e.target.value)}
+                    className="w-full rounded-xl border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-50 disabled:text-gray-500 transition-colors duration-200 h-11"
+                  >
+                    {Intl.supportedValuesOf('timeZone').map((tz) => (
+                      <option key={tz} value={tz}>{tz}</option>
+                    ))}
+                  </select>
+                  <p className="mt-2 text-xs text-gray-500">This will be used to schedule and display events in your local time</p>
                 </div>
+              </div>
 
-                {/* Form Fields */}
-                <div className="space-y-8">
-                  {/* Timezone Section */}
-                  <div className="form-group">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
-                    <select
-                      disabled={!isEditing}
-                      value={formData.timezone}
-                      onChange={(e) => handleInputChange('timezone', '', e.target.value)}
-                      className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-500 transition-colors duration-200"
-                    >
-                      {Intl.supportedValuesOf('timeZone').map((tz) => (
-                        <option key={tz} value={tz}>{tz}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-3">Notification Preferences</h3>
+              {/* Notification Section */}
+              <div className="bg-[#f9f9fc] p-6 rounded-2xl border border-[#e8e8ed]">
+                <h3 className="text-md font-semibold text-gray-900 mb-5 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                  Notification Settings
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Notification Preferences */}
+                  <div className="bg-white p-5 rounded-xl shadow-sm border border-[#e8e8ed]">
+                    <h4 className="text-sm font-medium text-gray-800 mb-4">Notification Channels</h4>
                     <div className="space-y-4">
                       {[
-                        ['isEmailEnabled', 'Email'],
-                        ['isWhatsAppEnabled', 'WhatsApp'],
-                        ['isTelegramEnabled', 'Telegram'],
-                        ['isCallEnabled', 'Phone Call']
-                      ].map(([key, label]) => (
-                        <div key={key} className="flex items-center">
-                          <input
-                            type="checkbox"
-                            disabled={!isEditing}
-                            checked={formData.notificationPreferences[key as keyof typeof formData.notificationPreferences] as boolean}
-                            onChange={(e) => handleInputChange('notificationPreferences', key, e.target.checked)}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                          />
-                          <label className="ml-2 text-sm text-gray-700">{label}</label>
+                        ['isEmailEnabled', 'Email', 'Receive email notifications for reminders and updates'],
+                        ['isWhatsAppEnabled', 'WhatsApp', 'Get instant messages via WhatsApp'],
+                        ['isTelegramEnabled', 'Telegram', 'Receive notifications through Telegram'],
+                        ['isCallEnabled', 'Phone Call', 'Get important reminders via phone call']
+                      ].map(([key, label, description]) => (
+                        <div key={key} className="flex items-start">
+                          <div className="flex items-center h-5">
+                            <input
+                              type="checkbox"
+                              disabled={!isEditing}
+                              checked={formData.notificationPreferences[key as keyof typeof formData.notificationPreferences] as boolean}
+                              onChange={(e) => handleInputChange('notificationPreferences', key, e.target.checked)}
+                              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                            />
+                          </div>
+                          <div className="ml-3 text-sm">
+                            <label className="font-medium text-gray-700">{label}</label>
+                            <p className="text-gray-500">{description}</p>
+                          </div>
                         </div>
                       ))}
                     </div>
+                    
+                    {/* Add Notify Before Minutes */}
+                    <div className="mt-6 pt-5 border-t border-gray-100">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Notification Timing
+                      </label>
+                      <div className="flex items-center px-3 py-2 bg-[#f9f9fc] rounded-lg">
+                        <span className="text-sm text-gray-600 mr-2">Notify</span>
+                        <select
+                          disabled={!isEditing}
+                          value={formData.notificationPreferences.notifyBeforeMinutes}
+                          onChange={(e) => handleInputChange('notificationPreferences', 'notifyBeforeMinutes', parseInt(e.target.value))}
+                          className="rounded-lg border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-50 text-sm"
+                        >
+                          {[5, 10, 15, 30, 60].map((mins) => (
+                            <option key={mins} value={mins}>{mins}</option>
+                          ))}
+                        </select>
+                        <span className="text-sm text-gray-600 ml-2">minutes before events</span>
+                      </div>
+                      <p className="mt-2 text-xs text-gray-500">How far in advance you&apos;ll receive notifications for your scheduled events</p>
+                    </div>
                   </div>
 
-                  <div className="p-3 md:p-8">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                      <div className="p-6">
-                        <div className="flex justify-between items-center mb-6">
-                          <h2 className="text-lg font-semibold text-gray-900">Get notified from Telegram</h2>
-                          <div className="flex flex-col items-end gap-1">
-                            <button
-                              onClick={handleTelegramConnect}
-                              disabled={!isEditing || !!formData.notificationPreferences.telegramChatId}
-                              className="px-4 py-2 text-sm rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-300"
-                            >
-                              {formData.notificationPreferences.telegramChatId ? 'Telegram Connected' : 'Connect Telegram'}
-                            </button>
-                            <span className="text-xs text-gray-500">
-                              {formData.notificationPreferences.telegramChatId 
-                                ? 'You will receive notifications from Telegram'
-                                : 'Click button to get notifications from Telegram'}
-                            </span>
+                  {/* Telegram Connection */}
+                  <div className="bg-white p-5 rounded-xl shadow-sm border border-[#e8e8ed]">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-800">Telegram Notifications</h4>
+                        <p className="text-xs text-gray-500 mt-1">Connect your Telegram account to receive instant notifications</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <button
+                          onClick={handleTelegramConnect}
+                          disabled={!isEditing || !!formData.notificationPreferences.telegramChatId}
+                          className={`px-3.5 py-1.5 text-xs rounded-full flex items-center gap-1 ${
+                            formData.notificationPreferences.telegramChatId 
+                              ? 'bg-green-50 text-green-700 border border-green-200' 
+                              : 'bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-gray-200 disabled:text-gray-400'
+                          }`}
+                        >
+                          {formData.notificationPreferences.telegramChatId ? (
+                            <>
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              Connected
+                            </>
+                          ) : (
+                            'Connect Telegram'
+                          )}
+                        </button>
+                        <span className="text-xs text-gray-500">
+                          {formData.notificationPreferences.telegramChatId 
+                            ? 'Your Telegram account is linked'
+                            : 'Link your account to get notifications'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Phone Number */}
+                    <div className="mt-6 pt-5 border-t border-gray-100">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                          </svg>
+                        </div>
+                        <input
+                          type="tel"
+                          disabled={!isEditing}
+                          value={formData.notificationPreferences.phoneNumber}
+                          onChange={(e) => handleInputChange('notificationPreferences', 'phoneNumber', e.target.value)}
+                          className="pl-10 w-full rounded-xl border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-50 text-sm h-11"
+                          placeholder="Enter your phone number"
+                        />
+                      </div>
+                      <p className="mt-2 text-xs text-gray-500">Used for WhatsApp and call notifications</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Personal Information Section */}
+              <div className="bg-[#f9f9fc] p-6 rounded-2xl border border-[#e8e8ed]">
+                <h3 className="text-md font-semibold text-gray-900 mb-5 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  Personal Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-5">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Profession</label>
+                      <input
+                        type="text"
+                        disabled={!isEditing}
+                        value={formData.onboardingData.profession}
+                        onChange={(e) => handleInputChange('onboardingData', 'profession', e.target.value)}
+                        className="w-full rounded-xl border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-50 text-sm h-11"
+                        placeholder="What do you do?"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Hobbies</label>
+                      <input
+                        type="text"
+                        disabled={!isEditing}
+                        value={formData.onboardingData.hobbies.join(', ')}
+                        onChange={(e) => handleInputChange('onboardingData', 'hobbies', e.target.value.split(',').map(h => h.trim()))}
+                        className="w-full rounded-xl border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-50 text-sm h-11"
+                        placeholder="Reading, Cooking, Sports, etc. (comma-separated)"
+                      />
+                      <p className="mt-2 text-xs text-gray-500">Separate multiple hobbies with commas</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-xl shadow-sm border border-[#e8e8ed]">
+                    <h4 className="text-lg font-medium text-gray-800 mb-6">Schedule Preferences</h4>
+                    
+                    <div className="space-y-8">
+                      {/* Working Hours */}
+                      <div>
+                        <label className="block text-base font-medium text-gray-700 mb-3">Working Hours</label>
+                        <div className="grid grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-sm text-gray-500 mb-2">Start Time</label>
+                            <div className="relative bg-[#f9f9fc] rounded-xl p-3 h-14 flex items-center">
+                              <input
+                                type="time"
+                                disabled={!isEditing}
+                                value={formData.onboardingData.workingStart}
+                                onChange={(e) => handleInputChange('onboardingData', 'workingStart', e.target.value)}
+                                className="appearance-none bg-transparent w-full border-none focus:ring-0 text-xl font-medium text-gray-800"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-sm text-gray-500 mb-2">End Time</label>
+                            <div className="relative bg-[#f9f9fc] rounded-xl p-3 h-14 flex items-center">
+                              <input
+                                type="time"
+                                disabled={!isEditing}
+                                value={formData.onboardingData.workingEnd}
+                                onChange={(e) => handleInputChange('onboardingData', 'workingEnd', e.target.value)}
+                                className="appearance-none bg-transparent w-full border-none focus:ring-0 text-xl font-medium text-gray-800"
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Phone Number */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Phone Number</label>
-                    <input
-                      type="time"
-                      disabled={!isEditing}
-                      value={formData.onboardingData.workingStart}
-                      onChange={(e) => handleInputChange('onboardingData', 'workingStart', e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Working End Time</label>
-                    <input
-                      type="time"
-                      disabled={!isEditing}
-                      value={formData.onboardingData.workingEnd}
-                      onChange={(e) => handleInputChange('onboardingData', 'workingEnd', e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    />
-                  </div>
-
-                  {/* Onboarding Data */}
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-3">Personal Information</h3>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">Profession</label>
-                        <input
-                          type="text"
-                          disabled={!isEditing}
-                          value={formData.onboardingData.profession}
-                          onChange={(e) => handleInputChange('onboardingData', 'profession', e.target.value)}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">Hobbies (comma-separated)</label>
-                        <input
-                          type="text"
-                          disabled={!isEditing}
-                          value={formData.onboardingData.hobbies.join(', ')}
-                          onChange={(e) => handleInputChange('onboardingData', 'hobbies', e.target.value.split(',').map(h => h.trim()))}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">Working Start Time</label>
-                          <input
-                            type="time"
-                            disabled={!isEditing}
-                            value={formData.onboardingData.workingStart}
-                            onChange={(e) => handleInputChange('onboardingData', 'workingStart', e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                          />
+                      
+                      {/* Sleep Schedule */}
+                      <div className="pt-6 border-t border-gray-100">
+                        <label className="block text-base font-medium text-gray-700 mb-3">Sleep Schedule</label>
+                        <div className="grid grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-sm text-gray-500 mb-2">Bedtime</label>
+                            <div className="relative bg-[#f9f9fc] rounded-xl p-3 h-14 flex items-center">
+                              <input
+                                type="time"
+                                disabled={!isEditing}
+                                value={formData.onboardingData.sleepingStart}
+                                onChange={(e) => handleInputChange('onboardingData', 'sleepingStart', e.target.value)}
+                                className="appearance-none bg-transparent w-full border-none focus:ring-0 text-xl font-medium text-gray-800"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-sm text-gray-500 mb-2">Wake Time</label>
+                            <div className="relative bg-[#f9f9fc] rounded-xl p-3 h-14 flex items-center">
+                              <input
+                                type="time"
+                                disabled={!isEditing}
+                                value={formData.onboardingData.sleepingEnd}
+                                onChange={(e) => handleInputChange('onboardingData', 'sleepingEnd', e.target.value)}
+                                className="appearance-none bg-transparent w-full border-none focus:ring-0 text-xl font-medium text-gray-800"
+                              />
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">Working End Time</label>
-                          <input
-                            type="time"
-                            disabled={!isEditing}
-                            value={formData.onboardingData.workingEnd}
-                            onChange={(e) => handleInputChange('onboardingData', 'workingEnd', e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">Sleeping Start Time</label>
-                          <input
-                            type="time"
-                            disabled={!isEditing}
-                            value={formData.onboardingData.sleepingStart}
-                            onChange={(e) => handleInputChange('onboardingData', 'sleepingStart', e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">Sleeping End Time</label>
-                          <input
-                            type="time"
-                            disabled={!isEditing}
-                            value={formData.onboardingData.sleepingEnd}
-                            onChange={(e) => handleInputChange('onboardingData', 'sleepingEnd', e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                          />
-                        </div>
+                        <p className="mt-3 text-sm text-gray-500">We use this to avoid scheduling during your sleep hours</p>
                       </div>
                     </div>
                   </div>
@@ -421,15 +520,23 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
-      </div>
-      </main>
 
+      {/* Toast Notification - Apple Style */}
       {showToast && (
         <div 
-          className={`fixed bottom-4 right-4 px-4 py-2 rounded-lg text-white ${
-            toastType === 'success' ? 'bg-green-500' : 'bg-red-500'
-          } transition-opacity duration-300`}
+          className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 px-5 py-3.5 rounded-full text-white shadow-lg flex items-center gap-2 ${
+            toastType === 'success' ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gradient-to-r from-red-500 to-red-600'
+          } transition-all duration-300 z-50 backdrop-blur-sm bg-opacity-90`}
         >
+          {toastType === 'success' ? (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+          )}
           {toastMessage}
         </div>
       )}
