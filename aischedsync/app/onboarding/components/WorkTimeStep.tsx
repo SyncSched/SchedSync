@@ -161,7 +161,7 @@ const WorkTimeStep: React.FC<WorkTimeStepProps> = ({ value, onChange }) => {
               <TimeInput
                 value={convertStringTimeToDate(value.workingStart)}
                 onChange={handleStartTimeChange}
-                className="w-full"
+                className="w-full bg-[#eef2ff] text-[#6366f2] border-0"
               />
               
               {/* Quick Select Times */}
@@ -171,8 +171,7 @@ const WorkTimeStep: React.FC<WorkTimeStepProps> = ({ value, onChange }) => {
                     key={time}
                     onClick={() => handleQuickSelect(time)}
                     className="px-3 py-2 rounded-xl text-sm font-medium
-                      bg-gradient-to-r from-indigo-50 to-purple-50
-                      text-indigo-600 hover:from-indigo-100 hover:to-purple-100
+                      bg-[#eef2ff] text-[#6366f2] hover:bg-[#e4e7ff]
                       transition-all duration-200"
                   >
                     {time}
@@ -183,16 +182,15 @@ const WorkTimeStep: React.FC<WorkTimeStepProps> = ({ value, onChange }) => {
           </div>
 
           {/* Work End Time Preview */}
-          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg py-4  flex items-center justify-between
-            sm:h-[52px] my-auto">
-            <div className="flex ml-2 mt-2 mb-2 mr-2 items-center gap-2">
-              <Sun className="w-5 h-5 text-amber-500" />
-              <span className="text-sm sm:text-base font-semibold text-gray-900">
-                Work end time
+          <div className="space-y-3">
+            <label className="text-base font-semibold text-gray-900 flex items-center gap-2">
+              <Sun className="w-4 h-4" />
+              Work End
+            </label>
+            <div className="flex items-center h-[52px] px-3 rounded-lg border border-gray-200 bg-white">
+              <span className="text-base sm:text-lg font-semibold text-gray-900">
+                {formatTime(convertStringTimeToDate(value.workingEnd))}
               </span>
-            </div>
-            <div className="text-base  sm:text-lg font-bold text-indigo-600">
-              {formatTime(convertStringTimeToDate(value.workingEnd))}
             </div>
           </div>
           
