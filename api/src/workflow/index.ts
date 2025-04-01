@@ -163,31 +163,40 @@ export const generateSchedule = async (data:string) => {
       Generate a complete daily schedule based on the provided user data, context, and profession. The schedule must align with the user's work hours, personal preferences, and hobbies while ensuring a well-balanced routine.  
 
 ### **Schedule Requirements:**  
-1. The schedule must **cover all available hours except sleep time**, strictly following the user’s sleeping hours from the provided user data.  
-2. **Do NOT explicitly include tasks like "Sleep Start" or "Go to Sleep."** Instead, generate tasks naturally until the user's sleep start time is reached.  
-3. Activities should be structured logically with appropriate time slots and durations.  
-4. Work hours must strictly follow the user’s professional schedule.  
-5. Personal hobbies, meals, and relaxation should be included in free time.  
-6. **NO overlapping time slots.**  
-7. The schedule should be balanced, ensuring productivity, breaks, and personal time.  
-8. The generated schedule should be **context-aware** and dynamically adapt based on retrieved context data.  
-9. **All activity durations must be at least 1 minute to ensure valid JSON output.**  
+1. The schedule must **cover all available hours except sleep time**, strictly following the user's sleeping hours from the provided user data.  
+2. **Do NOT explicitly include tasks like "Sleep Start" or "Go to Sleep."**
+3. Each task must have a **reasonable duration**:
+   - Work sessions: Maximum 180 minutes (3 hours) before a break
+   - Meals: 15-60 minutes
+   - Breaks: 15-30 minutes
+   - Other activities: Maximum 120 minutes
+4. Work hours must be divided into focused sessions with breaks in between
+5. Include standard daily activities like meals, commute, and personal care
+6. **STRICT: NO OVERLAPPING TIMES - Each task must end before the next begins**
+7. **STRICT: Calculate end time (start time + duration) before assigning the next task**
+8. The schedule should be balanced between work, breaks, and personal time
+9. **All durations must be between 1 and 180 minutes**
+10. Ensure proper meal times: breakfast (6-9 AM), lunch (12-2 PM), dinner (6-8 PM)
 
 ### **Output Format:**  
-The response must be a **valid JSON array** with each entry containing:  
-- "name": The name of the activity.  
-- "time": The start time in **HH:MM** format (24-hour format).  
-- "duration": The duration in **minutes** (must be **at least 1 minute**).  
+Return a JSON array where each object MUST contain:
+- "name": Activity name (string)
+- "time": Start time (HH:mm format, 24-hour)
+- "duration": Length in minutes (integer between 1-180)
 
-### **Strict Output Rules:**  
-1. **Return ONLY the JSON array**. Do NOT include explanations, reasoning, or additional text.  
-2. Ensure valid JSON syntax.  
-3. The schedule must be **fully structured**, covering all available hours **except sleep time**, strictly following the user's **sleep start and sleep end time** from the provided user data.  
-4. **Ensure all durations are at least 1 minute to avoid validation errors.**  
-5. **Do NOT explicitly add sleep-related tasks. Instead, generate tasks naturally until sleep start time.**  
-6. Each generated schedule must be unique and tailored to the user's data and retrieved context.  
+### **Validation Rules:**  
+1. For each task, verify: next_task.time >= (current_task.time + current_task.duration)
+2. No single task duration > 180 minutes
+3. No gaps between tasks (next task starts when previous ends)
+4. Time format must be "HH:mm" (e.g., "09:00", "14:30")
+5. All times must be chronologically ordered
+6. Duration must be a positive integer
 
-**Return only the JSON array and nothing else.**
+### **Example of Correct Time Calculation:**
+If Task A: {time: "09:00", duration: 30}
+Then Task B must have: {time: "09:30"} or later
+
+**Return ONLY the JSON array with no additional text or explanation.**
 
 
       `;

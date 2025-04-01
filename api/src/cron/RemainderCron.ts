@@ -27,7 +27,9 @@ class WhatsAppNotifier implements NotificationService {
 
 class TelegramNotifier implements NotificationService {
   async send(to: string, _subject: string, message: string): Promise<boolean> {
-    return sendTelegram(to, message);
+    console.log(`Telegram Notifications to ${to}: ${message}`);
+    return true;
+    // return sendTelegram(to, message);
   }
 }
 
