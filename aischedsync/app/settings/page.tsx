@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import Sidebar from '../components/Sidebar';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { UserInfo, getCurrentUser, updateUserSettings, getUserSettings, NotificationSettings, getTelegramAuthLink } from '@/api/lib';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -67,14 +66,14 @@ export default function SettingsPage() {
   const [originalFormData, setOriginalFormData] = useState<FormData>(defaultFormData);
   const isMounted = useRef(false);
 
-  const showToastMessage = (message: string, type: 'success' | 'error') => {
+  const showToastMessage = useCallback((message: string, type: 'success' | 'error') => {
     setToastMessage(message);
     setToastType(type);
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
-  };
+  }, []); // Empty dependency array since it only uses setState functions which are stable
 
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     if (!isAuthenticated || !isMounted.current) return;
 
     try {
@@ -121,7 +120,7 @@ export default function SettingsPage() {
         setIsLoading(false);
       }
     }
-  };
+  }, [isAuthenticated, showToastMessage]);
 
   useEffect(() => {
     isMounted.current = true;
@@ -133,7 +132,7 @@ export default function SettingsPage() {
     return () => {
       isMounted.current = false;
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchUserData]);
 
   const handleInputChange = (
     section: keyof FormData,

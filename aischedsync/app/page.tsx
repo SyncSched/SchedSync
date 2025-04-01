@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { getTodaySchedule, updateSchedule, getCurrentUser, updateUserTimezone, type UserInfo, type Task } from '../api/lib';
+import { getTodaySchedule, updateSchedule, updateUserTimezone, type Task } from '../api/lib';
 import { useAuth } from '@/contexts/AuthContext';
 import Modal from './components/ui/Modal';
 import { TaskForm } from './components/TaskForm';
@@ -11,15 +11,6 @@ import { recalculateTaskTimes } from './utils/taskUtils';
 import { isTaskActive, formatToHHMM } from '@/app/utils/dateUtils';
 import Goals from './components/Goals';
 
-interface NewTaskState {
-  name: string;
-  time: string;
-  duration: number;
-  isEmailEnabled: boolean;
-  isWhatsAppEnabled: boolean;
-  isTelegramEnabled: boolean;
-  isCallEnabled: boolean;
-}
 
 export default function Home() {
   const [mainTasks, setMainTasks] = useState<Task[]>([]);
@@ -29,8 +20,8 @@ export default function Home() {
     { id: 2, title: "Review PRs", time: "4:30 PM" }
   ]);
 
-  const [user, setUser] = useState<UserInfo | null>(null);
-  const { isAuthenticated, logout } = useAuth();
+  // const [user, setUser] = useState<UserInfo | null>(null);
+  const { isAuthenticated } = useAuth();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [showDeleteWarning, setShowDeleteWarning] = useState(false);
@@ -73,18 +64,6 @@ export default function Home() {
     }
   }, [mainTasks]); // Re-run when tasks change
 
-  // Add these new state variables at the top with other state declarations
-  const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
-
-  const [newTask, setNewTask] = useState<NewTaskState>({
-    name: '',
-    time: '',
-    duration: 30,
-    isEmailEnabled: false,
-    isWhatsAppEnabled: false,
-    isTelegramEnabled: false,
-    isCallEnabled: false
-  });
 
   interface TaskFormData {
     name: string;
@@ -112,20 +91,8 @@ export default function Home() {
       }
     };
 
-    const fetchUser = async () => {
-      if (isAuthenticated) {
-        try {
-          const userData = await getCurrentUser();
-          setUser(userData);
-        } catch (err) { // Change 'error' to 'err' and use it
-          console.error('Failed to fetch user data:', err);
-          showErrorToast('Failed to fetch user data');
-        }
-      }
-    };
-
     fetchData();
-    fetchUser();
+    // fetchUser();
   }, [isAuthenticated]);
 
   const handleDragStart = (e: React.DragEvent, columnType: 'main' | 'quick', index: number) => {
@@ -313,106 +280,6 @@ export default function Home() {
   const handleCloseModal = () => {
     setIsEditModalOpen(false);
     setSelectedTask(null);
-  };
-
-  const handleAddTask = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const scheduleId = mainTasks[0]?.scheduleId || '';
-      
-      let taskTime: string;
-      const now = new Date();
-      
-      if (mainTasks.length > 0) {
-        // If there are existing tasks, set time after the last task
-        const lastTask = mainTasks[mainTasks.length - 1];
-        console.log(lastTask)
-        const lastTaskTime = new Date(lastTask.time);
-        const lastTaskEndTime = new Date(lastTaskTime.getTime() + (lastTask.duration * 60000));
-        taskTime = lastTaskEndTime.toISOString();
-      } else {
-        // If no tasks, handle the new task time
-        if (newTask.time) {
-          // Handle both 24-hour and 12-hour formats
-          let hours: number;
-          let minutes: number;
-          
-          if (newTask.time.includes('AM') || newTask.time.includes('PM')) {
-            // 12-hour format
-            const [timeStr, period] = newTask.time.split(' ');
-            const [h, m] = timeStr.split(':').map(Number);
-            hours = h;
-            minutes = m;
-            
-            if (period === 'PM' && hours !== 12) {
-              hours += 12;
-            } else if (period === 'AM' && hours === 12) {
-              hours = 0;
-            }
-          } else {
-            // 24-hour format
-            [hours, minutes] = newTask.time.split(':').map(Number);
-          }
-
-          const selectedTime = new Date();
-          selectedTime.setHours(hours, minutes, 0, 0);
-          
-          // If the time is in the past, move it to tomorrow
-          if (selectedTime < now) {
-            selectedTime.setDate(selectedTime.getDate() + 1);
-          }
-          taskTime = selectedTime.toISOString();
-        } else {
-          // Round current time to nearest 5 minutes
-          const roundedMinutes = Math.ceil(now.getMinutes() / 5) * 5;
-          now.setMinutes(roundedMinutes, 0, 0);
-          taskTime = now.toISOString();
-        }
-      }
-
-      // Create new task
-      const newTaskObject: Task = {
-        id: `temp-${Date.now()}`,
-        name: newTask.name,
-        time: taskTime,
-        duration: Number(newTask.duration),
-        scheduleId: scheduleId,
-        isEmailEnabled: newTask.isEmailEnabled,
-        isWhatsAppEnabled: newTask.isWhatsAppEnabled,
-        isTelegramEnabled: newTask.isTelegramEnabled,
-        isCallEnabled: newTask.isCallEnabled
-      };
-
-      const updatedTasks = [...mainTasks, newTaskObject];
-      await updateSchedule(scheduleId, updatedTasks);
-
-      const latestSchedule = await getTodaySchedule();
-      if (latestSchedule && latestSchedule.originalData) {
-        setMainTasks(latestSchedule.originalData);
-      }
-
-      setIsAddTaskModalOpen(false);
-      showSuccessToast('Task added successfully!');
-      setNewTask({
-        name: '',
-        time: '',
-        duration: 30,
-        isEmailEnabled: false,
-        isWhatsAppEnabled: false,
-        isTelegramEnabled: false,
-        isCallEnabled: false
-      });
-    } catch (error) {
-      console.error('Error adding task:', error);
-      showErrorToast('Failed to add task');
-    }
-  };
-
-  const handleNotificationChange = (setting: keyof NewTaskState) => {
-    setNewTask(prev => ({
-      ...prev,
-      [setting]: !prev[setting]
-    }));
   };
 
   const handleGoalAdd = (title: string) => {
