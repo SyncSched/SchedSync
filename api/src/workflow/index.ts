@@ -79,7 +79,8 @@ const genAI = new GoogleGenerativeAI(GEMINI_API_KEY!);
 
 async function callGeminiAPI(prompt: string) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Use Gemini 2.0 Flash
+    // const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Use Gemini 2.0 Flash
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" }); 
 
     const response = await model.generateContent(prompt);
     const result = await response.response;
@@ -92,7 +93,11 @@ async function callGeminiAPI(prompt: string) {
 }
 
 
-export const storeDailySchedules = async (userId: string, scheduleData: string) => {
+export const storeDailySchedules = async (
+  userId: string, 
+  scheduleData: string,
+  user: any // Replace 'any' with your User type
+) => {
   try {
     const pinecone = new PineconeManager("rag-index");
     const embeddingsManager = new EmbeddingManager();
@@ -101,13 +106,22 @@ export const storeDailySchedules = async (userId: string, scheduleData: string) 
     // Check if schedule exists for today
     const vectorStore = pinecone.getVectorStore();
     const today = new Date().toISOString().split('T')[0];
-    const existingSchedules = await vectorStore.similaritySearch(
-      `userId:${userId} date:${today}`,
-      1
+    // We should search based on the actual schedule content
+    const existingSchedules = await vectorStore.similaritySearchWithScore(
+      scheduleData,  // Search using the actual schedule content
+      1,
+      {
+        userId: userId,
+        date: today,
+        type: 'daily_schedule',
+      }
     );
-
+    
+    // existingSchedules will be an array of tuples: [document, score]
+    // Example usage:
     if (existingSchedules.length > 0) {
-      console.log(`Schedule already exists for user ${userId} on ${today}`);
+      const [doc, score] = existingSchedules[0];
+      console.log(`Schedule already exists for user ${userId} on ${today} with similarity score: ${score}`);
       return false;
     }
 
@@ -117,10 +131,23 @@ export const storeDailySchedules = async (userId: string, scheduleData: string) 
       metadata: {
         userId: userId,
         date: today,
+        dayOfWeek: new Date().toLocaleDateString('en-US', { weekday: 'long' }), // e.g., "Monday"
         type: 'daily_schedule',
-        source: 'user_schedule' // Added required source property
+        source: 'user_schedule',
+        // User-specific context
+        profession: user.onboardingData?.profession,
+        workingHours: user.onboardingData?.workingHours,
+        workingStart: user.onboardingData?.workingStart,
+        workingEnd: user.onboardingData?.workingEnd,
+        sleepingHours: user.onboardingData?.sleepingHours,
+        sleepingStart: user.onboardingData?.sleepingStart,
+        sleepingEnd: user.onboardingData?.sleepingEnd,
+        timezone: user.timezone,
+        // Additional context
+        isWorkday: !['Saturday', 'Sunday'].includes(new Date().toLocaleDateString('en-US', { weekday: 'long' })),
       }
     });
+
 
     // Store the document
     await pinecone.upsertDocuments(
@@ -137,100 +164,87 @@ export const storeDailySchedules = async (userId: string, scheduleData: string) 
 };
 
 
-export const generateSchedule = async (data:string) => {
-  try{
-      // 3. Initialize Pinecone
-      console.log("starting...")
-      const pinecone = new PineconeManager("rag-index");
+export const generateSchedule = async ( user: any) => {
+  try {
+    console.log("starting...")
+    const pinecone = new PineconeManager("rag-index");
+    const embeddingsManager = new EmbeddingManager();
+    await pinecone.initializeVectorStore(embeddingsManager.getEmbeddingsModel());
+    console.log("vector db pinecone setup complete");
+    const vectorStore = pinecone.getVectorStore();
+    // Customize retriever to get more relevant documents
+    const retriever = vectorStore.asRetriever({
+      k: 5,
+      // filter: {
+      //   userId: user.id,
+      //   profession: user.onboardingData?.profession,
+      //   dayOfWeek: new Date().toLocaleDateString('en-US', { weekday: 'long' })
+      // }
+    });
+    console.log("got retreiver");
+    const question = `
+      Generate a complete daily schedule for a ${user.onboardingData?.profession} on ${new Date().toLocaleDateString('en-US', { weekday: 'long' })}.
       
-      
-      //3.5 Initialzie Embedders
-      const embeddingsManager = new EmbeddingManager();
-      await pinecone.initializeVectorStore(embeddingsManager.getEmbeddingsModel());
-      console.log("vector db pinecone setup complete")
-      // await pinecone.upsertDocuments(
-      //   docs,
-      //   embeddingsManager.getEmbeddingsModel()
-      // );
-      const vectorStore = pinecone.getVectorStore();
-      const retriever = vectorStore.asRetriever();
-  
-      console.log("got retreiver");
-  
-  
-      const question = `
+      ### **User Profile:**
+      - Profession: ${user.onboardingData?.profession}
+      - Working Hours: ${user.onboardingData?.workingHours} hours (${user.onboardingData?.workingStart} - ${user.onboardingData?.workingEnd})
+      - Sleeping Hours: ${user.onboardingData?.sleepingHours} hours (${user.onboardingData?.sleepingStart} - ${user.onboardingData?.sleepingEnd})
+      - Timezone: ${user.timezone}
+      - Hobbies: ${user.onboardingData?.hobbies.join(', ')}
 
-      Generate a complete daily schedule based on the provided user data, context, and profession. The schedule must align with the user's work hours, personal preferences, and hobbies while ensuring a well-balanced routine.  
+      ### **Schedule Requirements:**  
+      1. The schedule must **cover all available hours except sleep time**, strictly following the user's sleeping hours from ${user.onboardingData?.sleepingStart} to ${user.onboardingData?.sleepingEnd}.  
+      2. **Do NOT explicitly include tasks like "Sleep Start" or "Go to Sleep."**
+      3. Each task must have a **reasonable duration**:
+         - Work sessions: Maximum 180 minutes (3 hours) before a break
+         - Meals: 15-60 minutes
+         - Breaks: 15-30 minutes
+         - Other activities: Maximum 120 minutes
+      4. Work hours must be scheduled between ${user.onboardingData?.workingStart} - ${user.onboardingData?.workingEnd}
+      5. Include standard daily activities like meals, commute, and personal care
+      6. **STRICT: NO OVERLAPPING TIMES - Each task must end before the next begins**
+      7. **STRICT: Calculate end time (start time + duration) before assigning the next task**
+      8. The schedule should be balanced between work, breaks, and personal time
+      9. **All durations must be between 1 and 180 minutes**
+      10. Ensure proper meal times: breakfast (6-9 AM), lunch (12-2 PM), dinner (6-8 PM)
 
-### **Schedule Requirements:**  
-1. The schedule must **cover all available hours except sleep time**, strictly following the user's sleeping hours from the provided user data.  
-2. **Do NOT explicitly include tasks like "Sleep Start" or "Go to Sleep."**
-3. Each task must have a **reasonable duration**:
-   - Work sessions: Maximum 180 minutes (3 hours) before a break
-   - Meals: 15-60 minutes
-   - Breaks: 15-30 minutes
-   - Other activities: Maximum 120 minutes
-4. Work hours must be divided into focused sessions with breaks in between
-5. Include standard daily activities like meals, commute, and personal care
-6. **STRICT: NO OVERLAPPING TIMES - Each task must end before the next begins**
-7. **STRICT: Calculate end time (start time + duration) before assigning the next task**
-8. The schedule should be balanced between work, breaks, and personal time
-9. **All durations must be between 1 and 180 minutes**
-10. Ensure proper meal times: breakfast (6-9 AM), lunch (12-2 PM), dinner (6-8 PM)
+      ### **Output Format:**  
+      Return a JSON array where each object MUST contain:
+      - "name": Activity name (string)
+      - "time": Start time (HH:mm format, 24-hour)
+      - "duration": Length in minutes (integer between 1-180)
 
-### **Output Format:**  
-Return a JSON array where each object MUST contain:
-- "name": Activity name (string)
-- "time": Start time (HH:mm format, 24-hour)
-- "duration": Length in minutes (integer between 1-180)
+      ### **Validation Rules:**  
+      1. For each task, verify: next_task.time >= (current_task.time + current_task.duration)
+      2. No single task duration > 180 minutes
+      3. No gaps between tasks (next task starts when previous ends)
+      4. Time format must be "HH:mm" (e.g., "09:00", "14:30")
+      5. All times must be chronologically ordered
+      6. Duration must be a positive integer
 
-### **Validation Rules:**  
-1. For each task, verify: next_task.time >= (current_task.time + current_task.duration)
-2. No single task duration > 180 minutes
-3. No gaps between tasks (next task starts when previous ends)
-4. Time format must be "HH:mm" (e.g., "09:00", "14:30")
-5. All times must be chronologically ordered
-6. Duration must be a positive integer
+      **Return ONLY the JSON array with no additional text or explanation.**
+    `;
 
-### **Example of Correct Time Calculation:**
-If Task A: {time: "09:00", duration: 30}
-Then Task B must have: {time: "09:30"} or later
+    const chain = RunnableSequence.from([
+      retriever,
+      formatDocumentsAsString,
+      async (context: string) => {
+        const prompt = `
+          Context: ${context}
+                    
+          Question: ${question}
+        `.trim();
+         console.log(prompt)
+        return await callGeminiAPI(prompt);
+      },
+    ]);
 
-**Return ONLY the JSON array with no additional text or explanation.**
+    const result = await chain.invoke(question);
+    console.log(result);
+    return result;
 
-
-      `;
-      
-      const chain = RunnableSequence.from([
-        retriever, // Fetch relevant documents
-        formatDocumentsAsString, // Convert docs into a string format for context
-        async (context: string) => {
-          // Predefined question
-  
-          // Construct the prompt with Context, User Data, and Question
-          const prompt = `
-            Context: ${context}
-            
-            User Data: ${data}
-            
-            Question: ${question}
-          `.trim(); // Trim removes extra whitespace
-          console.log(prompt)
-          // Send the prompt to the DeepSeek API
-          // return await callDeepSeekAPI(prompt);
-          // return await callOpenAIAPI(prompt);
-          return await callGeminiAPI(prompt);
-        },
-      ]);
-    
-      
-      const result = await chain.invoke(question);
-      console.log("Answer:", result);
-
-      return result;
-    
-  }catch(err){
-    console.log("Problem in Schedule generation via RAG",err);
+  } catch(err) {
+    console.log("Problem in Schedule generation via RAG", err);
   }
 }
 
