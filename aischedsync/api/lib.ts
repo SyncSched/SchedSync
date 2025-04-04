@@ -1,5 +1,26 @@
 import Cookies from 'js-cookie';
-// /lib/api.ts
+
+export interface UserSettings {
+  timezone: string;
+  isEmailEnabled: boolean;
+  isWhatsAppEnabled: boolean;
+  isTelegramEnabled: boolean;
+  isCallEnabled: boolean;
+  notifyBeforeMinutes: number;
+  phoneNumber?: string | null;
+  telegramChatId?: string | null;
+  onboardingData?: {
+    profession: string;
+    hobbies: string[];
+    sleepingHours: number;
+    sleepingStart: string;
+    sleepingEnd: string;
+    workingHours: number;
+    workingStart: string;
+    workingEnd: string;
+  } | null;
+}
+
 export interface User {
     id?: string;
     email: string;
@@ -274,10 +295,23 @@ export const updateSchedule = async (scheduleId: string, tasks: Task[]): Promise
 };
 
 export interface NotificationSettings {
+  timezone: string;
   isEmailEnabled: boolean;
   isWhatsAppEnabled: boolean;
   isTelegramEnabled: boolean;
   isCallEnabled: boolean;
+  notifyBeforeMinutes: number;
+  phoneNumber?: string;
+  onboardingData?: {
+    profession: string;
+    hobbies: string[];
+    sleepingHours: number;
+    sleepingStart: string;
+    sleepingEnd: string;
+    workingHours: number;
+    workingStart: string;
+    workingEnd: string;
+  };
 }
 
 /**
@@ -296,12 +330,26 @@ export const updateUserSettings = async (settings: NotificationSettings): Promis
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
     },
-    body: JSON.stringify(settings)
+    body: JSON.stringify({
+      timezone: settings.timezone,
+      notificationPreferences: {
+        isEmailEnabled: settings.isEmailEnabled,
+        isWhatsAppEnabled: settings.isWhatsAppEnabled,
+        isTelegramEnabled: settings.isTelegramEnabled,
+        isCallEnabled: settings.isCallEnabled,
+        notifyBeforeMinutes: settings.notifyBeforeMinutes,
+        phoneNumber: settings.phoneNumber
+      },
+      onboardingData: settings.onboardingData
+    })
   });
 
   if (!response.ok) {
-    throw new Error('Failed to update settings');
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to update settings');
   }
+
+  return await response.json();
 };
 
 /**
@@ -326,4 +374,42 @@ export const getUserSettings = async (): Promise<UserSettings> => {
   }
 
   return await response.json();
+};
+
+export const updateUserTimezone = async (timezone: string): Promise<void> => {
+  const token = getStoredAuthToken();
+  
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/user/timezone`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ timezone })
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to update timezone');
+  }
+};
+
+export const getTelegramAuthLink = async (userId: string): Promise<{ authLink: string }> => {
+  const response = await fetch(`${API_URL}/users/${userId}/telegram-auth`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${getStoredAuthToken()}`
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to generate Telegram auth link');
+  }
+
+  return response.json();
 };

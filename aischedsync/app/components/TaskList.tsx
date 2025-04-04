@@ -62,7 +62,6 @@ export default function TaskList({
           </div>
         ) : (
           tasks.map((task, index) => {
-            const now = new Date();
             const taskStart = new Date();
             taskStart.setHours(parseInt(task.time.split(':')[0]), parseInt(task.time.split(':')[1]));
             const taskEnd = new Date(taskStart);

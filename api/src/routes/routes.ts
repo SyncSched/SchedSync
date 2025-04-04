@@ -10,6 +10,7 @@ import {
 } from '../controllers/user.controller';
 import { updateTaskNotificationSettings } from '../controllers/task.controller';
 import { getUpcomingNotificationsHandler , updateNotificationTimeHandler, deleteNotificationHandler } from '../controllers/notification.controller';
+import { getTelegramAuthLink } from '../controllers/notification.controller';
 
 export const attachPublicRoutes = (app: any): void => {
     app.get('/users', getAllUsersHandler);
@@ -40,4 +41,7 @@ export const attachPrivateRoutes = (app: any): void => {
     app.get('/notifications/upcoming', getUpcomingNotificationsHandler);
     app.put('/notifications/:notificationId', updateNotificationTimeHandler);
     app.delete('/notifications/:notificationId', deleteNotificationHandler);
+
+    // Telegram auth route
+    app.get('/users/:userId/telegram-auth', getTelegramAuthLink);
 }
