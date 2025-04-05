@@ -161,6 +161,11 @@ function MainLayout({ children }: MainLayoutProps) {
           title: "Tools",
           subtitle: "Productivity tools and integrations"
         };
+      case '/reminders':
+        return {
+          title: "Reminders",
+          subtitle: "Manage your reminders"
+        };
       default:
         return {
           title: "SchedSync",

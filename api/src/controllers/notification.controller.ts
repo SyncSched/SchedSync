@@ -52,6 +52,8 @@ export const updateNotificationTimeHandler = async (
         const { notificationId } = req.params;
         const { notifyAt } = req.body;
 
+        console.log('notifyAt###############################', notifyAt);
+
         if (!userId) {
             return res.status(401).json({ error: 'User not authenticated' });
         }

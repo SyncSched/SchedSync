@@ -413,3 +413,93 @@ export const getTelegramAuthLink = async (userId: string): Promise<{ authLink: s
 
   return response.json();
 };
+
+export interface NotificationTask {
+  id: string;
+  name: string;
+  time: string;
+  duration: number;
+}
+
+export interface Notification {
+  id: string;
+  taskId: string;
+  userId: string;
+  channel: 'email' | 'whatsapp' | 'telegram' | 'call';
+  status: 'pending' | 'sent' | 'failed';
+  notifyAt: string;
+  createdAt: string;
+  task: NotificationTask;
+}
+
+/**
+ * Gets upcoming notifications for the user
+ */
+export const getUpcomingNotifications = async (): Promise<Notification[]> => {
+  const token = getStoredAuthToken();
+  
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/notifications/upcoming`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch upcoming notifications');
+  }
+
+  return await response.json();
+};
+
+/**
+ * Updates a notification's time
+ */
+export const updateNotificationTime = async (notificationId: string, newTime: string): Promise<Notification> => {
+  const token = getStoredAuthToken();
+  
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/notifications/${notificationId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ time: newTime })
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to update notification time');
+  }
+
+  return await response.json();
+};
+
+/**
+ * Deletes a notification
+ */
+export const deleteNotification = async (notificationId: string): Promise<void> => {
+  const token = getStoredAuthToken();
+  
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/notifications/${notificationId}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to delete notification');
+  }
+};
