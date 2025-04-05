@@ -45,6 +45,10 @@ export const handler = async (event: any, context: Context) => {
     }
   }
 
+  if (event.path === '/telegram/webhook' && event.httpMethod === 'POST') {
+    console.log('[LAMBDA] Processing Telegram webhook');
+  }
+
   // 🟢 Handle API Gateway requests
   return new Promise((resolve, reject) => {
     serverless.proxy(server, event, context, "CALLBACK", (err, res) => {
