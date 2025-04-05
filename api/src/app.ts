@@ -10,7 +10,7 @@ import { attachPublicRoutes, attachPrivateRoutes } from './routes/routes';
 import { authMiddleware } from './middleware/authMiddleware';
 import { RouteNotFoundError } from './errors';
 import { handleError } from './middleware/error';
-import { initScheduleCron } from './cron/scheduleCron';
+import { initLocalScheduleCron } from './cron/scheduleCron';
 import { initNotificationCron } from './cron/RemainderCron';
 
 import './utils/passportConfig';
@@ -70,8 +70,13 @@ attachPrivateRoutes(app);
 app.use((req, _res, next) => next(new RouteNotFoundError(req.originalUrl)));
 app.use(handleError);
 
-// Initialize cron jobs
-initScheduleCron();
-initNotificationCron();
+// Initialize cron jobs only in local development
+if (process.env.NODE_ENV !== 'production') {
+  console.log('Initializing local cron jobs...');
+  initLocalScheduleCron();
+  initNotificationCron();
+} else {
+  console.log('Running in production mode - cron jobs will be handled by AWS EventBridge');
+}
 
 export default app;

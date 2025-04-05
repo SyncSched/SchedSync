@@ -71,17 +71,21 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
             },
         });
 
-        // Fetch onboarding data
-        const onboardingData = await getOnboardingData(userId);
-        if (!onboardingData) {
+        // Fetch complete user data including onboarding information
+        const userWithOnboarding = await prisma.user.findUnique({
+            where: { id: userId },
+            include: {
+                onboardingData: true // Include onboarding data
+            }
+        });
+
+        if (!userWithOnboarding || !userWithOnboarding.onboardingData) {
             await prisma.schedule.delete({ where: { id: lockedSchedule.id } });
-            return next(new EntityNotFoundError("Onboarding data not found. Please complete onboarding."));
+            return next(new EntityNotFoundError("User data or onboarding data not found. Please complete onboarding."));
         }
 
-        const userData = JSON.stringify(onboardingData);
-
-        // Generate the schedule
-        const generatedSchedule = await generateSchedule(userData);
+        // Generate the schedule with complete user information
+        const generatedSchedule = await generateSchedule(userWithOnboarding);
         if (!generatedSchedule) {
             await prisma.schedule.delete({ where: { id: lockedSchedule.id } });
             return next(new EntityNotFoundError("Failed to generate schedule"));

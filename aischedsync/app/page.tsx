@@ -1,20 +1,18 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { getTodaySchedule, updateSchedule, getCurrentUser, updateUserTimezone, type UserInfo, type Task } from '../api/lib';
+import { getTodaySchedule, updateSchedule, updateUserTimezone, type Task } from '../api/lib';
 import { useAuth } from '@/contexts/AuthContext';
 import Modal from './components/ui/Modal';
 import { TaskForm } from './components/TaskForm';
-import Sidebar from './components/Sidebar';
-import Header from './components/Header';
 import TaskList from './components/TaskList';
 import QuickTasks from './components/QuickTasks';
 import { recalculateTaskTimes } from './utils/taskUtils';
 import { isTaskActive, formatToHHMM } from '@/app/utils/dateUtils';
 import Goals from './components/Goals';
 
+
 export default function Home() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [mainTasks, setMainTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [quickTasks, setQuickTasks] = useState([
@@ -22,9 +20,8 @@ export default function Home() {
     { id: 2, title: "Review PRs", time: "4:30 PM" }
   ]);
 
-  const [user, setUser] = useState<UserInfo | null>(null);
-  const { isAuthenticated, logout } = useAuth();
-  const [showProfileModal, setShowProfileModal] = useState(false);
+  // const [user, setUser] = useState<UserInfo | null>(null);
+  const { isAuthenticated } = useAuth();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [showDeleteWarning, setShowDeleteWarning] = useState(false);
@@ -33,6 +30,7 @@ export default function Home() {
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [showTaskStatusModal, setShowTaskStatusModal] = useState(false);
   const [selectedPastTask, setSelectedPastTask] = useState<Task | null>(null);
+  const [goals, setGoals] = useState<{ id: number; title: string; isCompleted: boolean; }[]>([]);
 
   useEffect(() => {
     const updateTimezoneInfo = async () => {
@@ -66,29 +64,6 @@ export default function Home() {
     }
   }, [mainTasks]); // Re-run when tasks change
 
-  // Add these new state variables at the top with other state declarations
-  const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
-  const [goals, setGoals] = useState<{ id: number; title: string; isCompleted: boolean; }[]>([]);
-
-  interface NewTaskState {
-    name: string;
-    time: string;
-    duration: number;
-    isEmailEnabled: boolean;
-    isWhatsAppEnabled: boolean;
-    isTelegramEnabled: boolean;
-    isCallEnabled: boolean;
-  }
-
-  const [newTask, setNewTask] = useState<NewTaskState>({
-    name: '',
-    time: '',
-    duration: 30,
-    isEmailEnabled: false,
-    isWhatsAppEnabled: false,
-    isTelegramEnabled: false,
-    isCallEnabled: false
-  });
 
   interface TaskFormData {
     name: string;
@@ -116,20 +91,8 @@ export default function Home() {
       }
     };
 
-    const fetchUser = async () => {
-      if (isAuthenticated) {
-        try {
-          const userData = await getCurrentUser();
-          setUser(userData);
-        } catch (err) { // Change 'error' to 'err' and use it
-          console.error('Failed to fetch user data:', err);
-          showErrorToast('Failed to fetch user data');
-        }
-      }
-    };
-
     fetchData();
-    fetchUser();
+    // fetchUser();
   }, [isAuthenticated]);
 
   const handleDragStart = (e: React.DragEvent, columnType: 'main' | 'quick', index: number) => {
@@ -187,8 +150,8 @@ export default function Home() {
         newTasks.splice(targetIndex, 0, movedTask);
         setQuickTasks(newTasks);
       }
-    } catch (error) {
-      console.error('Error in handleDrop:', error);
+    } catch {
+      console.error('Error in handleDrop');
       showErrorToast('Failed to update task order. Please try again.');
     }
   };
@@ -319,106 +282,6 @@ export default function Home() {
     setSelectedTask(null);
   };
 
-  const handleAddTask = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const scheduleId = mainTasks[0]?.scheduleId || '';
-      
-      let taskTime: string;
-      const now = new Date();
-      
-      if (mainTasks.length > 0) {
-        // If there are existing tasks, set time after the last task
-        const lastTask = mainTasks[mainTasks.length - 1];
-        console.log(lastTask)
-        const lastTaskTime = new Date(lastTask.time);
-        const lastTaskEndTime = new Date(lastTaskTime.getTime() + (lastTask.duration * 60000));
-        taskTime = lastTaskEndTime.toISOString();
-      } else {
-        // If no tasks, handle the new task time
-        if (newTask.time) {
-          // Handle both 24-hour and 12-hour formats
-          let hours: number;
-          let minutes: number;
-          
-          if (newTask.time.includes('AM') || newTask.time.includes('PM')) {
-            // 12-hour format
-            const [timeStr, period] = newTask.time.split(' ');
-            const [h, m] = timeStr.split(':').map(Number);
-            hours = h;
-            minutes = m;
-            
-            if (period === 'PM' && hours !== 12) {
-              hours += 12;
-            } else if (period === 'AM' && hours === 12) {
-              hours = 0;
-            }
-          } else {
-            // 24-hour format
-            [hours, minutes] = newTask.time.split(':').map(Number);
-          }
-
-          const selectedTime = new Date();
-          selectedTime.setHours(hours, minutes, 0, 0);
-          
-          // If the time is in the past, move it to tomorrow
-          if (selectedTime < now) {
-            selectedTime.setDate(selectedTime.getDate() + 1);
-          }
-          taskTime = selectedTime.toISOString();
-        } else {
-          // Round current time to nearest 5 minutes
-          const roundedMinutes = Math.ceil(now.getMinutes() / 5) * 5;
-          now.setMinutes(roundedMinutes, 0, 0);
-          taskTime = now.toISOString();
-        }
-      }
-
-      // Create new task
-      const newTaskObject: Task = {
-        id: `temp-${Date.now()}`,
-        name: newTask.name,
-        time: taskTime,
-        duration: Number(newTask.duration),
-        scheduleId: scheduleId,
-        isEmailEnabled: newTask.isEmailEnabled,
-        isWhatsAppEnabled: newTask.isWhatsAppEnabled,
-        isTelegramEnabled: newTask.isTelegramEnabled,
-        isCallEnabled: newTask.isCallEnabled
-      };
-
-      const updatedTasks = [...mainTasks, newTaskObject];
-      await updateSchedule(scheduleId, updatedTasks);
-
-      const latestSchedule = await getTodaySchedule();
-      if (latestSchedule && latestSchedule.originalData) {
-        setMainTasks(latestSchedule.originalData);
-      }
-
-      setIsAddTaskModalOpen(false);
-      showSuccessToast('Task added successfully!');
-      setNewTask({
-        name: '',
-        time: '',
-        duration: 30,
-        isEmailEnabled: false,
-        isWhatsAppEnabled: false,
-        isTelegramEnabled: false,
-        isCallEnabled: false
-      });
-    } catch (error) {
-      console.error('Error adding task:', error);
-      showErrorToast('Failed to add task');
-    }
-  };
-
-  const handleNotificationChange = (setting: keyof NewTaskState) => {
-    setNewTask(prev => ({
-      ...prev,
-      [setting]: !prev[setting]
-    }));
-  };
-
   const handleGoalAdd = (title: string) => {
     setGoals(prev => [...prev, {
       id: Date.now(),
@@ -448,103 +311,44 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-white overflow-hidden">
-      {/* Mobile Header */}
-      <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white">
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-1.5 hover:bg-gray-100 rounded-lg text-black"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/>
-            </svg>
-          </button>
-          <div>
-            <h1 className="text-lg font-semibold text-gray-900">Today&apos;s Schedule</h1>
-            <p className="text-xs text-gray-500">Plan your day effectively</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => setIsAddTaskModalOpen(true)}
-            className="px-3 py-1.5 bg-black text-white text-sm rounded-lg hover:bg-gray-800 transition-colors"
-          >
-            Add New Task
-          </button>
-          <button className="p-1.5 hover:bg-gray-100 rounded-lg text-black">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <Sidebar 
-        isSidebarOpen={isSidebarOpen}
-        user={user}
-        onLogout={logout}
-      />
-
-      {/* Overlay for mobile sidebar */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
+    <div className="flex flex-col md:flex-row h-full md:-mt-8">
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto w-full bg-[#F8F9FA]">
-        <div className="p-3 md:p-8">
-          {/* Desktop Header - Hide on Mobile */}
-          <div className="hidden md:block">
-            <Header 
-              onAddTask={() => setIsAddTaskModalOpen(true)}
-              onSidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-              user={user}
-              onProfileClick={() => setShowProfileModal(!showProfileModal)}
-              showProfileModal={showProfileModal}
-              onLogout={logout}
-              setShowProfileModal={setShowProfileModal}
+      <div className="flex-1">
+        {/* Task List and Side Cards */}
+        <div className="space-y-4">
+          <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+            <TaskList 
+              tasks={mainTasks}
+              isLoading={isLoading}
+              onTaskClick={handleTaskClick}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
             />
-          </div>
 
-          {/* Task List and Side Cards */}
-          <div className="space-y-4">
-            <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-              <TaskList 
-                tasks={mainTasks}
-                isLoading={isLoading}
-                onTaskClick={handleTaskClick}
+            <div className="space-y-4">
+              <Goals
+                goals={goals}
+                onGoalAdd={handleGoalAdd}
+                onGoalDelete={handleGoalDelete}
+                onGoalEdit={handleGoalEdit}
+                onGoalToggle={handleGoalToggle}
+              />
+              
+              <QuickTasks 
+                tasks={quickTasks}
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
+                onAddTask={() => {}}
               />
-
-              <div className="space-y-4">
-                <Goals
-                  goals={goals}
-                  onGoalAdd={handleGoalAdd}
-                  onGoalDelete={handleGoalDelete}
-                  onGoalEdit={handleGoalEdit}
-                  onGoalToggle={handleGoalToggle}
-                />
-                
-                <QuickTasks 
-                  tasks={quickTasks}
-                  onDragStart={handleDragStart}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  onAddTask={() => setIsAddTaskModalOpen(true)}
-                />
-              </div>
             </div>
           </div>
         </div>
-      </main>
+      </div>
 
       {/* Modals */}
       {isEditModalOpen && selectedTask && ( // Add selectedTask check here
@@ -559,13 +363,13 @@ export default function Home() {
             onClose={handleCloseModal}
             onDelete={() => setShowDeleteWarning(true)}
             initialTask={{
-              name: selectedTask.name,
-              time: renderTaskTime(selectedTask),
-              duration: selectedTask.duration,
-              isEmailEnabled: selectedTask.isEmailEnabled,
-              isWhatsAppEnabled: selectedTask.isWhatsAppEnabled,
-              isTelegramEnabled: selectedTask.isTelegramEnabled,
-              isCallEnabled: selectedTask.isCallEnabled
+              name: selectedTask!.name,
+              time: renderTaskTime(selectedTask!),
+              duration: selectedTask!.duration,
+              isEmailEnabled: selectedTask!.isEmailEnabled,
+              isWhatsAppEnabled: selectedTask!.isWhatsAppEnabled,
+              isTelegramEnabled: selectedTask!.isTelegramEnabled,
+              isCallEnabled: selectedTask!.isCallEnabled
             }}
           />
         </Modal>
@@ -637,126 +441,6 @@ export default function Home() {
           toastType === 'success' ? 'bg-green-500' : 'bg-red-500'
         } transition-opacity duration-300`}>
           {toastMessage}
-        </div>
-      )}
-
-      {/* Add Task Modal */}
-      {isAddTaskModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Add New Task</h3>
-              <button 
-                onClick={() => setIsAddTaskModalOpen(false)}
-                className="text-gray-400 hover:text-gray-500"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            
-            <form onSubmit={handleAddTask}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Task Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={newTask.name}
-                    onChange={(e) => setNewTask({...newTask, name: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    placeholder="Enter task name"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Time</label>
-                  <input
-                    type="time"
-                    required
-                    value={newTask.time}
-                    onChange={(e) => setNewTask({...newTask, time: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Duration (minutes)</label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    value={newTask.duration}
-                    onChange={(e) => setNewTask({...newTask, duration: parseInt(e.target.value)})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">Notification Settings</label>
-                  <div className="space-y-2">
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={newTask.isEmailEnabled}
-                        onChange={() => handleNotificationChange('isEmailEnabled')}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-700">Email Notifications</span>
-                    </label>
-
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={newTask.isWhatsAppEnabled}
-                        onChange={() => handleNotificationChange('isWhatsAppEnabled')}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-700">WhatsApp Notifications</span>
-                    </label>
-
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={newTask.isTelegramEnabled}
-                        onChange={() => handleNotificationChange('isTelegramEnabled')}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-700">Telegram Notifications</span>
-                    </label>
-
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={newTask.isCallEnabled}
-                        onChange={() => handleNotificationChange('isCallEnabled')}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-700">Phone Call Notifications</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-6 flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setIsAddTaskModalOpen(false)}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                
-                <button
-                  type="submit"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
-                >
-                  Add Task
-                </button>
-              </div>
-            </form>
-          </div>
         </div>
       )}
     </div>

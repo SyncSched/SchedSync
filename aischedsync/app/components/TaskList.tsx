@@ -120,10 +120,14 @@ export default function TaskList({
                     <span className={`text-sm ${isPastTask ? 'text-gray-400' : 'text-gray-600'}`}>{formatToHHMM(task.time)}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <svg className={`w-4 h-4 ${isPastTask ? 'text-gray-300' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    <svg className={`w-4 h-4 ${isPastTask ? 'text-gray-300' : 'text-gray-400'}`} viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M6.16 4.6A4.054 4.054 0 0 1 8 7.994v0c0-1.415.726-2.66 1.825-3.384.23-.199.426-.395.609-.602L5.56 4.001c.19.214.386.41.593.594z"/>
+                      <path d="M11.18 6.06A4.399 4.399 0 0 0 13 2.5V2h1V0H2v2h1v.5a4.391 4.391 0 0 0 1.808 3.551A2.564 2.564 0 0 1 6 7.99a2.755 2.755 0 0 1-1.209 2.003 4.441 4.441 0 0 0-1.79 3.503v.503h-1v2h12v-2h-1v-.5a4.435 4.435 0 0 0-1.769-3.492 2.762 2.762 0 0 1-1.23-1.996 2.551 2.551 0 0 1 1.169-1.946zM9 8a3.693 3.693 0 0 0 1.519 2.763A3.477 3.477 0 0 1 12 13.495V14h-1.77c-.7-.87-1.71-2-2.23-2s-1.53 1.13-2.23 2H4v-.5a3.472 3.472 0 0 1 1.459-2.723 3.698 3.698 0 0 0 1.54-2.766 3.482 3.482 0 0 0-1.498-2.683 3.438 3.438 0 0 1-1.502-2.827v-.5h8v.5a3.426 3.426 0 0 1-1.479 2.813 3.487 3.487 0 0 0-1.521 2.678z"/>
                     </svg>
-                    <span className={`text-sm ${isPastTask ? 'text-gray-400' : 'text-gray-600'}`}>{task.duration} min</span>
+                    <span className={`text-sm ${isPastTask ? 'text-gray-400' : 'text-gray-600'}`}>
+                      {Math.floor(task.duration / 60) > 0 ? `${Math.floor(task.duration / 60)} hour ` : ''}
+                      {task.duration % 60 > 0 ? `${task.duration % 60} min` : ''}
+                    </span>
                   </div>
                 </div>
               </div>

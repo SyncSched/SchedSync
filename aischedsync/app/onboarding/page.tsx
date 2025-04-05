@@ -17,11 +17,11 @@ const OnboardingPage = () => {
     profession: '',
     hobbies: [],
     sleepingHours: 0,
-    sleepingStart: new Date().toISOString(),
-    sleepingEnd: new Date().toISOString(),
+    sleepingStart: '22:00', // Default to 10:00 PM
+    sleepingEnd: '06:00',   // Default to 6:00 AM
     workingHours: 0,
-    workingStart: new Date().toISOString(),
-    workingEnd: new Date().toISOString(),
+    workingStart: '09:00',  // Default to 9:00 AM
+    workingEnd: '17:00',    // Default to 5:00 PM
     userId: 'user-id-placeholder', // Replace with actual user ID
   });
 

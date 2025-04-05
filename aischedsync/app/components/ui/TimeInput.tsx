@@ -44,14 +44,14 @@ const TimeInput: React.FC<TimeInputProps> = ({ value, onChange, className = '' }
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className={`w-full flex items-center justify-between px-4 py-3 bg-white border-2 
-          border-gray-200 rounded-xl hover:border-indigo-500 transition-colors 
+        className={`w-full flex items-center justify-between px-4 py-3 border-2 
+          rounded-xl hover:border-indigo-500 transition-colors 
           duration-200 ${className}`}
       >
-        <span className="text-xl font-semibold text-gray-700">
+        <span className="text-xl font-semibold inherit">
           {formatTimeForDisplay(value)}
         </span>
-        <span className="text-gray-400">↓</span>
+        <span className="inherit opacity-60">↓</span>
       </button>
 
       <AnimatePresence>
