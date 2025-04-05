@@ -14,13 +14,16 @@ export const handler = async (event: any, context: Context) => {
     try {
       // Check which type of scheduled job this is
       const jobType = event.detail?.jobType;
+      console.log(`Executing scheduled job of type: ${jobType}`);
       
       switch (jobType) {
         case 'process-notifications':
           await processNotifications();
+          console.log("Notifications processed successfully");
           break;
         case 'process-schedules':
           await processUserSchedules();
+          console.log("Schedules processed successfully");
           break;
         default:
           console.warn(`Unknown job type: ${jobType}`);
