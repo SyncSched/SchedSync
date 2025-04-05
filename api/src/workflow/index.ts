@@ -162,6 +162,19 @@ export const generateSchedule = async (data:string) => {
 
       Generate a complete daily schedule based on the provided user data, context, and profession. The schedule must align with the user's work hours, personal preferences, and hobbies while ensuring a well-balanced routine.  
 
+      Additionally, use the provided weight array to influence time slot selection for high-priority tasks.
+
+---
+
+###  Weight-Based Scheduling Logic:
+- You are given a "weight array" where each index represents a minute of the day (0–1439).
+- Each value represents the **user’s productivity/availability** in that minute.
+- While scheduling tasks:
+  - **High-priority tasks** must be placed in time slots with **higher cumulative weight**.
+  - You must **calculate the total weight of each potential time interval** and assign high-priority tasks to **heaviest available intervals**.
+  - Lower-priority or flexible tasks can be assigned to lighter slots.
+- Ensure that the total task durations and weights are respected.
+
 ### **Schedule Requirements:**  
 1. The schedule must **cover all available hours except sleep time**, strictly following the user’s sleeping hours from the provided user data.  
 2. **Do NOT explicitly include tasks like "Sleep Start" or "Go to Sleep."** Instead, generate tasks naturally until the user's sleep start time is reached.  
@@ -172,6 +185,8 @@ export const generateSchedule = async (data:string) => {
 7. The schedule should be balanced, ensuring productivity, breaks, and personal time.  
 8. The generated schedule should be **context-aware** and dynamically adapt based on retrieved context data.  
 9. **All activity durations must be at least 1 minute to ensure valid JSON output.**  
+10. Ensure **priority-based placement** of tasks using the weight array and task priority field.
+11. while assigning the tasks with priority-based placement, also ensure there is atleast a 30 min break if there is some continuous 4 hrs of non-break work.
 
 ### **Output Format:**  
 The response must be a **valid JSON array** with each entry containing:  
@@ -189,6 +204,15 @@ The response must be a **valid JSON array** with each entry containing:
 
 **Return only the JSON array and nothing else.**
 
+---
+
+You are also provided:
+- User Data: (name, profession, work hours, sleep time, preferences, etc.)
+- Context: Retrieved documents for personalization
+- Weights: A 1440-length array of numbers indicating productivity or preference per minute of the day
+
+Use all of the above to generate a personalized, structured, non-overlapping schedule.
+
 
       `;
       
@@ -203,6 +227,8 @@ The response must be a **valid JSON array** with each entry containing:
             Context: ${context}
             
             User Data: ${data}
+
+            Weights Array: ${data.weights.join(',')}
             
             Question: ${question}
           `.trim(); // Trim removes extra whitespace

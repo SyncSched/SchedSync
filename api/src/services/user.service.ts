@@ -14,7 +14,9 @@ export const createUser = async (data: CreateUserInput): Promise<User | null> =>
     console.log('User already exists:', existingUser);
     return existingUser; 
   }
-
+  
+  data.weights= new Array(1440).fill(0)
+  
   return prisma.user.create({
     data,
   });

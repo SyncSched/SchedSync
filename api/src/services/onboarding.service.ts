@@ -60,6 +60,7 @@ export const createOnboardingData = async (data: OnboardingData): Promise<boolea
     }
 
     // Create the onboarding data
+    
     await prisma.onboardingData.create({
       data: {
         userId: data.userId,

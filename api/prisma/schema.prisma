@@ -37,6 +37,8 @@ model User {
   notifyBeforeMinutes Int          @default(10) // Reminder time before task in minutes
   
   notifications      TaskNotification[]
+
+  weights  Int[]
 }
 
 model TaskNotification {

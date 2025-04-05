@@ -30,6 +30,7 @@ export interface User {
     schedules?: Schedule[];
     createdAt: Date;
     settings?: UserSettings;
+    weights?: number[];
 }
 
 export type CreateUserInput = Omit<User, 'id' | 'createdAt' | 'schedules'>;
