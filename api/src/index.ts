@@ -9,11 +9,10 @@ const server = serverless.createServer(app);
 export const handler = async (event: any, context: Context) => {
   console.log("🔍 Event Received:", JSON.stringify(event, null, 2));
 
-  // 🟢 Handle EventBridge Scheduled Event (Cron Job)
-  if (event.source === "aws.scheduler") {
+  // Check directly for jobType in the event
+  const jobType = event.jobType;
+  if (jobType) {
     try {
-      // Check which type of scheduled job this is
-      const jobType = event.detail?.jobType;
       console.log(`Executing scheduled job of type: ${jobType}`);
       
       switch (jobType) {
