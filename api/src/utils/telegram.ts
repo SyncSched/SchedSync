@@ -123,7 +123,8 @@ export const generateTelegramAuthLink = (userId: string): string => {
 
   // Generate a secure token that maps to this user
   const authToken = generateAuthToken(userId);
+  const encodedAuthToken = encodeURIComponent(authToken);
 
   // Create a deep link with the start parameter containing the auth token
-  return `https://t.me/${botUsername}?start=${authToken}`;
+  return `https://t.me/${botUsername}?start=${encodedAuthToken}`;
 };
