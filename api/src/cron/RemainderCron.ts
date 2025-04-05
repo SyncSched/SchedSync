@@ -27,9 +27,8 @@ class WhatsAppNotifier implements NotificationService {
 
 class TelegramNotifier implements NotificationService {
   async send(to: string, _subject: string, message: string): Promise<boolean> {
-    console.log(`Telegram Notifications to ${to}: ${message}`);
-    return true;
-    // return sendTelegram(to, message);
+    console.log(`Sending Telegram notification to ${to}`);
+    return sendTelegram(to, message);
   }
 }
 
@@ -54,7 +53,7 @@ export async function processNotifications() {
   console.log('[NOTIFICATION_PROCESSOR] Current timestamp:', new Date().toISOString());
 
   const now = new Date();
-  const nowUTC = new Date(now.toISOString()); 
+  const nowUTC = new Date(now.toISOString());
   console.log('[NOTIFICATION_PROCESSOR] Processing notifications due before:', now.toISOString());
 
   try {
@@ -65,9 +64,9 @@ export async function processNotifications() {
           lte: nowUTC
         }
       },
-      include: { 
-        user: true, 
-        task: true 
+      include: {
+        user: true,
+        task: true
       }
     });
 
@@ -215,14 +214,21 @@ function getRecipientAddress(user: any, channel: string): string | null {
 
 function formatMessage(task: any, channel: string): string {
   const baseMessage = `Your task "${task.name}" is scheduled at ${task.time}`;
-  
+
   switch (channel.toLowerCase()) {
     case 'email':
       return `${baseMessage}\n\nThis is an automated reminder from your schedule assistant.`;
     case 'whatsapp':
       return `📅 ${baseMessage}`;
     case 'telegram':
-      return `🔔 ${baseMessage}`;
+      return `<b>🔔 Task Reminder</b>
+
+<b>${task.name}</b>
+⏰ Scheduled at: ${task.time}
+${task.description ? `
+📝 ${task.description}` : ''}
+
+<i>SchedSync Notification</i>`;
     case 'call':
       return baseMessage;
     default:
