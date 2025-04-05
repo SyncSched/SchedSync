@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { UserInfo, getCurrentUser, updateUserSettings, getUserSettings, NotificationSettings, getTelegramAuthLink } from '@/api/lib';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface ExtendedUserInfo extends UserInfo {
   notificationSettings?: NotificationSettings;
@@ -55,6 +56,7 @@ const defaultFormData: FormData = {
 
 export default function SettingsPage() {
   const { isAuthenticated } = useAuth();
+  const { isDark } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<ExtendedUserInfo | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -203,18 +205,18 @@ export default function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className={`flex items-center justify-center h-screen ${isDark ? 'bg-gray-900' : 'bg-gradient-to-br from-gray-50 to-gray-100'} transition-colors duration-300`}>
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen -mt-[80px]">
+    <div className={`min-h-screen -mt-[80px] ${isDark ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}>
       <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
         
         {/* Settings Card - Apple Style */}
-        <div className="bg-white backdrop-blur-xl bg-opacity-80 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-[#e2e2e7] overflow-hidden">
+        <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-[#e2e2e7]'} backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border overflow-hidden transition-colors duration-300`}>
           
           {/* Card Body with Form Fields */}
           <div className="p-8">
@@ -224,7 +226,9 @@ export default function SettingsPage() {
                 <>
                   <button
                     onClick={handleCancel}
-                    className="px-5 py-2.5 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors duration-200 font-medium text-sm flex items-center gap-1.5 mr-3"
+                    className={`px-5 py-2.5 rounded-full ${
+                      isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                    } border transition-colors duration-200 font-medium text-sm flex items-center gap-1.5 mr-3`}
                     disabled={isSubmitting}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -267,32 +271,45 @@ export default function SettingsPage() {
 
             <div className="space-y-10">
               {/* Timezone Section */}
-              <div className="bg-[#f9f9fc] p-6 rounded-2xl border border-[#e8e8ed]">
-                <h3 className="text-md font-semibold text-gray-900 mb-5 flex items-center">
+              <div className={`${isDark ? 'bg-gray-900 border-gray-700' : 'bg-[#f9f9fc] border-[#e8e8ed]'} p-6 rounded-2xl border transition-colors duration-300`}>
+                <h3 className={`text-md font-semibold ${isDark ? 'text-gray-100' : 'text-gray-900'} mb-5 flex items-center transition-colors duration-300`}>
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   Time Zone Settings
                 </h3>
-                <div className="form-group">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Your Time Zone</label>
-                  <select
-                    disabled={!isEditing}
-                    value={formData.timezone}
-                    onChange={(e) => handleInputChange('timezone', '', e.target.value)}
-                    className="w-full rounded-xl border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-50 disabled:text-gray-500 transition-colors duration-200 h-11"
-                  >
-                    {Intl.supportedValuesOf('timeZone').map((tz) => (
-                      <option key={tz} value={tz}>{tz}</option>
-                    ))}
-                  </select>
-                  <p className="mt-2 text-xs text-gray-500">This will be used to schedule and display events in your local time</p>
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="timezone" className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-2 transition-colors duration-300`}>
+                      Current Time Zone
+                    </label>
+                    <div className="relative">
+                      <select
+                        id="timezone"
+                        name="timezone"
+                        value={formData.timezone}
+                        onChange={(e) => handleInputChange('timezone', '', e.target.value)}
+                        disabled={!isEditing}
+                        className={`block w-full rounded-lg border ${
+                          isDark 
+                            ? 'bg-gray-800 border-gray-600 text-gray-300 focus:border-indigo-500' 
+                            : 'bg-white border-gray-300 text-gray-900 focus:border-indigo-600'
+                        } px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-50 transition-colors duration-300`}
+                      >
+                        {Intl.supportedValuesOf('timeZone').map((tz) => (
+                          <option key={tz} value={tz} className={isDark ? 'bg-gray-800' : 'bg-white'}>
+                            {tz}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {/* Notification Section */}
-              <div className="bg-[#f9f9fc] p-6 rounded-2xl border border-[#e8e8ed]">
-                <h3 className="text-md font-semibold text-gray-900 mb-5 flex items-center">
+              <div className={`${isDark ? 'bg-gray-900 border-gray-700' : 'bg-[#f9f9fc] border-[#e8e8ed]'} p-6 rounded-2xl border transition-colors duration-300`}>
+                <h3 className={`text-md font-semibold ${isDark ? 'text-gray-100' : 'text-gray-900'} mb-5 flex items-center transition-colors duration-300`}>
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
@@ -300,8 +317,8 @@ export default function SettingsPage() {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {/* Notification Preferences */}
-                  <div className="bg-white p-5 rounded-xl shadow-sm border border-[#e8e8ed]">
-                    <h4 className="text-sm font-medium text-gray-800 mb-4">Notification Channels</h4>
+                  <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white'} p-5 rounded-xl shadow-sm border border-[#e8e8ed]`}>
+                    <h4 className={`text-sm font-medium ${isDark ? 'text-gray-100' : 'text-gray-800'} mb-4`}>Notification Channels</h4>
                     <div className="space-y-4">
                       {[
                         ['isEmailEnabled', 'Email', 'Receive email notifications for reminders and updates'],
@@ -320,8 +337,8 @@ export default function SettingsPage() {
                             />
                           </div>
                           <div className="ml-3 text-sm">
-                            <label className="font-medium text-gray-700">{label}</label>
-                            <p className="text-gray-500">{description}</p>
+                            <label className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{label}</label>
+                            <p className={`text-${isDark ? 'gray-400' : 'gray-500'}`}>{description}</p>
                           </div>
                         </div>
                       ))}
@@ -329,42 +346,54 @@ export default function SettingsPage() {
                     
                     {/* Add Notify Before Minutes */}
                     <div className="mt-6 pt-5 border-t border-gray-100">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
                         Notification Timing
                       </label>
-                      <div className="flex items-center px-3 py-2 bg-[#f9f9fc] rounded-lg">
-                        <span className="text-sm text-gray-600 mr-2">Notify</span>
+                      <div className={`flex items-center px-3 py-2 rounded-lg ${
+                        isDark ? 'bg-gray-800 border border-gray-600' : 'bg-[#f9f9fc]'
+                      } transition-colors duration-300`}>
+                        <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'} mr-2`}>Notify</span>
                         <select
                           disabled={!isEditing}
                           value={formData.notificationPreferences.notifyBeforeMinutes}
                           onChange={(e) => handleInputChange('notificationPreferences', 'notifyBeforeMinutes', parseInt(e.target.value))}
-                          className="rounded-lg border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-50 text-sm"
+                          className={`rounded-lg border ${
+                            isDark 
+                              ? 'bg-gray-700 border-gray-600 text-gray-300 focus:border-indigo-500' 
+                              : 'bg-white border-gray-300 text-gray-900 focus:border-indigo-600'
+                          } px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-50 transition-colors duration-300`}
                         >
                           {[5, 10, 15, 30, 60].map((mins) => (
-                            <option key={mins} value={mins}>{mins}</option>
+                            <option key={mins} value={mins} className={isDark ? 'bg-gray-700' : 'bg-white'}>
+                              {mins}
+                            </option>
                           ))}
                         </select>
-                        <span className="text-sm text-gray-600 ml-2">minutes before events</span>
+                        <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'} ml-2`}>minutes before events</span>
                       </div>
-                      <p className="mt-2 text-xs text-gray-500">How far in advance you&apos;ll receive notifications for your scheduled events</p>
+                      <p className={`mt-2 text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                        How far in advance you&apos;ll receive notifications for your scheduled events
+                      </p>
                     </div>
                   </div>
 
                   {/* Telegram Connection */}
-                  <div className="bg-white p-5 rounded-xl shadow-sm border border-[#e8e8ed]">
+                  <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white'} p-5 rounded-xl shadow-sm border border-[#e8e8ed]`}>
                     <div className="flex justify-between items-start mb-4">
                       <div>
-                        <h4 className="text-sm font-medium text-gray-800">Telegram Notifications</h4>
-                        <p className="text-xs text-gray-500 mt-1">Connect your Telegram account to receive instant notifications</p>
+                        <h4 className={`text-sm font-medium ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Telegram Notifications</h4>
+                        <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'} mt-1`}>Connect your Telegram account to receive instant notifications</p>
                       </div>
                       <div className="flex flex-col items-end gap-1">
                         <button
                           onClick={handleTelegramConnect}
                           disabled={!isEditing || !!formData.notificationPreferences.telegramChatId}
-                          className={`px-3.5 py-1.5 text-xs rounded-full flex items-center gap-1 ${
+                          className={`px-3.5 py-1.5 text-xs rounded-full flex items-center gap-1 transition-colors duration-300 ${
                             formData.notificationPreferences.telegramChatId 
                               ? 'bg-green-50 text-green-700 border border-green-200' 
-                              : 'bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-gray-200 disabled:text-gray-400'
+                              : isDark
+                                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600 disabled:bg-gray-800 disabled:text-gray-500 disabled:border-gray-700'
+                                : 'bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-gray-200 disabled:text-gray-400'
                           }`}
                         >
                           {formData.notificationPreferences.telegramChatId ? (
@@ -378,7 +407,7 @@ export default function SettingsPage() {
                             'Connect Telegram'
                           )}
                         </button>
-                        <span className="text-xs text-gray-500">
+                        <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                           {formData.notificationPreferences.telegramChatId 
                             ? 'Your Telegram account is linked'
                             : 'Link your account to get notifications'}
@@ -388,7 +417,7 @@ export default function SettingsPage() {
 
                     {/* Phone Number */}
                     <div className="mt-6 pt-5 border-t border-gray-100">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                      <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Phone Number</label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -400,19 +429,23 @@ export default function SettingsPage() {
                           disabled={!isEditing}
                           value={formData.notificationPreferences.phoneNumber}
                           onChange={(e) => handleInputChange('notificationPreferences', 'phoneNumber', e.target.value)}
-                          className="pl-10 w-full rounded-xl border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-50 text-sm h-11"
+                          className={`pl-10 w-full rounded-xl border ${
+                            isDark 
+                              ? 'bg-gray-800 border-gray-600 text-gray-300 focus:border-indigo-500' 
+                              : 'bg-white border-gray-300 text-gray-900 focus:border-indigo-600'
+                          } px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-50 transition-colors duration-300`}
                           placeholder="Enter your phone number"
                         />
                       </div>
-                      <p className="mt-2 text-xs text-gray-500">Used for WhatsApp and call notifications</p>
+                      <p className={`mt-2 text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Used for WhatsApp and call notifications</p>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Personal Information Section */}
-              <div className="bg-[#f9f9fc] p-6 rounded-2xl border border-[#e8e8ed]">
-                <h3 className="text-md font-semibold text-gray-900 mb-5 flex items-center">
+              <div className={`${isDark ? 'bg-gray-900 border-gray-700' : 'bg-[#f9f9fc] border-[#e8e8ed]'} p-6 rounded-2xl border transition-colors duration-300`}>
+                <h3 className={`text-md font-semibold ${isDark ? 'text-gray-100' : 'text-gray-900'} mb-5 flex items-center transition-colors duration-300`}>
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
@@ -421,60 +454,72 @@ export default function SettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-5">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Profession</label>
+                      <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Profession</label>
                       <input
                         type="text"
                         disabled={!isEditing}
                         value={formData.onboardingData.profession}
                         onChange={(e) => handleInputChange('onboardingData', 'profession', e.target.value)}
-                        className="w-full rounded-xl border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-50 text-sm h-11"
+                        className={`w-full rounded-xl border ${
+                          isDark 
+                            ? 'bg-gray-800 border-gray-600 text-gray-300 focus:border-indigo-500' 
+                            : 'bg-white border-gray-300 text-gray-900 focus:border-indigo-600'
+                        } px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-50 transition-colors duration-300`}
                         placeholder="What do you do?"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Hobbies</label>
+                      <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Hobbies</label>
                       <input
                         type="text"
                         disabled={!isEditing}
                         value={formData.onboardingData.hobbies.join(', ')}
                         onChange={(e) => handleInputChange('onboardingData', 'hobbies', e.target.value.split(',').map(h => h.trim()))}
-                        className="w-full rounded-xl border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-50 text-sm h-11"
+                        className={`w-full rounded-xl border ${
+                          isDark 
+                            ? 'bg-gray-800 border-gray-600 text-gray-300 focus:border-indigo-500' 
+                            : 'bg-white border-gray-300 text-gray-900 focus:border-indigo-600'
+                        } px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-50 transition-colors duration-300`}
                         placeholder="Reading, Cooking, Sports, etc. (comma-separated)"
                       />
-                      <p className="mt-2 text-xs text-gray-500">Separate multiple hobbies with commas</p>
+                      <p className={`mt-2 text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Separate multiple hobbies with commas</p>
                     </div>
                   </div>
 
-                  <div className="bg-white p-5 rounded-xl shadow-sm border border-[#e8e8ed]">
-                    <h4 className="text-lg font-medium text-gray-800 mb-6">Schedule Preferences</h4>
+                  <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white'} p-5 rounded-xl shadow-sm border border-[#e8e8ed]`}>
+                    <h4 className={`text-lg font-medium ${isDark ? 'text-gray-100' : 'text-gray-800'} mb-6`}>Schedule Preferences</h4>
                     
                     <div className="space-y-8">
                       {/* Working Hours */}
                       <div>
-                        <label className="block text-base font-medium text-gray-700 mb-3">Working Hours</label>
+                        <label className={`block text-base font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-3`}>Working Hours</label>
                         <div className="grid grid-cols-2 gap-6">
                           <div>
-                            <label className="block text-sm text-gray-500 mb-2">Start Time</label>
-                            <div className="relative bg-[#f9f9fc] rounded-xl p-3 h-14 flex items-center">
+                            <label className={`block text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-2`}>Start Time</label>
+                            <div className={`relative rounded-xl p-3 h-14 flex items-center ${
+                              isDark ? 'bg-gray-800 border border-gray-600' : 'bg-[#f9f9fc]'
+                            }`}>
                               <input
                                 type="time"
                                 disabled={!isEditing}
                                 value={formData.onboardingData.workingStart}
                                 onChange={(e) => handleInputChange('onboardingData', 'workingStart', e.target.value)}
-                                className="appearance-none bg-transparent w-full border-none focus:ring-0 text-xl font-medium text-gray-800"
+                                className={`appearance-none bg-transparent w-full border-none focus:ring-0 text-xl font-medium ${isDark ? 'text-gray-300' : 'text-gray-800'}`}
                               />
                             </div>
                           </div>
                           <div>
-                            <label className="block text-sm text-gray-500 mb-2">End Time</label>
-                            <div className="relative bg-[#f9f9fc] rounded-xl p-3 h-14 flex items-center">
+                            <label className={`block text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-2`}>End Time</label>
+                            <div className={`relative rounded-xl p-3 h-14 flex items-center ${
+                              isDark ? 'bg-gray-800 border border-gray-600' : 'bg-[#f9f9fc]'
+                            }`}>
                               <input
                                 type="time"
                                 disabled={!isEditing}
                                 value={formData.onboardingData.workingEnd}
                                 onChange={(e) => handleInputChange('onboardingData', 'workingEnd', e.target.value)}
-                                className="appearance-none bg-transparent w-full border-none focus:ring-0 text-xl font-medium text-gray-800"
+                                className={`appearance-none bg-transparent w-full border-none focus:ring-0 text-xl font-medium ${isDark ? 'text-gray-300' : 'text-gray-800'}`}
                               />
                             </div>
                           </div>
@@ -483,34 +528,38 @@ export default function SettingsPage() {
                       
                       {/* Sleep Schedule */}
                       <div className="pt-6 border-t border-gray-100">
-                        <label className="block text-base font-medium text-gray-700 mb-3">Sleep Schedule</label>
+                        <label className={`block text-base font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-3`}>Sleep Schedule</label>
                         <div className="grid grid-cols-2 gap-6">
                           <div>
-                            <label className="block text-sm text-gray-500 mb-2">Bedtime</label>
-                            <div className="relative bg-[#f9f9fc] rounded-xl p-3 h-14 flex items-center">
+                            <label className={`block text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-2`}>Bedtime</label>
+                            <div className={`relative rounded-xl p-3 h-14 flex items-center ${
+                              isDark ? 'bg-gray-800 border border-gray-600' : 'bg-[#f9f9fc]'
+                            }`}>
                               <input
                                 type="time"
                                 disabled={!isEditing}
                                 value={formData.onboardingData.sleepingStart}
                                 onChange={(e) => handleInputChange('onboardingData', 'sleepingStart', e.target.value)}
-                                className="appearance-none bg-transparent w-full border-none focus:ring-0 text-xl font-medium text-gray-800"
+                                className={`appearance-none bg-transparent w-full border-none focus:ring-0 text-xl font-medium ${isDark ? 'text-gray-300' : 'text-gray-800'}`}
                               />
                             </div>
                           </div>
                           <div>
-                            <label className="block text-sm text-gray-500 mb-2">Wake Time</label>
-                            <div className="relative bg-[#f9f9fc] rounded-xl p-3 h-14 flex items-center">
+                            <label className={`block text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-2`}>Wake Time</label>
+                            <div className={`relative rounded-xl p-3 h-14 flex items-center ${
+                              isDark ? 'bg-gray-800 border border-gray-600' : 'bg-[#f9f9fc]'
+                            }`}>
                               <input
                                 type="time"
                                 disabled={!isEditing}
                                 value={formData.onboardingData.sleepingEnd}
                                 onChange={(e) => handleInputChange('onboardingData', 'sleepingEnd', e.target.value)}
-                                className="appearance-none bg-transparent w-full border-none focus:ring-0 text-xl font-medium text-gray-800"
+                                className={`appearance-none bg-transparent w-full border-none focus:ring-0 text-xl font-medium ${isDark ? 'text-gray-300' : 'text-gray-800'}`}
                               />
                             </div>
                           </div>
                         </div>
-                        <p className="mt-3 text-sm text-gray-500">We use this to avoid scheduling during your sleep hours</p>
+                        <p className={`mt-3 text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>We use this to avoid scheduling during your sleep hours</p>
                       </div>
                     </div>
                   </div>

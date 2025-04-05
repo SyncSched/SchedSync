@@ -9,6 +9,7 @@ import './globals.css';
 import { usePathname } from 'next/navigation';
 import { getTodaySchedule, updateSchedule, type Task } from '@/api/lib';
 import Header from './components/Header';
+import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -29,6 +30,7 @@ interface MainLayoutProps {
 function MainLayout({ children }: MainLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, logout } = useAuth();
+  const { isDark } = useTheme();
   const pathname = usePathname();
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -182,14 +184,14 @@ function MainLayout({ children }: MainLayoutProps) {
   const { title, subtitle } = getPageMeta();
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-white overflow-hidden">
+    <div className={`flex flex-col md:flex-row h-screen ${isDark ? 'bg-gray-900' : 'bg-white'} overflow-hidden transition-colors duration-300`}>
       {/* Mobile Header */}
-      <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white relative z-40">
+      <div className={`md:hidden flex items-center justify-between px-4 py-3 border-b ${isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'} relative z-40 transition-colors duration-300`}>
         <div className="flex items-center gap-3">
           {isSidebarOpen ? (
             <button 
               onClick={() => setIsSidebarOpen(false)}
-              className="p-1.5 hover:bg-gray-100 rounded-lg text-black"
+              className={`p-1.5 ${isDark ? 'hover:bg-gray-700 text-gray-200' : 'hover:bg-gray-100 text-black'} rounded-lg transition-colors duration-300`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
@@ -198,14 +200,14 @@ function MainLayout({ children }: MainLayoutProps) {
           ) : (
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-1.5 hover:bg-gray-100 rounded-lg text-black"
+              className={`p-1.5 ${isDark ? 'hover:bg-gray-700 text-gray-200' : 'hover:bg-gray-100 text-black'} rounded-lg transition-colors duration-300`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/>
               </svg>
             </button>
           )}
-          <h1 className="text-lg font-semibold text-gray-900">{title}</h1>
+          <h1 className={`text-lg font-semibold ${isDark ? 'text-gray-100' : 'text-gray-900'} transition-colors duration-300`}>{title}</h1>
         </div>
       </div>
 
@@ -225,7 +227,7 @@ function MainLayout({ children }: MainLayoutProps) {
       />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden w-full bg-[#F8F9FA]">
+      <main className={`flex-1 overflow-hidden w-full ${isDark ? 'bg-gray-900' : 'bg-[#F8F9FA]'} transition-colors duration-300`}>
         <div className="h-full flex flex-col">
           {/* Desktop Header - Fixed */}
           <div className="hidden md:block p-8 pb-0">
@@ -243,7 +245,7 @@ function MainLayout({ children }: MainLayoutProps) {
           </div>
           
           {/* Scrollable Content Area */}
-          <div className="flex-1 overflow-auto p-3 md:p-8 md:pt-8">
+          <div className={`flex-1 overflow-auto p-3 md:p-8 md:pt-8 ${isDark ? 'bg-gray-900' : 'bg-[#F8F9FA]'} transition-colors duration-300`}>
             {children}
           </div>
         </div>
@@ -252,12 +254,12 @@ function MainLayout({ children }: MainLayoutProps) {
       {/* Add Task Modal */}
       {isAddTaskModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+          <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-full max-w-md mx-4 transition-colors duration-300`}>
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Add New Task</h3>
+              <h3 className={`text-lg font-semibold ${isDark ? 'text-gray-100' : 'text-gray-900'} transition-colors duration-300`}>Add New Task</h3>
               <button 
                 onClick={() => setIsAddTaskModalOpen(false)}
-                className="text-gray-400 hover:text-gray-500"
+                className={`${isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-500'} transition-colors duration-300`}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -268,51 +270,59 @@ function MainLayout({ children }: MainLayoutProps) {
             <form onSubmit={handleAddTask}>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Task Name</label>
+                  <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} transition-colors duration-300`}>Task Name</label>
                   <input
                     type="text"
                     required
                     value={newTask.name}
                     onChange={(e) => setNewTask({...newTask, name: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className={`mt-1 block w-full rounded-md ${
+                      isDark ? 'bg-gray-700 border-gray-600 text-gray-100' : 'border-gray-300 text-gray-900'
+                    } shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors duration-300`}
                     placeholder="Enter task name"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Time</label>
+                  <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} transition-colors duration-300`}>Time</label>
                   <input
                     type="time"
                     required
                     value={newTask.time}
                     onChange={(e) => setNewTask({...newTask, time: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className={`mt-1 block w-full rounded-md ${
+                      isDark ? 'bg-gray-700 border-gray-600 text-gray-100' : 'border-gray-300 text-gray-900'
+                    } shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors duration-300`}
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Duration (minutes)</label>
+                  <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} transition-colors duration-300`}>Duration (minutes)</label>
                   <input
                     type="number"
                     required
                     min="1"
                     value={newTask.duration}
                     onChange={(e) => setNewTask({...newTask, duration: parseInt(e.target.value)})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className={`mt-1 block w-full rounded-md ${
+                      isDark ? 'bg-gray-700 border-gray-600 text-gray-100' : 'border-gray-300 text-gray-900'
+                    } shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors duration-300`}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">Notification Settings</label>
+                  <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} transition-colors duration-300`}>Notification Settings</label>
                   <div className="space-y-2">
                     <label className="flex items-center space-x-2">
                       <input
                         type="checkbox"
                         checked={newTask.isEmailEnabled}
                         onChange={() => handleNotificationChange('isEmailEnabled')}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className={`rounded ${
+                          isDark ? 'bg-gray-700 border-gray-600' : 'border-gray-300'
+                        } text-blue-600 focus:ring-blue-500 transition-colors duration-300`}
                       />
-                      <span className="text-sm text-gray-700">Email Notifications</span>
+                      <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'} transition-colors duration-300`}>Email Notifications</span>
                     </label>
 
                     <label className="flex items-center space-x-2">
@@ -320,9 +330,11 @@ function MainLayout({ children }: MainLayoutProps) {
                         type="checkbox"
                         checked={newTask.isWhatsAppEnabled}
                         onChange={() => handleNotificationChange('isWhatsAppEnabled')}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className={`rounded ${
+                          isDark ? 'bg-gray-700 border-gray-600' : 'border-gray-300'
+                        } text-blue-600 focus:ring-blue-500 transition-colors duration-300`}
                       />
-                      <span className="text-sm text-gray-700">WhatsApp Notifications</span>
+                      <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'} transition-colors duration-300`}>WhatsApp Notifications</span>
                     </label>
 
                     <label className="flex items-center space-x-2">
@@ -330,19 +342,11 @@ function MainLayout({ children }: MainLayoutProps) {
                         type="checkbox"
                         checked={newTask.isTelegramEnabled}
                         onChange={() => handleNotificationChange('isTelegramEnabled')}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className={`rounded ${
+                          isDark ? 'bg-gray-700 border-gray-600' : 'border-gray-300'
+                        } text-blue-600 focus:ring-blue-500 transition-colors duration-300`}
                       />
-                      <span className="text-sm text-gray-700">Telegram Notifications</span>
-                    </label>
-
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={newTask.isCallEnabled}
-                        onChange={() => handleNotificationChange('isCallEnabled')}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-700">Phone Call Notifications</span>
+                      <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'} transition-colors duration-300`}>Telegram Notifications</span>
                     </label>
                   </div>
                 </div>
@@ -392,12 +396,14 @@ export default function RootLayout({
         <meta name="twitter:description" content="Automate and personalize your daily schedule with AI." />
         <meta name="twitter:image" content="https://schedsync.com/favicon.ico" />
       </head>
-      <body className={inter.className}>
-        <AuthProvider>
-          <MainLayout>
-          {children}
-          </MainLayout>
-        </AuthProvider>
+      <body className={`${inter.className} bg-gray-900`}>
+        <ThemeProvider>
+          <AuthProvider>
+            <MainLayout>
+              {children}
+            </MainLayout>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

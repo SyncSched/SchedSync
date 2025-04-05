@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { Notification, getUpcomingNotifications, updateNotificationTime, deleteNotification } from '@/api/lib';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function RemindersPage() {
+  const { isDark } = useTheme();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -111,25 +113,31 @@ export default function RemindersPage() {
   const getStatusColor = (status: Notification['status']) => {
     switch (status) {
       case 'pending':
-        return 'text-yellow-600 bg-yellow-50 border border-yellow-200';
+        return isDark 
+          ? 'text-yellow-300 bg-yellow-900/50 border border-yellow-700'
+          : 'text-yellow-600 bg-yellow-50 border border-yellow-200';
       case 'sent':
-        return 'text-green-600 bg-green-50 border border-green-200';
+        return isDark
+          ? 'text-green-300 bg-green-900/50 border border-green-700'
+          : 'text-green-600 bg-green-50 border border-green-200';
       case 'failed':
-        return 'text-red-600 bg-red-50 border border-red-200';
+        return isDark
+          ? 'text-red-300 bg-red-900/50 border border-red-700'
+          : 'text-red-600 bg-red-50 border border-red-200';
     }
   };
 
   return (
-    <div className="min-h-screen md:-mt-16 bg-gray-50">
+    <div className={`min-h-screen md:-mt-16 ${isDark ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white'} rounded-xl shadow-sm p-6 transition-colors duration-300`}>
           {loading ? (
             <div className="flex justify-center items-center py-12">
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
             </div>
           ) : error ? (
             <div className="flex justify-center items-center py-8">
-              <div className="text-red-500 bg-red-50 px-4 py-3 rounded-lg border border-red-200 flex items-center">
+              <div className={`${isDark ? 'text-red-400 bg-red-900/50 border-red-700' : 'text-red-500 bg-red-50 border-red-200'} px-4 py-3 rounded-lg border flex items-center transition-colors duration-300`}>
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -138,36 +146,42 @@ export default function RemindersPage() {
             </div>
           ) : notifications.length === 0 ? (
             <div className="text-center py-12">
-              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className={`mx-auto h-12 w-12 ${isDark ? 'text-gray-600' : 'text-gray-400'} transition-colors duration-300`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <p className="mt-4 text-gray-500 text-lg">No upcoming reminders</p>
-              <p className="mt-2 text-gray-400 text-sm">Notifications for your scheduled tasks will appear here</p>
+              <p className={`mt-4 ${isDark ? 'text-gray-300' : 'text-gray-500'} text-lg transition-colors duration-300`}>No upcoming reminders</p>
+              <p className={`mt-2 ${isDark ? 'text-gray-500' : 'text-gray-400'} text-sm transition-colors duration-300`}>Notifications for your scheduled tasks will appear here</p>
             </div>
           ) : (
             <div className="space-y-4">
               {notifications.map((notification) => (
                 <div 
                   key={notification.id} 
-                  className="flex items-start gap-4 p-4 bg-gray-50 hover:bg-gray-100 transition-colors rounded-xl border border-gray-100"
+                  className={`flex items-start gap-4 p-4 ${
+                    isDark 
+                      ? 'bg-gray-900 hover:bg-gray-800 border-gray-700' 
+                      : 'bg-gray-50 hover:bg-gray-100 border-gray-100'
+                  } transition-colors rounded-xl border`}
                 >
                   {getChannelIcon(notification.channel)}
                   <div className="flex-grow min-w-0">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-medium text-gray-900 truncate">{notification.task.name}</h3>
+                      <h3 className={`font-medium ${isDark ? 'text-gray-100' : 'text-gray-900'} truncate transition-colors duration-300`}>
+                        {notification.task.name}
+                      </h3>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(notification.status)}`}>
                         {notification.status}
                       </span>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-sm text-gray-600 flex items-center">
-                        <svg className="w-4 h-4 mr-1.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'} flex items-center transition-colors duration-300`}>
+                        <svg className={`w-4 h-4 mr-1.5 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         Task time: {formatDate(notification.task.time)}
                       </p>
-                      <p className="text-sm text-gray-600 flex items-center">
-                        <svg className="w-4 h-4 mr-1.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'} flex items-center transition-colors duration-300`}>
+                        <svg className={`w-4 h-4 mr-1.5 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                         </svg>
                         Notify at: {formatDate(notification.notifyAt)}
@@ -178,18 +192,28 @@ export default function RemindersPage() {
                     <div className="relative">
                       <input
                         type="datetime-local"
-                        className="rounded-lg border-gray-200 text-sm pr-8 focus:border-indigo-500 focus:ring-indigo-500"
+                        className={`h-10 rounded-xl text-sm ${
+                          isDark 
+                            ? 'bg-gray-800 border-gray-600 text-gray-300 focus:border-indigo-500 hover:bg-gray-700' 
+                            : 'bg-white border-gray-200 text-gray-900 focus:border-indigo-600 hover:bg-gray-50'
+                        } px-4 py-2 border focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-50 transition-all duration-300 ease-in-out shadow-sm`}
                         value={formatDateForInput(notification.notifyAt)}
                         onChange={(e) => handleUpdateTime(notification.id, e.target.value)}
                       />
-                      
                     </div>
                     <button
                       onClick={() => handleDelete(notification.id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      className={`px-3 py-2 rounded-xl flex items-center gap-1.5 font-medium text-sm ${
+                        isDark 
+                          ? 'text-red-400 hover:bg-red-900/50 border border-red-800/50' 
+                          : 'text-red-600 hover:bg-red-50 border border-red-200'
+                      } transition-all duration-300`}
                       title="Delete reminder"
                     >
-                     <label>Cancel</label>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Cancel
                     </button>
                   </div>
                 </div>
