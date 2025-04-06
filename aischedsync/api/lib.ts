@@ -472,7 +472,7 @@ export const updateNotificationTime = async (notificationId: string, newTime: st
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
     },
-    body: JSON.stringify({ time: newTime })
+    body: JSON.stringify({ notifyAt: newTime })
   });
 
   if (!response.ok) {

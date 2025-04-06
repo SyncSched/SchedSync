@@ -1,4 +1,3 @@
-import { updateRemainderSettings } from '../controllers/notification.controller';
 import { checkOnboardingDataHandler, createOnboardingHandler } from '../controllers/onboarding.controller';
 import { createScheduleHandler, generateScheduleHandler, getScheduleHandler, updateScheduleHandler } from '../controllers/schedule.controller';
 import { 
@@ -28,7 +27,6 @@ export const attachPrivateRoutes = (app: any): void => {
     app.get('/checkonboardingdata', checkOnboardingDataHandler);
 
     app.put('/schedule/:id/update', updateScheduleHandler);
-    app.put("/notifications/:userId", updateRemainderSettings);
 
     app.patch('/task/:taskId/notifications', updateTaskNotificationSettings);
 

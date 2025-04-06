@@ -3,12 +3,15 @@
 import { useState, useEffect } from 'react';
 import { Notification, getUpcomingNotifications, updateNotificationTime, deleteNotification } from '@/api/lib';
 import { useTheme } from '@/contexts/ThemeContext';
+import { formatDateForDatetimeLocal, localToUTC } from '@/app/utils/dateUtils';
 
 export default function RemindersPage() {
   const { isDark } = useTheme();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteWarning, setShowDeleteWarning] = useState(false);
+  const [notificationToDelete, setNotificationToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     fetchNotifications();
@@ -30,8 +33,12 @@ export default function RemindersPage() {
 
   const handleUpdateTime = async (notificationId: string, newTime: string) => {
     try {
-      const updatedNotification = await updateNotificationTime(notificationId, newTime);
-      setNotifications(notifications.map(notif => 
+      // Convert the local datetime to UTC for storage
+      const localDate = new Date(newTime);
+      const utcTime = localToUTC(localDate);
+
+      const updatedNotification = await updateNotificationTime(notificationId, utcTime);
+      setNotifications(notifications.map(notif =>
         notif.id === notificationId ? updatedNotification : notif
       ));
     } catch (err) {
@@ -39,10 +46,19 @@ export default function RemindersPage() {
     }
   };
 
-  const handleDelete = async (notificationId: string) => {
+  const handleDeleteClick = (notificationId: string) => {
+    setNotificationToDelete(notificationId);
+    setShowDeleteWarning(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!notificationToDelete) return;
+    
     try {
-      await deleteNotification(notificationId);
-      setNotifications(notifications.filter(notif => notif.id !== notificationId));
+      await deleteNotification(notificationToDelete);
+      setNotifications(notifications.filter(notif => notif.id !== notificationToDelete));
+      setShowDeleteWarning(false);
+      setNotificationToDelete(null);
     } catch (err) {
       console.error('Error deleting notification:', err);
     }
@@ -66,8 +82,8 @@ export default function RemindersPage() {
 
   const formatDateForInput = (dateString: string) => {
     try {
-      const date = new Date(dateString);
-      return date.toISOString().slice(0, 16);
+      // Use the utility function to format the date for datetime-local input
+      return formatDateForDatetimeLocal(dateString);
     } catch {
       return '';
     }
@@ -113,7 +129,7 @@ export default function RemindersPage() {
   const getStatusColor = (status: Notification['status']) => {
     switch (status) {
       case 'pending':
-        return isDark 
+        return isDark
           ? 'text-yellow-300 bg-yellow-900/50 border border-yellow-700'
           : 'text-yellow-600 bg-yellow-50 border border-yellow-200';
       case 'sent':
@@ -155,11 +171,11 @@ export default function RemindersPage() {
           ) : (
             <div className="space-y-4">
               {notifications.map((notification) => (
-                <div 
-                  key={notification.id} 
+                <div
+                  key={notification.id}
                   className={`flex flex-col sm:flex-row items-start gap-4 p-3 sm:p-4 ${
-                    isDark 
-                      ? 'bg-gray-900 hover:bg-gray-800 border-gray-700' 
+                    isDark
+                      ? 'bg-gray-900 hover:bg-gray-800 border-gray-700'
                       : 'bg-gray-50 hover:bg-gray-100 border-gray-100'
                   } transition-colors rounded-xl border`}
                 >
@@ -193,8 +209,8 @@ export default function RemindersPage() {
                       <input
                         type="datetime-local"
                         className={`w-full sm:w-auto h-10 rounded-xl text-sm ${
-                          isDark 
-                            ? 'bg-gray-800 border-gray-600 text-gray-300 focus:border-indigo-500 hover:bg-gray-700' 
+                          isDark
+                            ? 'bg-gray-800 border-gray-600 text-gray-300 focus:border-indigo-500 hover:bg-gray-700'
                             : 'bg-white border-gray-200 text-gray-900 focus:border-indigo-600 hover:bg-gray-50'
                         } px-4 py-2 border focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-50 transition-all duration-300 ease-in-out shadow-sm`}
                         value={formatDateForInput(notification.notifyAt)}
@@ -202,10 +218,10 @@ export default function RemindersPage() {
                       />
                     </div>
                     <button
-                      onClick={() => handleDelete(notification.id)}
+                      onClick={() => handleDeleteClick(notification.id)}
                       className={`w-full sm:w-auto px-3 py-2 rounded-xl flex items-center justify-center sm:justify-start gap-1.5 font-medium text-sm ${
-                        isDark 
-                          ? 'text-red-400 hover:bg-red-900/50 border border-red-800/50' 
+                        isDark
+                          ? 'text-red-400 hover:bg-red-900/50 border border-red-800/50'
                           : 'text-red-600 hover:bg-red-50 border border-red-200'
                       } transition-all duration-300`}
                       title="Delete reminder"
@@ -222,6 +238,38 @@ export default function RemindersPage() {
           )}
         </div>
       </div>
+      {/* Delete Confirmation Modal */}
+      {showDeleteWarning && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-full max-w-sm mx-4 transition-colors duration-300`}>
+            <h3 className={`text-lg font-medium ${isDark ? 'text-gray-100' : 'text-gray-900'} mb-4 transition-colors duration-300`}>Delete Reminder</h3>
+            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-6 transition-colors duration-300`}>
+              Are you sure you want to delete this reminder? This action cannot be undone.
+            </p>
+            
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => {
+                  setShowDeleteWarning(false);
+                  setNotificationToDelete(null);
+                }}
+                className={`inline-flex items-center px-4 py-2 border ${
+                  isDark ? 'border-gray-600 text-gray-300 bg-gray-700 hover:bg-gray-600' : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
+                } text-sm font-medium rounded-md transition-colors duration-300`}
+              >
+                Cancel
+              </button>
+              
+              <button
+                onClick={handleDeleteConfirm}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-} 
+}
