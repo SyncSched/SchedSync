@@ -1,23 +1,27 @@
 import { checkOnboardingDataHandler, createOnboardingHandler } from '../controllers/onboarding.controller';
 import { createScheduleHandler, generateScheduleHandler, getScheduleHandler, updateScheduleHandler } from '../controllers/schedule.controller';
-import { 
-    getAllUsersHandler, 
-    getCurrentUser, 
-    updateUserTimezoneHandler, 
+import {
+    getAllUsersHandler,
+    getCurrentUser,
+    updateUserTimezoneHandler,
     updateUserSettingsHandler,
-    getUserSettingsHandler 
+    getUserSettingsHandler
 } from '../controllers/user.controller';
 import { updateTaskNotificationSettings } from '../controllers/task.controller';
 import { getUpcomingNotificationsHandler , updateNotificationTimeHandler, deleteNotificationHandler } from '../controllers/notification.controller';
 import { getTelegramAuthLink } from '../controllers/notification.controller';
+import { telegramWebhookHandler, setTelegramWebhook } from '../controllers/telegram.controller';
 
 export const attachPublicRoutes = (app: any): void => {
     app.get('/users', getAllUsersHandler);
+
+    // Telegram webhook endpoint (needs to be public to receive updates from Telegram)
+    app.post('/telegram/webhook', telegramWebhookHandler);
 }
 
 export const attachPrivateRoutes = (app: any): void => {
     app.get('/currentUser', getCurrentUser);
-    
+
     app.post('/getSchedule', getScheduleHandler);
     app.post('/generateSchedule', generateScheduleHandler);
     app.post('/createSchedule', createScheduleHandler);
@@ -40,6 +44,7 @@ export const attachPrivateRoutes = (app: any): void => {
     app.put('/notifications/:notificationId', updateNotificationTimeHandler);
     app.delete('/notifications/:notificationId', deleteNotificationHandler);
 
-    // Telegram auth route
+    // Telegram routes
     app.get('/users/:userId/telegram-auth', getTelegramAuthLink);
+    app.post('/telegram/set-webhook', setTelegramWebhook);
 }
