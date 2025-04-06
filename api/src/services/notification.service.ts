@@ -5,14 +5,10 @@ const prisma = new PrismaClient();
 
 export const getUpcomingNotifications = async (userId: string) => {
     const now = new Date();
-    
     return await prisma.taskNotification.findMany({
         where: {
             userId,
-            status: "pending",
-            notifyAt: {
-                gte: now
-            }
+            status: "pending"
         },
         include: {
             task: {

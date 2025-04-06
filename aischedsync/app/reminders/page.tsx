@@ -129,8 +129,8 @@ export default function RemindersPage() {
 
   return (
     <div className={`min-h-screen md:-mt-16 ${isDark ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white'} rounded-xl shadow-sm p-6 transition-colors duration-300`}>
+      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white'} rounded-xl shadow-sm p-3 sm:p-6 transition-colors duration-300`}>
           {loading ? (
             <div className="flex justify-center items-center py-12">
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
@@ -157,14 +157,14 @@ export default function RemindersPage() {
               {notifications.map((notification) => (
                 <div 
                   key={notification.id} 
-                  className={`flex items-start gap-4 p-4 ${
+                  className={`flex flex-col sm:flex-row items-start gap-4 p-3 sm:p-4 ${
                     isDark 
                       ? 'bg-gray-900 hover:bg-gray-800 border-gray-700' 
                       : 'bg-gray-50 hover:bg-gray-100 border-gray-100'
                   } transition-colors rounded-xl border`}
                 >
                   {getChannelIcon(notification.channel)}
-                  <div className="flex-grow min-w-0">
+                  <div className="flex-grow min-w-0 w-full sm:w-auto">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className={`font-medium ${isDark ? 'text-gray-100' : 'text-gray-900'} truncate transition-colors duration-300`}>
                         {notification.task.name}
@@ -188,11 +188,11 @@ export default function RemindersPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto mt-3 sm:mt-0">
+                    <div className="relative w-full sm:w-auto">
                       <input
                         type="datetime-local"
-                        className={`h-10 rounded-xl text-sm ${
+                        className={`w-full sm:w-auto h-10 rounded-xl text-sm ${
                           isDark 
                             ? 'bg-gray-800 border-gray-600 text-gray-300 focus:border-indigo-500 hover:bg-gray-700' 
                             : 'bg-white border-gray-200 text-gray-900 focus:border-indigo-600 hover:bg-gray-50'
@@ -203,7 +203,7 @@ export default function RemindersPage() {
                     </div>
                     <button
                       onClick={() => handleDelete(notification.id)}
-                      className={`px-3 py-2 rounded-xl flex items-center gap-1.5 font-medium text-sm ${
+                      className={`w-full sm:w-auto px-3 py-2 rounded-xl flex items-center justify-center sm:justify-start gap-1.5 font-medium text-sm ${
                         isDark 
                           ? 'text-red-400 hover:bg-red-900/50 border border-red-800/50' 
                           : 'text-red-600 hover:bg-red-50 border border-red-200'
