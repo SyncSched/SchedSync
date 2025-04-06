@@ -21,7 +21,7 @@ export const formatToHHMM = (isoString: string | Date): string => {
 
     // Handle Date object or ISO string
     const date = isoString instanceof Date ? isoString : new Date(isoString);
-    
+
     // Check if date is valid
     if (isNaN(date.getTime())) {
       console.error('Invalid date input:', isoString);
@@ -72,7 +72,7 @@ export const addMinutesToTime = (timeStr: string, minutes: number): string => {
   const [hours, mins] = timeStr.split(':').map(Number);
   date.setHours(hours, mins);
   date.setMinutes(date.getMinutes() + minutes);
-  
+
   return date.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
@@ -107,4 +107,29 @@ export const formatTimeForDisplay = (date: Date | string): string => {
 // Helper function to get current time in ISO format
 export const getCurrentTimeISO = (): string => {
   return new Date().toISOString();
+};
+
+// Convert UTC date string to local date for display
+export const utcToLocal = (dateString: string): Date => {
+  const date = new Date(dateString);
+  return date;
+};
+
+// Convert local date to UTC for storage
+export const localToUTC = (localDate: Date): string => {
+  return localDate.toISOString();
+};
+
+// Format date for datetime-local input in local timezone
+export const formatDateForDatetimeLocal = (dateString: string): string => {
+  const date = new Date(dateString);
+
+  // Format to YYYY-MM-DDThh:mm format required by datetime-local input
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
