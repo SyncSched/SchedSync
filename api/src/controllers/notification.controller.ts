@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
 import { AuthenticatedRequest } from '../types/request';
 import { PrismaClient } from "@prisma/client";
-import { 
-    getUpcomingNotifications, 
-    updateNotificationTime, 
-    deleteNotification 
+import {
+    getUpcomingNotifications,
+    updateNotificationTime,
+    deleteNotification
 } from '../services/notification.service';
 import { generateTelegramAuthLink } from '../utils/telegram';
 
@@ -27,7 +27,7 @@ export const updateRemainderSettings = async (req: Request, res: Response) => {
 };
 
 export const getUpcomingNotificationsHandler = async (
-    req: AuthenticatedRequest, 
+    req: AuthenticatedRequest,
     res: Response
 ) => {
     try {
@@ -44,7 +44,7 @@ export const getUpcomingNotificationsHandler = async (
 };
 
 export const updateNotificationTimeHandler = async (
-    req: AuthenticatedRequest, 
+    req: AuthenticatedRequest,
     res: Response
 ) => {
     try {
@@ -73,7 +73,7 @@ export const updateNotificationTimeHandler = async (
 };
 
 export const deleteNotificationHandler = async (
-    req: AuthenticatedRequest, 
+    req: AuthenticatedRequest,
     res: Response
 ) => {
     try {
@@ -94,13 +94,14 @@ export const deleteNotificationHandler = async (
 export const getTelegramAuthLink = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
-    const authLink = generateTelegramAuthLink(userId);
-    
-    return res.json({ 
+    const authLink = await generateTelegramAuthLink(userId);
+
+    return res.json({
       authLink,
       expiresIn: '30 minutes'
     });
   } catch (error) {
+    console.error('[TELEGRAM AUTH] Error generating auth link:', error);
     return res.status(500).json({ error: "Error generating Telegram auth link" });
   }
 };

@@ -37,6 +37,7 @@ model User {
   notifyBeforeMinutes Int          @default(10) // Reminder time before task in minutes
   
   notifications      TaskNotification[]
+  telegramAuth TelegramAuth[]
 }
 
 model TaskNotification {
@@ -131,4 +132,16 @@ model Attachment {
   fileType  String   // MIME type
   fileSize  Int      // Size in bytes
   uploadedAt DateTime @default(now())
+}
+
+
+model TelegramAuth {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([token])
 }

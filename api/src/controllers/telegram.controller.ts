@@ -46,7 +46,7 @@ async function handleStartCommand(update: any) {
     const authToken = parts[1];
     console.log(`[TELEGRAM] Auth token received: ${authToken}`);
 
-    const userId = validateAuthToken(authToken);
+    const userId = await validateAuthToken(authToken);
     console.log(`[TELEGRAM] Validated user ID: ${userId || 'invalid token'}`);
 
     if (userId) {

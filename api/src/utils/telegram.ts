@@ -30,7 +30,7 @@ try {
       bot.onText(/\/start (.+)/, async (msg, match) => {
         const chatId = msg.chat.id;
         const authToken = match ? match[1] : '';
-        const userId = validateAuthToken(authToken);
+        const userId = await validateAuthToken(authToken);
 
         if (userId) {
           try {
@@ -113,7 +113,7 @@ export const sendTelegram = async (chatId: string, message: string): Promise<boo
  * @param userId The user ID to associate with the Telegram account
  * @returns A URL that users can click to start a chat with the bot and authenticate
  */
-export const generateTelegramAuthLink = (userId: string): string => {
+export const generateTelegramAuthLink = async (userId: string): Promise<string> => {
   const botUsername = process.env.TELEGRAM_BOT_USERNAME;
 
   if (!botUsername) {
@@ -121,9 +121,14 @@ export const generateTelegramAuthLink = (userId: string): string => {
     return '#';
   }
 
-  // Generate a secure token that maps to this user
-  const authToken = generateAuthToken(userId);
+  try {
+    // Generate a secure token that maps to this user
+    const authToken = await generateAuthToken(userId);
 
-  // Create a deep link with the start parameter containing the auth token
-  return `https://t.me/${botUsername}?start=${authToken}`;
+    // Create a deep link with the start parameter containing the auth token
+    return `https://t.me/${botUsername}?start=${authToken}`;
+  } catch (error) {
+    console.error('[TELEGRAM] Error generating auth link:', error);
+    return '#';
+  }
 };
