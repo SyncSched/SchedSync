@@ -1,0 +1,275 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Notification, getUpcomingNotifications, updateNotificationTime, deleteNotification } from '@/api/lib';
+import { useTheme } from '@/contexts/ThemeContext';
+import { formatDateForDatetimeLocal, localToUTC } from '@/app/utils/dateUtils';
+
+export default function RemindersPage() {
+  const { isDark } = useTheme();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showDeleteWarning, setShowDeleteWarning] = useState(false);
+  const [notificationToDelete, setNotificationToDelete] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const data = await getUpcomingNotifications();
+      setNotifications(data);
+      setError(null);
+    } catch (err) {
+      setError('Failed to load notifications');
+      console.error('Error fetching notifications:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateTime = async (notificationId: string, newTime: string) => {
+    try {
+      // Convert the local datetime to UTC for storage
+      const localDate = new Date(newTime);
+      const utcTime = localToUTC(localDate);
+
+      const updatedNotification = await updateNotificationTime(notificationId, utcTime);
+      setNotifications(notifications.map(notif =>
+        notif.id === notificationId ? updatedNotification : notif
+      ));
+    } catch (err) {
+      console.error('Error updating notification time:', err);
+    }
+  };
+
+  const handleDeleteClick = (notificationId: string) => {
+    setNotificationToDelete(notificationId);
+    setShowDeleteWarning(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!notificationToDelete) return;
+    
+    try {
+      await deleteNotification(notificationToDelete);
+      setNotifications(notifications.filter(notif => notif.id !== notificationToDelete));
+      setShowDeleteWarning(false);
+      setNotificationToDelete(null);
+    } catch (err) {
+      console.error('Error deleting notification:', err);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch {
+      return 'Invalid date';
+    }
+  };
+
+  const formatDateForInput = (dateString: string) => {
+    try {
+      // Use the utility function to format the date for datetime-local input
+      return formatDateForDatetimeLocal(dateString);
+    } catch {
+      return '';
+    }
+  };
+
+  const getChannelIcon = (channel: Notification['channel']) => {
+    switch (channel) {
+      case 'email':
+        return (
+          <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-50">
+            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </div>
+        );
+      case 'whatsapp':
+        return (
+          <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-green-50">
+            <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+            </svg>
+          </div>
+        );
+      case 'telegram':
+        return (
+          <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-sky-50">
+            <svg className="w-4 h-4 text-sky-600" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+            </svg>
+          </div>
+        );
+      case 'call':
+        return (
+          <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-purple-50">
+            <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+            </svg>
+          </div>
+        );
+    }
+  };
+
+  const getStatusColor = (status: Notification['status']) => {
+    switch (status) {
+      case 'pending':
+        return isDark
+          ? 'text-yellow-300 bg-yellow-900/50 border border-yellow-700'
+          : 'text-yellow-600 bg-yellow-50 border border-yellow-200';
+      case 'sent':
+        return isDark
+          ? 'text-green-300 bg-green-900/50 border border-green-700'
+          : 'text-green-600 bg-green-50 border border-green-200';
+      case 'failed':
+        return isDark
+          ? 'text-red-300 bg-red-900/50 border border-red-700'
+          : 'text-red-600 bg-red-50 border border-red-200';
+    }
+  };
+
+  return (
+    <div className={`min-h-screen md:-mt-16 ${isDark ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}>
+      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white'} rounded-xl shadow-sm p-3 sm:p-6 transition-colors duration-300`}>
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
+            </div>
+          ) : error ? (
+            <div className="flex justify-center items-center py-8">
+              <div className={`${isDark ? 'text-red-400 bg-red-900/50 border-red-700' : 'text-red-500 bg-red-50 border-red-200'} px-4 py-3 rounded-lg border flex items-center transition-colors duration-300`}>
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {error}
+              </div>
+            </div>
+          ) : notifications.length === 0 ? (
+            <div className="text-center py-12">
+              <svg className={`mx-auto h-12 w-12 ${isDark ? 'text-gray-600' : 'text-gray-400'} transition-colors duration-300`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className={`mt-4 ${isDark ? 'text-gray-300' : 'text-gray-500'} text-lg transition-colors duration-300`}>No upcoming reminders</p>
+              <p className={`mt-2 ${isDark ? 'text-gray-500' : 'text-gray-400'} text-sm transition-colors duration-300`}>Notifications for your scheduled tasks will appear here</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {notifications.map((notification) => (
+                <div
+                  key={notification.id}
+                  className={`flex flex-col sm:flex-row items-start gap-4 p-3 sm:p-4 ${
+                    isDark
+                      ? 'bg-gray-900 hover:bg-gray-800 border-gray-700'
+                      : 'bg-gray-50 hover:bg-gray-100 border-gray-100'
+                  } transition-colors rounded-xl border`}
+                >
+                  {getChannelIcon(notification.channel)}
+                  <div className="flex-grow min-w-0 w-full sm:w-auto">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className={`font-medium ${isDark ? 'text-gray-100' : 'text-gray-900'} truncate transition-colors duration-300`}>
+                        {notification.task.name}
+                      </h3>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(notification.status)}`}>
+                        {notification.status}
+                      </span>
+                    </div>
+                    <div className="space-y-1">
+                      <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'} flex items-center transition-colors duration-300`}>
+                        <svg className={`w-4 h-4 mr-1.5 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Task time: {formatDate(notification.task.time)}
+                      </p>
+                      <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'} flex items-center transition-colors duration-300`}>
+                        <svg className={`w-4 h-4 mr-1.5 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        Notify at: {formatDate(notification.notifyAt)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto mt-3 sm:mt-0">
+                    <div className="relative w-full sm:w-auto">
+                      <input
+                        type="datetime-local"
+                        className={`w-full sm:w-auto h-10 rounded-xl text-sm ${
+                          isDark
+                            ? 'bg-gray-800 border-gray-600 text-gray-300 focus:border-indigo-500 hover:bg-gray-700'
+                            : 'bg-white border-gray-200 text-gray-900 focus:border-indigo-600 hover:bg-gray-50'
+                        } px-4 py-2 border focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-50 transition-all duration-300 ease-in-out shadow-sm`}
+                        value={formatDateForInput(notification.notifyAt)}
+                        onChange={(e) => handleUpdateTime(notification.id, e.target.value)}
+                      />
+                    </div>
+                    <button
+                      onClick={() => handleDeleteClick(notification.id)}
+                      className={`w-full sm:w-auto px-3 py-2 rounded-xl flex items-center justify-center sm:justify-start gap-1.5 font-medium text-sm ${
+                        isDark
+                          ? 'text-red-400 hover:bg-red-900/50 border border-red-800/50'
+                          : 'text-red-600 hover:bg-red-50 border border-red-200'
+                      } transition-all duration-300`}
+                      title="Delete reminder"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+      {/* Delete Confirmation Modal */}
+      {showDeleteWarning && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-full max-w-sm mx-4 transition-colors duration-300`}>
+            <h3 className={`text-lg font-medium ${isDark ? 'text-gray-100' : 'text-gray-900'} mb-4 transition-colors duration-300`}>Delete Reminder</h3>
+            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-6 transition-colors duration-300`}>
+              Are you sure you want to delete this reminder? This action cannot be undone.
+            </p>
+            
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => {
+                  setShowDeleteWarning(false);
+                  setNotificationToDelete(null);
+                }}
+                className={`inline-flex items-center px-4 py-2 border ${
+                  isDark ? 'border-gray-600 text-gray-300 bg-gray-700 hover:bg-gray-600' : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
+                } text-sm font-medium rounded-md transition-colors duration-300`}
+              >
+                Cancel
+              </button>
+              
+              <button
+                onClick={handleDeleteConfirm}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

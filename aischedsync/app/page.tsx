@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { getTodaySchedule, updateSchedule, updateUserTimezone, type Task } from '../api/lib';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import Modal from './components/ui/Modal';
 import { TaskForm } from './components/TaskForm';
 import TaskList from './components/TaskList';
@@ -31,6 +32,7 @@ export default function Home() {
   const [showTaskStatusModal, setShowTaskStatusModal] = useState(false);
   const [selectedPastTask, setSelectedPastTask] = useState<Task | null>(null);
   const [goals, setGoals] = useState<{ id: number; title: string; isCompleted: boolean; }[]>([]);
+  const { isDark } = useTheme();
 
   useEffect(() => {
     const updateTimezoneInfo = async () => {
@@ -55,11 +57,21 @@ export default function Home() {
     const activeTask = mainTasks.find(task => isTaskActive(task.time, task.duration));
     
     if (activeTask) {
-      // Find the task element
+      // Find the task element and the scrollable container
       const taskElement = document.querySelector(`[data-task-id="${activeTask.id}"]`);
-      if (taskElement) {
-        // Scroll the task into view with smooth behavior
-        taskElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const scrollContainer = document.querySelector('.scrollable');
+      
+      if (taskElement && scrollContainer) {
+        // Calculate the scroll position
+        const containerRect = scrollContainer.getBoundingClientRect();
+        const taskRect = taskElement.getBoundingClientRect();
+        const scrollTop = taskRect.top - containerRect.top - (containerRect.height / 2) + scrollContainer.scrollTop;
+        
+        // Smooth scroll the container
+        scrollContainer.scrollTo({
+          top: scrollTop,
+          behavior: 'smooth'
+        });
       }
     }
   }, [mainTasks]); // Re-run when tasks change
@@ -311,24 +323,25 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-full md:-mt-8">
-
+    <div className={`flex flex-col md:flex-row h-full min-h-screen w-full md:-mt-12 ${isDark ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}>
       {/* Main Content */}
-      <div className="flex-1">
+      <div className={`flex-1 h-full min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300 p-4`}>
         {/* Task List and Side Cards */}
-        <div className="space-y-4">
-          <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-            <TaskList 
-              tasks={mainTasks}
-              isLoading={isLoading}
-              onTaskClick={handleTaskClick}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-            />
+        <div className={`h-full space-y-4 ${isDark ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}>
+          <div className={`flex flex-col md:flex-row gap-4 md:gap-6 h-full ${isDark ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}>
+            <div className={`flex-1 ${isDark ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}>
+              <TaskList 
+                tasks={mainTasks}
+                isLoading={isLoading}
+                onTaskClick={handleTaskClick}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              />
+            </div>
 
-            <div className="space-y-4">
+            <div className={`w-full md:w-80 space-y-4 ${isDark ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}>
               <Goals
                 goals={goals}
                 onGoalAdd={handleGoalAdd}
@@ -351,42 +364,46 @@ export default function Home() {
       </div>
 
       {/* Modals */}
-      {isEditModalOpen && selectedTask && ( // Add selectedTask check here
+      {isEditModalOpen && selectedTask && (
         <Modal
           title="Edit Task"
           onClose={handleCloseModal}
           size="md"
         >
-          <TaskForm
-            mode="edit"
-            onSubmit={handleEditTaskSubmit}
-            onClose={handleCloseModal}
-            onDelete={() => setShowDeleteWarning(true)}
-            initialTask={{
-              name: selectedTask!.name,
-              time: renderTaskTime(selectedTask!),
-              duration: selectedTask!.duration,
-              isEmailEnabled: selectedTask!.isEmailEnabled,
-              isWhatsAppEnabled: selectedTask!.isWhatsAppEnabled,
-              isTelegramEnabled: selectedTask!.isTelegramEnabled,
-              isCallEnabled: selectedTask!.isCallEnabled
-            }}
-          />
+          <div className={`${isDark ? 'bg-gray-900' : 'bg-white'} transition-colors duration-300`}>
+            <TaskForm
+              mode="edit"
+              onSubmit={handleEditTaskSubmit}
+              onClose={handleCloseModal}
+              onDelete={() => setShowDeleteWarning(true)}
+              initialTask={{
+                name: selectedTask!.name,
+                time: renderTaskTime(selectedTask!),
+                duration: selectedTask!.duration,
+                isEmailEnabled: selectedTask!.isEmailEnabled,
+                isWhatsAppEnabled: selectedTask!.isWhatsAppEnabled,
+                isTelegramEnabled: selectedTask!.isTelegramEnabled,
+                isCallEnabled: selectedTask!.isCallEnabled
+              }}
+            />
+          </div>
         </Modal>
       )}
 
       {showDeleteWarning && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-sm mx-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Delete Task</h3>
-            <p className="text-sm text-gray-500 mb-6">
+          <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-full max-w-sm mx-4 transition-colors duration-300`}>
+            <h3 className={`text-lg font-medium ${isDark ? 'text-gray-100' : 'text-gray-900'} mb-4 transition-colors duration-300`}>Delete Task</h3>
+            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-6 transition-colors duration-300`}>
               Are you sure you want to delete this task? This action cannot be undone.
             </p>
             
             <div className="flex justify-end space-x-4">
               <button
                 onClick={() => setShowDeleteWarning(false)}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                className={`inline-flex items-center px-4 py-2 border ${
+                  isDark ? 'border-gray-600 text-gray-300 bg-gray-700 hover:bg-gray-600' : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
+                } text-sm font-medium rounded-md transition-colors duration-300`}
               >
                 Cancel
               </button>
@@ -404,9 +421,9 @@ export default function Home() {
 
       {showTaskStatusModal && selectedPastTask && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-sm mx-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Task Status</h3>
-            <p className="text-sm text-gray-500 mb-6">
+          <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-full max-w-sm mx-4 transition-colors duration-300`}>
+            <h3 className={`text-lg font-medium ${isDark ? 'text-gray-100' : 'text-gray-900'} mb-4 transition-colors duration-300`}>Task Status</h3>
+            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-6 transition-colors duration-300`}>
               Was this task completed?
             </p>
             
@@ -416,7 +433,9 @@ export default function Home() {
                   setShowTaskStatusModal(false);
                   showErrorToast('Task marked as incomplete');
                 }}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                className={`inline-flex items-center px-4 py-2 border ${
+                  isDark ? 'border-gray-600 text-gray-300 bg-gray-700 hover:bg-gray-600' : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
+                } text-sm font-medium rounded-md transition-colors duration-300`}
               >
                 Not Done
               </button>
