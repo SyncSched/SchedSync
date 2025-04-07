@@ -59,7 +59,6 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
         });
 
         if (existingSchedule) {
-            console.log("Schedule is already being generated.");
             return next(new BadUserInputError({ message: "A schedule generation is already in progress" }));
         }
 
