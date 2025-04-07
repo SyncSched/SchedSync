@@ -45,8 +45,26 @@ export const handler = async (event: any, context: Context) => {
 
   // 🟢 Handle API Gateway requests
   return new Promise((resolve, reject) => {
+    console.log('[API Call]:', {
+      path: event.path,
+      method: event.httpMethod,
+      body: event.body,
+      queryParams: event.queryStringParameters
+    });
+
     serverless.proxy(server, event, context, "CALLBACK", (err, res) => {
-      if (err) return reject(err);
+      if (err) {
+        console.error('[API Response Error]:', err);
+        return reject(err);
+      }
+      
+      console.log('[API Response]:', {
+        path: event.path,
+        method: event.httpMethod,
+        statusCode: res?.statusCode,
+        body: res?.body
+      });
+      
       resolve(res);
     });
   });
