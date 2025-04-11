@@ -191,6 +191,20 @@ export const generateSchedule = async ( user: any) => {
       - Sleeping Hours: ${user.onboardingData?.sleepingHours} hours (${user.onboardingData?.sleepingStart} - ${user.onboardingData?.sleepingEnd})
       - Timezone: ${user.timezone}
       - Hobbies: ${user.onboardingData?.hobbies.join(', ')}
+      -weights: ${user.weights.join(', ')}
+
+      ---
+
+      ### **Additional Personalization with Weights:**
+
+      You are also provided with a "weights" array. This array contains 1440 numbers (one for each minute of the day, from 00:00 to 23:59). Each index in the array represents how effective or preferred that minute is for the user based on past behavior. Higher values mean higher productivity or preference.
+
+      - When deciding when to place tasks, **prefer intervals that have the highest total weight**.
+      - For each potential time slot, calculate the **sum of weights in that interval** and prefer slots with **higher cumulative weight**.
+      - Especially for **high-priority tasks**, always place them in intervals with **maximum available weights**.
+      - For low-priority tasks or hobbies, use low-weight intervals or filler time.
+
+      ---
 
       ### **Schedule Requirements:**  
       1. The schedule must **cover all available hours except sleep time**, strictly following the user's sleeping hours from ${user.onboardingData?.sleepingStart} to ${user.onboardingData?.sleepingEnd}.  
@@ -206,7 +220,11 @@ export const generateSchedule = async ( user: any) => {
       7. **STRICT: Calculate end time (start time + duration) before assigning the next task**
       8. The schedule should be balanced between work, breaks, and personal time
       9. **All durations must be between 1 and 180 minutes**
-      10. Ensure proper meal times: breakfast (6-9 AM), lunch (12-2 PM), dinner (6-8 PM)
+      10. Ensure proper meal times: breakfast (6-9 AM), lunch (12-2 PM), dinner (6-8 PM), give atleast 45 min for a meal slot. 
+      11. Activities like meal, breaks, focussing on hobbies, can be placed in those slots which the productivity is low.
+      12. No more than **4 continuous hours of work**. Insert breaks after that.
+      13. Make use of the weights to optimize placement of tasks and adapt based on the retrieved context.
+      14. Ensure balance between productivity, breaks, and leisure.
 
       ### **Output Format:**  
       Return a JSON array where each object MUST contain:
