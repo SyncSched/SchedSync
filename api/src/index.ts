@@ -43,12 +43,6 @@ export const handler = async (event: any, context: Context) => {
 
   if (event.path === '/telegram/webhook' && event.httpMethod === 'POST') {
     console.log('[LAMBDA] Processing Telegram webhook');
-  
-    // ✅ Respond immediately to Telegram
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ message: 'Telegram webhook received' }),
-    };
   }
   
 
