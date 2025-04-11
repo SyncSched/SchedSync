@@ -1,6 +1,0 @@
-1.No starttime for the task , that need to be added 
-the new task will be automatically added at the last time slot
-
-2.update Add task modal => remove time in that modal
-
-3.update the modal of the task like todoist
