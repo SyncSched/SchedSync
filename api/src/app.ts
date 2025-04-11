@@ -10,7 +10,7 @@ import { attachPublicRoutes, attachPrivateRoutes } from './routes/routes';
 import { authMiddleware } from './middleware/authMiddleware';
 import { RouteNotFoundError } from './errors';
 import { handleError } from './middleware/error';
-import { initScheduleCron } from './cron/scheduleCron';
+import { initLocalScheduleCron } from './cron/scheduleCron';
 import { initNotificationCron } from './cron/RemainderCron';
 
 import './utils/passportConfig';
@@ -41,7 +41,6 @@ app.get(
   }),
   (req, res) => {
     const user = req.user as User;
-    console.log(user);
     if (user && user.id) {
       const token = generateToken({
         id: user.id.toString(),
@@ -49,10 +48,8 @@ app.get(
         name: user.name,
         avatarUrl: user.avatarUrl
       });
-      console.log('Login successful. User details:', req.user);
       res.redirect(`${process.env.CLIENT_URL}/login?token=${token}`);
     } else {
-      console.log('Login failed. User not authenticated.');
       res.redirect(process.env.CLIENT_URL || 'http://localhost:8080');
     }
   },
@@ -70,8 +67,12 @@ attachPrivateRoutes(app);
 app.use((req, _res, next) => next(new RouteNotFoundError(req.originalUrl)));
 app.use(handleError);
 
-// Initialize cron jobs
-initScheduleCron();
-initNotificationCron();
+// Initialize cron jobs only in local development
+if (process.env.NODE_ENV !== 'production') {
+  initLocalScheduleCron();
+  initNotificationCron();
+} else {
+  console.log('Running in production mode - cron jobs will be handled by AWS EventBridge');
+}
 
 export default app;

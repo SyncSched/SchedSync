@@ -1,6 +1,6 @@
 
 import { PrismaClient } from '@prisma/client';
-import { CreateUserInput, User } from '../models/user.model';
+import { CreateUserInput, User , UserSettings } from '../models/user.model';
 import { BadUserInputError } from '../errors';
 
 const prisma = new PrismaClient();
@@ -11,7 +11,6 @@ export const createUser = async (data: CreateUserInput): Promise<User | null> =>
   });
 
   if (existingUser) {
-    console.log('User already exists:', existingUser);
     return existingUser; 
   }
 
@@ -111,4 +110,31 @@ export const updateUserSettings = async (
       }
     });
   });
+};
+
+export const getUserSettings = async (userId: string): Promise<UserSettings | null> => {
+  if (!userId) {
+    throw new BadUserInputError({ message: 'User ID is required' });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      timezone: true,
+      isEmailEnabled: true,
+      isWhatsAppEnabled: true,
+      isTelegramEnabled: true,
+      isCallEnabled: true,
+      notifyBeforeMinutes: true,
+      phoneNumber: true,
+      telegramChatId: true,
+      onboardingData: true
+    }
+  });
+
+  if (!user) {
+    return null;
+  }
+
+  return user;
 };

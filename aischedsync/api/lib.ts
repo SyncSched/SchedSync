@@ -1,5 +1,26 @@
 import Cookies from 'js-cookie';
-// /lib/api.ts
+
+export interface UserSettings {
+  timezone: string;
+  isEmailEnabled: boolean;
+  isWhatsAppEnabled: boolean;
+  isTelegramEnabled: boolean;
+  isCallEnabled: boolean;
+  notifyBeforeMinutes: number;
+  phoneNumber?: string | null;
+  telegramChatId?: string | null;
+  onboardingData?: {
+    profession: string;
+    hobbies: string[];
+    sleepingHours: number;
+    sleepingStart: string;
+    sleepingEnd: string;
+    workingHours: number;
+    workingStart: string;
+    workingEnd: string;
+  } | null;
+}
+
 export interface User {
     id?: string;
     email: string;
@@ -270,5 +291,215 @@ export const updateSchedule = async (scheduleId: string, tasks: Task[]): Promise
   } catch (error) {
     console.error('Error updating schedule:', error);
     throw error;
+  }
+};
+
+export interface NotificationSettings {
+  timezone: string;
+  isEmailEnabled: boolean;
+  isWhatsAppEnabled: boolean;
+  isTelegramEnabled: boolean;
+  isCallEnabled: boolean;
+  notifyBeforeMinutes: number;
+  phoneNumber?: string;
+  onboardingData?: {
+    profession: string;
+    hobbies: string[];
+    sleepingHours: number;
+    sleepingStart: string;
+    sleepingEnd: string;
+    workingHours: number;
+    workingStart: string;
+    workingEnd: string;
+  };
+}
+
+/**
+ * Updates the user's notification settings
+ */
+export const updateUserSettings = async (settings: NotificationSettings): Promise<void> => {
+  const token = getStoredAuthToken();
+  
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/user/settings`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      timezone: settings.timezone,
+      notificationPreferences: {
+        isEmailEnabled: settings.isEmailEnabled,
+        isWhatsAppEnabled: settings.isWhatsAppEnabled,
+        isTelegramEnabled: settings.isTelegramEnabled,
+        isCallEnabled: settings.isCallEnabled,
+        notifyBeforeMinutes: settings.notifyBeforeMinutes,
+        phoneNumber: settings.phoneNumber
+      },
+      onboardingData: settings.onboardingData
+    })
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to update settings');
+  }
+
+  return await response.json();
+};
+
+/**
+ * Gets the user's settings
+ */
+export const getUserSettings = async (): Promise<UserSettings> => {
+  const token = getStoredAuthToken();
+  
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/user/settings`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch user settings');
+  }
+
+  return await response.json();
+};
+
+export const updateUserTimezone = async (timezone: string): Promise<void> => {
+  const token = getStoredAuthToken();
+  
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/user/timezone`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ timezone })
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to update timezone');
+  }
+};
+
+export const getTelegramAuthLink = async (userId: string): Promise<{ authLink: string }> => {
+  const response = await fetch(`${API_URL}/users/${userId}/telegram-auth`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${getStoredAuthToken()}`
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to generate Telegram auth link');
+  }
+
+  return response.json();
+};
+
+export interface NotificationTask {
+  id: string;
+  name: string;
+  time: string;
+  duration: number;
+}
+
+export interface Notification {
+  id: string;
+  taskId: string;
+  userId: string;
+  channel: 'email' | 'whatsapp' | 'telegram' | 'call';
+  status: 'pending' | 'sent' | 'failed';
+  notifyAt: string;
+  createdAt: string;
+  task: NotificationTask;
+}
+
+/**
+ * Gets upcoming notifications for the user
+ */
+export const getUpcomingNotifications = async (): Promise<Notification[]> => {
+  const token = getStoredAuthToken();
+  
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/notifications/upcoming`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch upcoming notifications');
+  }
+
+  return await response.json();
+};
+
+/**
+ * Updates a notification's time
+ */
+export const updateNotificationTime = async (notificationId: string, newTime: string): Promise<Notification> => {
+  const token = getStoredAuthToken();
+  
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/notifications/${notificationId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ notifyAt: newTime })
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to update notification time');
+  }
+
+  return await response.json();
+};
+
+/**
+ * Deletes a notification
+ */
+export const deleteNotification = async (notificationId: string): Promise<void> => {
+  const token = getStoredAuthToken();
+  
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/notifications/${notificationId}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to delete notification');
   }
 };

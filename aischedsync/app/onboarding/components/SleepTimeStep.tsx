@@ -35,8 +35,15 @@ const SleepTimeStep: React.FC<SleepTimeStepProps> = ({ value, onChange }) => {
 
   const convertStringTimeToDate = (timeStr: string): Date => {
     const date = new Date();
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    date.setHours(hours, minutes, 0, 0);
+    // If timeStr is an ISO string, extract just the time part
+    if (timeStr.includes('T')) {
+      const isoTime = new Date(timeStr);
+      date.setHours(isoTime.getHours(), isoTime.getMinutes(), 0, 0);
+    } else {
+      // Handle HH:mm format
+      const [hours, minutes] = (timeStr || '00:00').split(':').map(Number);
+      date.setHours(hours || 0, minutes || 0, 0, 0);
+    }
     return date;
   };
 
@@ -205,7 +212,7 @@ const SleepTimeStep: React.FC<SleepTimeStepProps> = ({ value, onChange }) => {
               <TimeInput
                 value={convertStringTimeToDate(value.sleepingStart)}
                 onChange={handleStartTimeChange}
-                className="w-full"
+                className="w-full bg-[#eef2ff] text-[#6366f2] border-0"
               />
 
               {/* Quick Select Times */}
@@ -215,8 +222,7 @@ const SleepTimeStep: React.FC<SleepTimeStepProps> = ({ value, onChange }) => {
                     key={time}
                     onClick={() => handleQuickSelect(time)}
                     className="px-3 py-2 rounded-xl text-sm font-medium
-                      bg-gradient-to-r from-indigo-50 to-purple-50
-                      text-indigo-600 hover:from-indigo-100 hover:to-purple-100
+                      bg-[#EEF2FF] text-[#4F46E5] hover:bg-[#E0E7FF]
                       transition-all duration-200"
                   >
                     {time}
@@ -227,16 +233,15 @@ const SleepTimeStep: React.FC<SleepTimeStepProps> = ({ value, onChange }) => {
           </div>
 
           {/* Wake Time Preview - made responsive */}
-          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4 flex items-center justify-between
-            sm:h-[52px] my-auto"> {/* Added height to match time input */}
-            <div className="flex items-center gap-2">
-              <Sun className="w-5 h-5 text-amber-500" />
-              <span className="text-sm sm:text-base font-semibold text-gray-900">
-                Wake up time
+          <div className="space-y-3">
+            <label className="text-base font-semibold text-gray-900 flex items-center gap-2">
+              <Sun className="w-4 h-4" />
+              Wake up time
+            </label>
+            <div className="flex items-center h-[52px] px-3 rounded-lg border border-gray-200 bg-white">
+              <span className="text-base sm:text-lg font-semibold text-gray-900">
+                {formatTime(convertStringTimeToDate(value.sleepingEnd))}
               </span>
-            </div>
-            <div className="text-base sm:text-lg font-bold text-indigo-600">
-              {formatTime(convertStringTimeToDate(value.sleepingEnd))}
             </div>
           </div>
         </div>

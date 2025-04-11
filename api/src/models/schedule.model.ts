@@ -1,16 +1,33 @@
 import { User } from "./user.model";
+import { TaskStatus as PrismaTaskStatus, Priority as PrismaPriority } from '@prisma/client';
+
+// Update enums to match Prisma's types
+export type TaskStatus = PrismaTaskStatus;
+export type Priority = PrismaPriority;
 
 // Basic task structure
 export interface Task {
     id: string;
     name: string;
-    time: Date;    // Changed from string to Date
-    duration: number; // Duration in minutes
+    description: string | null;
+    notes: string | null;
+    time: Date;
+    duration: number;
+    status: TaskStatus;
+    priority: Priority;
+    location: string | null;
     scheduleId: string;
+    
+    // Notification preferences
     isEmailEnabled: boolean;
     isWhatsAppEnabled: boolean;
     isTelegramEnabled: boolean;
     isCallEnabled: boolean;
+
+    // Metadata
+    createdAt: Date;
+    updatedAt: Date;
+    completedAt: Date | null;
 }
   
   
@@ -18,15 +35,32 @@ export interface Task {
   export interface Schedule {
     id: string;
     userId: string;
-    user: User;
+    status: string;
     originalData: Task[];
+    user: User;
     createdAt: Date;
+    updatedAt: Date;
   }
   
   // Input types for creating/updating
-  export type CreateScheduleInput = Omit<Schedule, 'id' | 'createdAt' | 'user'> 
-
-
+  export interface CreateScheduleInput {
+    userId: string;
+    originalData: {
+        name: string;
+        description?: string | null;
+        notes?: string | null;
+        time: Date;
+        duration: number;
+        status?: TaskStatus;
+        priority?: Priority;
+        location?: string | null;
+        isEmailEnabled?: boolean;
+        isWhatsAppEnabled?: boolean;
+        isTelegramEnabled?: boolean;
+        isCallEnabled?: boolean;
+    }[];
+  }
+  
   export type UpdateScheduleInput = Partial<CreateScheduleInput>;
   
   // Task input types

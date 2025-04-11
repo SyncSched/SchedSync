@@ -37,6 +37,7 @@ model User {
   notifyBeforeMinutes Int          @default(10) // Reminder time before task in minutes
   
   notifications      TaskNotification[]
+  telegramAuth TelegramAuth[]
 }
 
 model TaskNotification {
@@ -81,15 +82,66 @@ model Schedule {
 model Task {
   id                String            @id @default(uuid())
   name              String
-  time              DateTime          // Changed from String to DateTime
-  duration          Int
+  description       String?           // Optional task description
+  notes             String?           // Rich text content (HTML)
+  time              DateTime          // Scheduled start time
+  duration          Int               // Planned duration in minutes
+  status            TaskStatus        @default(PENDING)
+  priority          Priority          @default(MEDIUM)
+  location          String?           // Optional location field
   scheduleId        String
+  
+  // Notification settings
   isEmailEnabled    Boolean           @default(false)
   isWhatsAppEnabled Boolean           @default(false)
   isTelegramEnabled Boolean           @default(false)
   isCallEnabled     Boolean           @default(false)
-  schedule          Schedule          @relation(fields: [scheduleId], references: [id],onDelete: Cascade)
+
+  // Metadata
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  completedAt       DateTime?         // When the task was marked as completed
+  
+  // Relations
+  schedule          Schedule          @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
   notifications     TaskNotification[]
+  attachments       Attachment[]      // One-to-many relation with attachments
 
   @@map("tasks")
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model Attachment {
+  id        String   @id @default(uuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  filename  String
+  fileUrl   String
+  fileType  String   // MIME type
+  fileSize  Int      // Size in bytes
+  uploadedAt DateTime @default(now())
+}
+
+
+model TelegramAuth {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([token])
 }
