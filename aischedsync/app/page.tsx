@@ -12,7 +12,15 @@ import { isTaskActive, formatToHHMM } from '@/app/utils/dateUtils';
 import Goals from './components/Goals';
 
 
+
+import dynamic from "next/dynamic";
+
+
+
 export default function Home() {
+
+
+  
   const [mainTasks, setMainTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [quickTasks, setQuickTasks] = useState([
@@ -64,15 +72,24 @@ export default function Home() {
     }
   }, [mainTasks]); // Re-run when tasks change
 
+  const handleLocationSelect = (latlng: { lat: number; lng: number }) => {
+    console.log("Selected location:", latlng);
+    // You can update state here or save to DB etc.
+  };
 
   interface TaskFormData {
     name: string;
-    time: string;
-    duration: number;
-    isEmailEnabled: boolean;
-    isWhatsAppEnabled: boolean;
-    isTelegramEnabled: boolean;
-    isCallEnabled: boolean;
+  description: string;
+  time: string;
+  duration: number;
+  endTime: string;
+  priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  status: 'PENDING' | 'COMPLETED';
+  location?: string| null;
+  isEmailEnabled: boolean;
+  isWhatsAppEnabled: boolean;
+  isTelegramEnabled: boolean;
+  isCallEnabled: boolean;
   }
 
   useEffect(() => {
@@ -172,6 +189,7 @@ export default function Home() {
 
   const handleEditTaskSubmit = async (formData: TaskFormData) => {
     try {
+      console.log(selectedTask)
       if (!selectedTask) return;
       const updatedTask: Task = {
         ...selectedTask,

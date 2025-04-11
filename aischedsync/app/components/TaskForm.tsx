@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
 import TimeInput from './ui/TimeInput';
 import { formatToHHMM, convertHHMMToISO } from '../utils/dateUtils';
+import dynamic from "next/dynamic";
+import { LatLngLiteral } from "leaflet";
+import { div } from 'framer-motion/client';
+
+
+// Load Leaflet dynamically to avoid SSR issues
+const LocationPicker = dynamic(() => import("../components/LocationPicker"), {
+  ssr: false,
+});
 
 interface TaskFormProps {
   onSubmit: (task: TaskFormData) => void;
@@ -15,7 +24,7 @@ interface TaskFormProps {
     isWhatsAppEnabled?: boolean;
     isTelegramEnabled?: boolean;
     isCallEnabled?: boolean;
-    location?: string;
+    location?: string| null
   };
 }
 
@@ -25,9 +34,9 @@ export interface TaskFormData {
   time: string;
   duration: number;
   endTime: string;
-  priority: 'high' | 'medium' | 'low';
-  status: 'pending' | 'completed';
-  location: string;
+  priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  status: 'PENDING' | 'COMPLETED';
+  location?: string | null;
   isEmailEnabled: boolean;
   isWhatsAppEnabled: boolean;
   isTelegramEnabled: boolean;
@@ -42,7 +51,8 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   initialTask 
 }) => {
   const [activeTab, setActiveTab] = useState<'details' | 'second'>('details');
-
+  const [showMap, setShowMap] = useState(false);
+  const [location, setLocation] = useState<string | null>(null); 
   // Initialize the time value correctly
   const getInitialTime = () => {
     if (initialTask?.time) {
@@ -62,9 +72,9 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     time: getInitialTime(),
     duration: initialTask?.duration || 30,
     endTime: '',
-    priority: 'medium',
-    status: 'pending',
-    location: initialTask?.location || '',
+    priority: 'MEDIUM',
+    status: 'PENDING',
+    location: initialTask?.location,
     isEmailEnabled: initialTask?.isEmailEnabled || false,
     isWhatsAppEnabled: initialTask?.isWhatsAppEnabled || false,
     isTelegramEnabled: initialTask?.isTelegramEnabled || false,
@@ -90,6 +100,13 @@ export const TaskForm: React.FC<TaskFormProps> = ({
       time: timeString
     }));
   };
+  const handleLocationChange = () => {
+    console.log({location: location})
+   setFormData(prev => ({
+      ...prev,
+      location: location
+    }));
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, type } = e.target;
@@ -113,6 +130,8 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   };
 
   return (
+
+    <div>
     <form onSubmit={handleSubmit} className="flex flex-col h-full">
       {/* Tabs Header */}
       <div className="flex items-end px-2 sm:px-4 pt-2 bg-white">
@@ -295,7 +314,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             <div className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-gray-100 p-3 lg:pl-3 flex flex-col backdrop-blur-sm">
               <div className="flex-1 space-y-2.5">
                 {/* Location Field */}
-                <div className="bg-white rounded-lg p-2 shadow-sm border border-gray-100/80">
+                {/* <div className="bg-white rounded-lg p-2 shadow-sm border border-gray-100/80">
                   <label className="block text-[11px] font-medium text-gray-600 mb-1">Location</label>
                   <div className="relative">
                     <input
@@ -313,7 +332,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                       </svg>
                     </div>
                   </div>
-                </div>
+                </div> */}
 
                 {/* Time Details */}
                 <div className="bg-white rounded-lg p-2 shadow-sm border border-gray-100/80">
@@ -350,22 +369,22 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                       value={formData.priority}
                       onChange={handleChange}
                       className={`w-full px-2 py-1.5 appearance-none rounded-lg text-xs font-medium focus:outline-none focus:ring-1 transition-colors duration-200 ${
-                        formData.priority === 'high' 
+                        formData.priority === 'HIGH' 
                           ? 'bg-red-50 text-red-700 focus:ring-red-200' 
-                          : formData.priority === 'medium'
+                          : formData.priority === 'MEDIUM'
                           ? 'bg-amber-50 text-amber-700 focus:ring-amber-200'
                           : 'bg-green-50 text-green-700 focus:ring-green-200'
                       }`}
                     >
-                      <option value="high" className="bg-red-50 text-red-700">High</option>
-                      <option value="medium" className="bg-amber-50 text-amber-700">Medium</option>
-                      <option value="low" className="bg-green-50 text-green-700">Low</option>
+                      <option value="HIGH" className="bg-red-50 text-red-700">High</option>
+                      <option value="MEDIUM" className="bg-amber-50 text-amber-700">Medium</option>
+                      <option value="LOW" className="bg-green-50 text-green-700">Low</option>
                     </select>
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
                       <svg className={`size-3.5 ${
-                        formData.priority === 'high' 
+                        formData.priority === 'HIGH' 
                           ? 'text-red-500' 
-                          : formData.priority === 'medium'
+                          : formData.priority === 'MEDIUM'
                           ? 'text-amber-500'
                           : 'text-green-500'
                       }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -384,17 +403,17 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                       value={formData.status}
                       onChange={handleChange}
                       className={`w-full px-2 py-1.5 appearance-none rounded-lg text-xs font-medium focus:outline-none focus:ring-1 transition-colors duration-200 ${
-                        formData.status === 'pending' 
+                        formData.status === 'PENDING' 
                           ? 'bg-blue-50 text-blue-700 focus:ring-blue-200' 
                           : 'bg-emerald-50 text-emerald-700 focus:ring-emerald-200'
                       }`}
                     >
-                      <option value="pending" className="bg-blue-50 text-blue-700">Pending</option>
-                      <option value="completed" className="bg-emerald-50 text-emerald-700">Completed</option>
+                      <option value="PENDING" className="bg-blue-50 text-blue-700">Pending</option>
+                      <option value="COMPLETED" className="bg-emerald-50 text-emerald-700">Completed</option>
                     </select>
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
                       <svg className={`size-3.5 ${
-                        formData.status === 'pending' 
+                        formData.status === 'PENDING' 
                           ? 'text-blue-500' 
                           : 'text-emerald-500'
                       }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -409,9 +428,17 @@ export const TaskForm: React.FC<TaskFormProps> = ({
               <div className="sticky bottom-0 bg-white border-t border-gray-100 mt-2 p-2 space-y-1.5 rounded-b-xl">
                 <button
                   type="submit"
+                  onClick={()=> {console.log(formData)}}
                   className="w-full px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-blue-500 transition-all duration-200 shadow-sm"
                 >
                   Update
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowMap(true)}
+                  className="w-full px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-blue-500 transition-all duration-200 shadow-sm"
+                >
+                  Set Location
                 </button>
                 
         {mode === 'edit' && onDelete && (
@@ -435,5 +462,27 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         )}
       </div>
     </form>
+
+    {showMap && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg shadow-lg w-[90%] max-w-3xl">
+            <LocationPicker
+              onSelect={(coords) => {
+                if (coords) {
+                  setLocation(`${coords.lat},${coords.lng}`);
+                }
+              }}
+            />
+            <button
+              onClick={() =>  { handleLocationChange(); setShowMap(false)}}
+              className="mt-4 bg-red-500 text-white px-4 py-2 rounded"
+            >
+              Close Map
+            </button>
+          </div>
+        </div>
+      )}
+
+    </div>
   );
 };
