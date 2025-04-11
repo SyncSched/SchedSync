@@ -152,23 +152,72 @@ export async function hasCalendarIntegration(userId: string): Promise<boolean> {
  */
 export async function getCurrentDayCalendarEvents(userId: string, date: Date): Promise<CalendarEvent[]> {
   try {
-    // Create start and end of the day in the user's timezone
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
-
     // Get user's timezone
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { timezone: true }
     });
 
-    // If we have the user's timezone, adjust the dates
-    if (user && user.timezone) {
-      console.log(`Getting calendar events for ${date.toISOString()} in timezone ${user.timezone}`);
+    if (!user) {
+      throw new Error('User not found');
     }
+
+    const userTimezone = user.timezone || 'UTC';
+
+    // Helper function to get timezone offset
+    function getTimezoneOffset(timezone: string, date: Date): number {
+      const localDate = new Date(date.toLocaleString('en-US', { timeZone: timezone }));
+      const utcDate = new Date(date.toLocaleString('en-US', { timeZone: 'UTC' }));
+      return (utcDate.getTime() - localDate.getTime()) / 60000; // Convert ms to minutes
+    }
+
+    // Calculate timezone offset
+    const calculatedOffset = getTimezoneOffset(userTimezone, date);
+
+    // For a user in India (UTC+5:30) requesting April 11:
+    // - startOfDay should be April 11, 18:30:00 UTC (which is April 12, 00:00:00 in India)
+    // - endOfDay should be April 12, 18:29:59 UTC (which is April 13, 23:59:59 in India)
+
+    // Create a new date object for the requested date
+    const requestDate = new Date(date);
+
+    // Get the date in the user's timezone
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: userTimezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+
+    // Get the date parts in the user's timezone
+    const dateParts = formatter.formatToParts(requestDate);
+    const year = parseInt(dateParts.find(part => part.type === 'year')?.value || '2025');
+    const month = parseInt(dateParts.find(part => part.type === 'month')?.value || '01') - 1; // Month is 0-indexed
+    const day = parseInt(dateParts.find(part => part.type === 'day')?.value || '01');
+
+    // For India (UTC+5:30), if the user requests April 11:
+    // We need to create April 11, 18:30:00 UTC (which is April 12, 00:00:00 in India)
+
+    // Create the start time in UTC
+    const startOfDay = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+
+    // Adjust for timezone offset to get the correct UTC time
+    // For India (UTC+5:30), we need to subtract 5.5 hours from local midnight to get UTC time
+    startOfDay.setUTCMinutes(startOfDay.getUTCMinutes() + calculatedOffset);
+
+    // Create the end time (23:59:59.999) in the user's local timezone
+    // This is exactly 24 hours after the start time, minus 1 millisecond
+    const endOfDay = new Date(startOfDay);
+    endOfDay.setUTCHours(endOfDay.getUTCHours() + 24);
+    endOfDay.setUTCMilliseconds(endOfDay.getUTCMilliseconds() - 1);
+
+    console.log('Calendar Query Range:', {
+      userTimezone,
+      calculatedOffset,
+      date: date.toISOString(),
+      startOfDay: startOfDay.toISOString(),
+      endOfDay: endOfDay.toISOString(),
+    });
 
     return await getUserCalendarEvents(userId, startOfDay, endOfDay);
   } catch (error) {
