@@ -40,19 +40,19 @@ const Login = () => {
     }, []);
 
     const loginWithGoogle = () => {
-        const scope = `https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email`;
+        const scope = `https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/calendar.readonly`;
         const redirectUri = `${process.env.NEXT_PUBLIC_API_URL}/auth/google/callback`;
         // const redirectUri = `https://jtxg13v8e1.execute-api.us-east-1.amazonaws.com/default/auth/google/callback`;
         const clientId = `535450891467-v9pu6251j703u36r8l5gsogdrrnkf04a.apps.googleusercontent.com`;
-        const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
-        
+        const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent`;
+
         window.open(url, "_self");
     };
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
-        
+
         if (token) {
             Cookies.set('authToken', token, { expires: 7, sameSite: 'strict' });
             router.push('/');
@@ -81,14 +81,14 @@ const Login = () => {
 
                     {/* Auth Button */}
                     <div className="space-y-4">
-                        <button 
+                        <button
                             onClick={loginWithGoogle}
                             className="w-full flex items-center justify-center gap-3 px-6 py-3.5 border-2 border-gray-200 rounded-full text-gray-700 hover:bg-gray-50 transition-all duration-200 text-sm font-medium"
                         >
-                            <Image 
+                            <Image
                                 src={googleImg}
-                                alt="Google Logo" 
-                                width={20} 
+                                alt="Google Logo"
+                                width={20}
                                 height={20}
                                 className="w-5 h-5"
                             />
@@ -100,7 +100,7 @@ const Login = () => {
                     <div className="mt-12 relative p-6 rounded-2xl bg-gradient-to-r from-gray-50/50 to-blue-50/50 backdrop-blur-sm">
                         <div className="absolute top-2 left-4 text-4xl text-blue-200 font-serif">&ldquo;</div>
                         <div className="min-h-[100px] flex items-center justify-center">
-                            <div 
+                            <div
                                 className="text-center transition-opacity duration-500"
                                 key={currentQuote} // Force re-render for animation
                             >
@@ -122,8 +122,8 @@ const Login = () => {
                                 key={index}
                                 onClick={() => setCurrentQuote(index)}
                                 className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-                                    currentQuote === index 
-                                        ? 'bg-blue-500 w-3' 
+                                    currentQuote === index
+                                        ? 'bg-blue-500 w-3'
                                         : 'bg-gray-300 hover:bg-gray-400'
                                 }`}
                                 aria-label={`Quote ${index + 1}`}
