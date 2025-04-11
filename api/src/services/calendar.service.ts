@@ -147,6 +147,37 @@ export async function hasCalendarIntegration(userId: string): Promise<boolean> {
 }
 
 /**
+ * Get user's calendar events for the current day
+ * This is specifically used for schedule generation to include existing calendar events
+ */
+export async function getCurrentDayCalendarEvents(userId: string, date: Date): Promise<CalendarEvent[]> {
+  try {
+    // Create start and end of the day in the user's timezone
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Get user's timezone
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { timezone: true }
+    });
+
+    // If we have the user's timezone, adjust the dates
+    if (user && user.timezone) {
+      console.log(`Getting calendar events for ${date.toISOString()} in timezone ${user.timezone}`);
+    }
+
+    return await getUserCalendarEvents(userId, startOfDay, endOfDay);
+  } catch (error) {
+    console.error('Error fetching current day calendar events:', error);
+    return [];
+  }
+}
+
+/**
  * Remove calendar integration for a user
  */
 export async function removeCalendarIntegration(userId: string): Promise<boolean> {

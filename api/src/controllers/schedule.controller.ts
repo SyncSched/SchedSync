@@ -1,12 +1,12 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { createSchedule, getSchedule, updateSchedule } from '../services/schedule.service';
 import { BadUserInputError, EntityNotFoundError } from '../errors';
 import { CreateScheduleInput } from '../models/schedule.model';
 import { generateSchedule } from '../workflow';
-import { getOnboardingData } from '../services/onboarding.service';
 import { AuthenticatedRequest } from '../types/request';
 import { PrismaClient } from '@prisma/client';
 import { formatInTimeZone } from 'date-fns-tz';
+import { getCurrentDayCalendarEvents, hasCalendarIntegration } from '../services/calendar.service';
 
 const prisma = new PrismaClient();
 
@@ -24,7 +24,7 @@ export const getScheduleHandler = async(req:AuthenticatedRequest, res:Response, 
         if(!requiredSchedule)
             return next(new EntityNotFoundError("Failed to retrieve the schedule or it's not present"));
 
-        res.status(201).json(requiredSchedule); 
+        res.status(201).json(requiredSchedule);
     }catch(err){
         next(err);
     }
@@ -83,8 +83,68 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
             return next(new EntityNotFoundError("User data or onboarding data not found. Please complete onboarding."));
         }
 
-        // Generate the schedule with complete user information
-        const generatedSchedule = await generateSchedule(userWithOnboarding);
+        // Check if user has calendar integration and fetch calendar events
+        let calendarEvents: any[] = [];
+        const hasCalendar = await hasCalendarIntegration(userId);
+
+        if (hasCalendar) {
+            try {
+                // Get calendar events for today
+                const today = new Date();
+                const events = await getCurrentDayCalendarEvents(userId, today);
+
+                // Transform events into task format
+                calendarEvents = events.map(event => {
+                    // Extract start and end times
+                    const startTime = event.start?.dateTime ? new Date(event.start.dateTime) : null;
+                    const endTime = event.end?.dateTime ? new Date(event.end.dateTime) : null;
+
+                    // Calculate duration in minutes
+                    const durationMinutes = startTime && endTime ?
+                        Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60)) :
+                        60; // Default to 1 hour if times are not available
+
+                    // Format time as HH:MM
+                    const formattedTime = startTime ?
+                        `${startTime.getHours().toString().padStart(2, '0')}:${startTime.getMinutes().toString().padStart(2, '0')}` :
+                        '09:00'; // Default time if not available
+
+                    return {
+                        name: event.summary || 'Untitled Event',
+                        description: event.description || '',
+                        time: formattedTime,
+                        duration: durationMinutes,
+                        location: event.location || '',
+                        isGoogleCalendarEvent: true, // Mark as Google Calendar event
+                        googleEventId: event.id, // Store the Google event ID for reference
+                        status: 'PENDING',
+                        priority: 'HIGH', // Calendar events are typically high priority
+                        isEmailEnabled: false,
+                        isWhatsAppEnabled: false,
+                        isTelegramEnabled: false,
+                        isCallEnabled: false
+                    };
+                });
+
+                console.log(`Found ${calendarEvents.length} calendar events for today`);
+            } catch (error) {
+                console.error('Error fetching calendar events for schedule generation:', error);
+                // Continue without calendar events if there's an error
+            }
+        }
+
+        // Add calendar events to user data for schedule generation
+        const userDataWithCalendar = {
+            ...userWithOnboarding,
+            calendarEvents: calendarEvents
+        };
+
+        // Debug log to verify calendar events
+        console.log(`Adding ${calendarEvents.length} calendar events to user data:`,
+            calendarEvents.map(event => ({ name: event.name, time: event.time, duration: event.duration })));
+
+        // Generate the schedule with complete user information including calendar events
+        const generatedSchedule = await generateSchedule(userDataWithCalendar);
         if (!generatedSchedule) {
             await prisma.schedule.delete({ where: { id: lockedSchedule.id } });
             return next(new EntityNotFoundError("Failed to generate schedule"));
@@ -102,7 +162,7 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
             // Create a date object in user's local timezone
             const [hours, minutes] = task.time.split(':');
             const localDate = new Date();
-            
+
             // First, set the time in user's local timezone
             const localDateTime = formatInTimeZone(
                 localDate,
@@ -147,9 +207,9 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
             console.error("Error generating schedule:", error);
             try {
                 const lockedSchedule = await prisma.schedule.findFirst({
-                    where: { 
-                        userId: currentUserId, 
-                        status: "pending" 
+                    where: {
+                        userId: currentUserId,
+                        status: "pending"
                     }
                 });
                 if (lockedSchedule) {
@@ -186,7 +246,7 @@ export const createScheduleHandler = async(req:AuthenticatedRequest , res:Respon
 
         res.status(201).json(createdSchedule);
     } catch (error) {
-        next(error); 
+        next(error);
     }
 };
 

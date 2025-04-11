@@ -44,7 +44,7 @@ async function callDeepSeekAPI(prompt: string) {
 
     // Extract and return the generated text
     const result = response.data.choices[0].message.content;
-    
+
     return result;
   } catch (error) {
     console.error("Error calling DeepSeek API:", error);
@@ -59,7 +59,7 @@ async function callDeepSeekAPI(prompt: string) {
 // async function callOpenAIAPI(prompt: string) {
 //   try {
 //     const response = await openai.chat.completions.create({
-//       model: "gpt-3.5-turbo", 
+//       model: "gpt-3.5-turbo",
 //       // model: "gpt-4",
 //       messages: [{ role: "user", content: prompt }],
 //       temperature: 0.7,
@@ -80,11 +80,11 @@ const genAI = new GoogleGenerativeAI(GEMINI_API_KEY!);
 async function callGeminiAPI(prompt: string) {
   try {
     // const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Use Gemini 2.0 Flash
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" }); 
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     const response = await model.generateContent(prompt);
     const result = await response.response;
-    
+
     return result.text(); // Extract the generated text
   } catch (error) {
     console.error("Error calling Gemini API:", error);
@@ -94,7 +94,7 @@ async function callGeminiAPI(prompt: string) {
 
 
 export const storeDailySchedules = async (
-  userId: string, 
+  userId: string,
   scheduleData: string,
   user: any // Replace 'any' with your User type
 ) => {
@@ -102,7 +102,7 @@ export const storeDailySchedules = async (
     const pinecone = new PineconeManager("rag-index");
     const embeddingsManager = new EmbeddingManager();
     await pinecone.initializeVectorStore(embeddingsManager.getEmbeddingsModel());
-    
+
     // Check if schedule exists for today
     const vectorStore = pinecone.getVectorStore();
     const today = new Date().toISOString().split('T')[0];
@@ -116,7 +116,7 @@ export const storeDailySchedules = async (
         type: 'daily_schedule',
       }
     );
-    
+
     // existingSchedules will be an array of tuples: [document, score]
     // Example usage:
     if (existingSchedules.length > 0) {
@@ -182,18 +182,38 @@ export const generateSchedule = async ( user: any) => {
       // }
     });
     console.log("got retreiver");
+    // Check if there are calendar events to include
+    const hasCalendarEvents = user.calendarEvents && Array.isArray(user.calendarEvents) && user.calendarEvents.length > 0;
+
+    // Debug log to verify calendar events in workflow
+    console.log('Workflow received user data with calendar events:',
+      hasCalendarEvents ? `${user.calendarEvents.length} events found` : 'No events found',
+      hasCalendarEvents ? user.calendarEvents.map((event: any) => ({ name: event.name, time: event.time })) : []);
+
+    // Format calendar events for the prompt if they exist
+    let calendarEventsSection = '';
+    if (hasCalendarEvents) {
+      calendarEventsSection = `
+      ### **Google Calendar Events (MUST INCLUDE):**
+      The following events from the user's Google Calendar MUST be included in the schedule exactly as specified:
+      ${user.calendarEvents.map((event: any, index: number) => `
+      ${index + 1}. "${event.name}" at ${event.time} for ${event.duration} minutes${event.location ? ` at ${event.location}` : ''}`).join('')}
+      `;
+    }
+
     const question = `
       Generate a complete daily schedule for a ${user.onboardingData?.profession} on ${new Date().toLocaleDateString('en-US', { weekday: 'long' })}.
-      
+
       ### **User Profile:**
       - Profession: ${user.onboardingData?.profession}
       - Working Hours: ${user.onboardingData?.workingHours} hours (${user.onboardingData?.workingStart} - ${user.onboardingData?.workingEnd})
       - Sleeping Hours: ${user.onboardingData?.sleepingHours} hours (${user.onboardingData?.sleepingStart} - ${user.onboardingData?.sleepingEnd})
       - Timezone: ${user.timezone}
       - Hobbies: ${user.onboardingData?.hobbies.join(', ')}
+      ${calendarEventsSection}
 
-      ### **Schedule Requirements:**  
-      1. The schedule must **cover all available hours except sleep time**, strictly following the user's sleeping hours from ${user.onboardingData?.sleepingStart} to ${user.onboardingData?.sleepingEnd}.  
+      ### **Schedule Requirements:**
+      1. The schedule must **cover all available hours except sleep time**, strictly following the user's sleeping hours from ${user.onboardingData?.sleepingStart} to ${user.onboardingData?.sleepingEnd}.
       2. **Do NOT explicitly include tasks like "Sleep Start" or "Go to Sleep."**
       3. Each task must have a **reasonable duration**:
          - Work sessions: Maximum 180 minutes (3 hours) before a break
@@ -207,20 +227,22 @@ export const generateSchedule = async ( user: any) => {
       8. The schedule should be balanced between work, breaks, and personal time
       9. **All durations must be between 1 and 180 minutes**
       10. Ensure proper meal times: breakfast (6-9 AM), lunch (12-2 PM), dinner (6-8 PM)
+      ${hasCalendarEvents ? '11. **CRITICAL: ALL Google Calendar events MUST be included exactly as specified**' : ''}
 
-      ### **Output Format:**  
+      ### **Output Format:**
       Return a JSON array where each object MUST contain:
       - "name": Activity name (string)
       - "time": Start time (HH:mm format, 24-hour)
       - "duration": Length in minutes (integer between 1-180)
 
-      ### **Validation Rules:**  
+      ### **Validation Rules:**
       1. For each task, verify: next_task.time >= (current_task.time + current_task.duration)
       2. No single task duration > 180 minutes
       3. No gaps between tasks (next task starts when previous ends)
       4. Time format must be "HH:mm" (e.g., "09:00", "14:30")
       5. All times must be chronologically ordered
       6. Duration must be a positive integer
+      ${hasCalendarEvents ? '7. All Google Calendar events must be included with exact name, time, and duration' : ''}
 
       **Return ONLY the JSON array with no additional text or explanation.**
     `;
@@ -231,7 +253,7 @@ export const generateSchedule = async ( user: any) => {
       async (context: string) => {
         const prompt = `
           Context: ${context}
-                    
+
           Question: ${question}
         `.trim();
          console.log(prompt)
@@ -254,7 +276,7 @@ async function main() {
   try {
 
     // // 1. Load PDF
-    
+
     // const loader = new CustomPDFLoader("documents/GameDeveloper Resume.pdf");
     // const rawDocs = await loader.load();
     // console.log("loading")
@@ -267,8 +289,8 @@ async function main() {
     // 3. Initialize Pinecone
     console.log("starting...")
     const pinecone = new PineconeManager("rag-index");
-    
-    
+
+
     //3.5 Initialzie Embedders
     const embeddingsManager = new EmbeddingManager();
     await pinecone.initializeVectorStore(embeddingsManager.getEmbeddingsModel());
@@ -291,8 +313,8 @@ async function main() {
         return await callDeepSeekAPI(prompt); // Use DeepSeek API for generation
       },
     ]);
-  
-    
+
+
     const result = await chain.invoke("I want to hire prudvi raj , so rate him out of 10 , don't forget to rate him");
     console.log("Answer:", result);
 

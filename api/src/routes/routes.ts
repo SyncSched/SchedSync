@@ -11,7 +11,13 @@ import { updateTaskNotificationSettings } from '../controllers/task.controller';
 import { getUpcomingNotificationsHandler , updateNotificationTimeHandler, deleteNotificationHandler } from '../controllers/notification.controller';
 import { getTelegramAuthLink } from '../controllers/notification.controller';
 import { telegramWebhookHandler, setTelegramWebhook } from '../controllers/telegram.controller';
-import { getCalendarEventsHandler, checkCalendarIntegrationHandler, removeCalendarIntegrationHandler } from '../controllers/calendar.controller';
+import {
+    getCalendarEventsHandler,
+    checkCalendarIntegrationHandler,
+    removeCalendarIntegrationHandler,
+    getCurrentDayEventsHandler,
+    getCalendarEventsAsTasksHandler
+} from '../controllers/calendar.controller';
 
 export const attachPublicRoutes = (app: any): void => {
     app.get('/users', getAllUsersHandler);
@@ -55,4 +61,6 @@ export const attachPrivateRoutes = (app: any): void => {
     app.get('/calendar/events', getCalendarEventsHandler);
     app.get('/calendar/integration', checkCalendarIntegrationHandler);
     app.delete('/calendar/integration', removeCalendarIntegrationHandler);
+    app.post('/calendar/today', getCurrentDayEventsHandler);
+    app.post('/calendar/tasks', getCalendarEventsAsTasksHandler);
 }
