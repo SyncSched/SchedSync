@@ -31,7 +31,11 @@ app.use(passport.session());
 app.use(cors());
 app.use(express.json());
 
-app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+app.get('/auth/google', passport.authenticate('google', {
+  scope: ['profile', 'email', 'https://www.googleapis.com/auth/calendar.readonly'],
+  accessType: 'offline',
+  prompt: 'consent'
+}));
 
 app.get(
   '/auth/google/callback',
