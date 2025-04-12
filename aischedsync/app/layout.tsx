@@ -389,6 +389,20 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* Add these new favicon links while keeping existing meta tags */}
+        <link
+          rel="icon"
+          type="image/x-icon"
+          href="/favicon-black.ico"
+          media="(prefers-color-scheme: light)"
+        />
+        <link
+          rel="icon"
+          type="image/x-icon"
+          href="/favicon-white.ico"
+          media="(prefers-color-scheme: dark)"
+        />
+
         {/* Google verification */}
         <meta name="google-site-verification" content="_DpLsLw2ZcBy38Nj9u_6Oy6odc5K_3UXTzVnRSyQEzQ" />
 
@@ -400,7 +414,6 @@ export default function RootLayout({
         <meta name="theme-color" content={siteConfig.themeColor} />
 
         {/* Favicon and App Icons */}
-        <link rel="icon" type="image/x-icon" href={siteConfig.icons.icon} />
         <link rel="shortcut icon" type="image/x-icon" href={siteConfig.icons.shortcut} />
         <link rel="apple-touch-icon" href={siteConfig.icons.apple} />
         <link rel="manifest" href="/manifest.json" />

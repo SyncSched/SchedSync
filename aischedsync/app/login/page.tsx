@@ -65,7 +65,14 @@ const Login = () => {
             <div className="w-full md:w-[45%] p-6 sm:p-8 md:p-12 lg:p-16 flex flex-col justify-center bg-white">
                 <div className="max-w-md mx-auto w-full">
                     {/* Logo/Brand */}
-                    <div className="mb-12">
+                    <div className="mb-12 flex items-center gap-3">
+                        <Image 
+                            src="/favicon-black.ico"
+                            alt="SchedSync Logo"
+                            width={40}
+                            height={40}
+                            className="w-10 h-10"
+                        />
                         <h2 className="text-2xl font-semibold text-gray-800">SchedSync</h2>
                     </div>
 
