@@ -504,7 +504,9 @@ export const updateNotificationTime = async (notificationId: string, newTime: st
   if (!response.ok) {
     throw new Error('Failed to update notification time');
   }
-}
+
+  return response.json();
+};
 
 /**
  * Get user's calendar events
