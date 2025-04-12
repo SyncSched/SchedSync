@@ -108,7 +108,40 @@ export default function TermsPage() {
           </section>
 
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">11. Contact Us</h2>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">11. Disclaimers</h2>
+            <p className="mb-4">The Service is provided "as is" and "as available" without any warranties, either express or implied, including but not limited to:</p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>The accuracy or reliability of AI-generated schedules</li>
+              <li>The continuous, uninterrupted availability of the Service</li>
+              <li>The compatibility with all calendar systems or devices</li>
+              <li>The complete accuracy of notifications and reminders</li>
+            </ul>
+          </section>
+
+          <section className="mb-8">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">12. User Feedback</h2>
+            <p className="mb-4">By providing feedback, suggestions, or recommendations regarding the Service:</p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>You grant SchedSync a perpetual, irrevocable license to use such feedback</li>
+              <li>We may implement suggestions without any obligation to provide compensation</li>
+              <li>Your feedback may be used to improve or modify our services</li>
+              <li>We will not attribute feedback to you without your consent</li>
+            </ul>
+          </section>
+
+          <section className="mb-8">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">13 .OAuth Consent</h2>
+            <p className="mb-4">When you authorize SchedSync to access your Google Calendar:</p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>We request read-only access to view your calendar events</li>
+              <li>This access is used solely for schedule optimization and conflict prevention</li>
+              <li>You can revoke this access at any time through your Google Account settings</li>
+              <li>We do not modify or create events in your calendar without explicit permission</li>
+            </ul>
+          </section>
+
+          <section className="mb-8">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">14. Contact Us</h2>
             <p className="mb-4">If you have any questions about these Terms, please contact us at:</p>
             <p className="mb-2"><a href="mailto:prudvirajkaukuntla3@gmail.com" className="text-blue-600 hover:text-blue-800 underline">prudvirajkaukuntla3@gmail.com</a></p>
           </section>

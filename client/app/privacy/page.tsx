@@ -63,6 +63,45 @@ export default function PrivacyPage() {
           </section>
 
           <section className="mb-8">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">Data Retention</h2>
+            <p className="mb-4">We retain your personal information for as long as your account is active or as needed to provide you services. Specifically:</p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>Account information is retained until you delete your account</li>
+              <li>Calendar data is synchronized in real-time and not stored permanently</li>
+              <li>Usage logs are retained for 30 days</li>
+              <li>Backup data is retained for 7 days</li>
+            </ul>
+          </section>
+
+          <section className="mb-8">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">Third-Party Services</h2>
+            <p className="mb-4">We use the following third-party services to operate our application:</p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li><strong>Google Calendar API:</strong> For calendar integration and event synchronization</li>
+              <li><strong>Amazon Web Services (AWS):</strong> For hosting and data storage</li>
+              <li><strong>SendGrid:</strong> For email notifications</li>
+              <li><strong>Twilio:</strong> For phone call notifications</li>
+              <li><strong>Telegram API:</strong> For Telegram notifications</li>
+            </ul>
+          </section>
+
+          <section className="mb-8">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">Google Calendar Permissions</h2>
+            <p className="mb-4">We request read-only access to your Google Calendar (calendar.readonly scope) to:</p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>Display your existing calendar events in SchedSync</li>
+              <li>Create personalized task schedules that work around your existing commitments</li>
+              <li>Prevent scheduling conflicts with your calendar events</li>
+            </ul>
+            <p className="mt-4">To revoke SchedSync's access to your Google Calendar:</p>
+            <ol className="list-decimal pl-6 space-y-2">
+              <li>Visit <a href="https://myaccount.google.com/permissions" className="text-blue-600 hover:text-blue-800 underline">Google Account Permissions</a></li>
+              <li>Find SchedSync in the list of connected apps</li>
+              <li>Click "Remove Access"</li>
+            </ol>
+          </section>
+
+          <section className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">Data Sharing</h2>
             <p className="mb-4">We do not sell your personal information to third parties. We may share your information in the following circumstances:</p>
             <ul className="list-disc pl-6 space-y-2">
