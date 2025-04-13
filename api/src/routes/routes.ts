@@ -11,6 +11,13 @@ import { updateTaskNotificationSettings } from '../controllers/task.controller';
 import { getUpcomingNotificationsHandler , updateNotificationTimeHandler, deleteNotificationHandler } from '../controllers/notification.controller';
 import { getTelegramAuthLink } from '../controllers/notification.controller';
 import { telegramWebhookHandler, setTelegramWebhook } from '../controllers/telegram.controller';
+import {
+    getCalendarEventsHandler,
+    checkCalendarIntegrationHandler,
+    removeCalendarIntegrationHandler,
+    getCurrentDayEventsHandler,
+    getCalendarEventsAsTasksHandler
+} from '../controllers/calendar.controller';
 
 export const attachPublicRoutes = (app: any): void => {
     app.get('/users', getAllUsersHandler);
@@ -20,18 +27,20 @@ export const attachPublicRoutes = (app: any): void => {
 }
 
 export const attachPrivateRoutes = (app: any): void => {
+
+
     app.get('/currentUser', getCurrentUser);
 
+    // Schedule routes
     app.post('/getSchedule', getScheduleHandler);
     app.post('/generateSchedule', generateScheduleHandler);
     app.post('/createSchedule', createScheduleHandler);
 
+    // Onboarding routes
     app.post('/createOnboarding', createOnboardingHandler);
-
     app.get('/checkonboardingdata', checkOnboardingDataHandler);
 
     app.put('/schedule/:id/update', updateScheduleHandler);
-
     app.patch('/task/:taskId/notifications', updateTaskNotificationSettings);
 
     // User settings routes
@@ -47,4 +56,11 @@ export const attachPrivateRoutes = (app: any): void => {
     // Telegram routes
     app.get('/users/:userId/telegram-auth', getTelegramAuthLink);
     app.post('/telegram/set-webhook', setTelegramWebhook);
+
+    // Calendar routes
+    app.get('/calendar/events', getCalendarEventsHandler);
+    app.get('/calendar/integration', checkCalendarIntegrationHandler);
+    app.delete('/calendar/integration', removeCalendarIntegrationHandler);
+    app.post('/calendar/today', getCurrentDayEventsHandler);
+    app.post('/calendar/tasks', getCalendarEventsAsTasksHandler);
 }

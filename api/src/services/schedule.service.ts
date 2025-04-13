@@ -252,20 +252,46 @@ export const getSchedule = async (
  // Since frontend sends UTC time, this is already in UTC
   const utcDate = new Date(date);
 
-  // Calculate the start and end times in UTC
-  const utcStartTime = new Date(utcDate);
-  utcStartTime.setUTCHours(0, 0, 0, 0); // Start of UTC day
-
-  const utcEndTime = new Date(utcDate);
-  utcEndTime.setUTCHours(23, 59, 59, 999); // End of UTC day (fixing 24:00 issue)
-
   // Determine user timezone and offset
   const userTimezone = user.timezone || 'UTC';
   const calculatedOffset = getTimezoneOffset(user.timezone, utcDate);
 
-  // Convert to local time after adjusting for UTC
-  const localStartTime = new Date(utcStartTime.getTime() + calculatedOffset * 60000);
-  const localEndTime = new Date(utcEndTime.getTime() + calculatedOffset * 60000);
+  // For a user in India (UTC+5:30) requesting April 11:
+  // - localStartTime should be April 11, 18:30:00 UTC (which is April 12, 00:00:00 in India)
+  // - localEndTime should be April 12, 18:29:59 UTC (which is April 13, 23:59:59 in India)
+
+  // Create a new date object for the requested date
+  const requestDate = new Date(utcDate);
+
+  // Get the date in the user's timezone
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: userTimezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+
+  // Get the date parts in the user's timezone
+  const dateParts = formatter.formatToParts(requestDate);
+  const year = parseInt(dateParts.find(part => part.type === 'year')?.value || '2025');
+  const month = parseInt(dateParts.find(part => part.type === 'month')?.value || '01') - 1; // Month is 0-indexed
+  const day = parseInt(dateParts.find(part => part.type === 'day')?.value || '01');
+
+  // For India (UTC+5:30), if the user requests April 11:
+  // We need to create April 11, 18:30:00 UTC (which is April 12, 00:00:00 in India)
+
+  // Create the start time in UTC
+  const localStartTime = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+
+  // Adjust for timezone offset to get the correct UTC time
+  // For India (UTC+5:30), we need to subtract 5.5 hours from local midnight to get UTC time
+  localStartTime.setUTCMinutes(localStartTime.getUTCMinutes() + calculatedOffset);
+
+  // Create the end time (23:59:59.999) in the user's local timezone
+  // This is exactly 24 hours after the start time, minus 1 millisecond
+  const localEndTime = new Date(localStartTime);
+  localEndTime.setUTCHours(localEndTime.getUTCHours() + 24);
+  localEndTime.setUTCMilliseconds(localEndTime.getUTCMilliseconds() - 1);
 
   console.log('Schedule Query Range:', {
     userTimezone,
@@ -442,7 +468,7 @@ export const updateSchedule = async (
 
     // Find tasks to delete (exist in DB but not in new data)
     const tasksToDelete = existingTasks.filter(task => !newTaskIds.has(task.id));
-    
+
     if (tasksToDelete.length > 0) {
       // Delete notifications for removed tasks
       await tx.taskNotification.deleteMany({
@@ -535,9 +561,9 @@ export const updateSchedule = async (
     // For each task, check if time or notification settings changed
     for (const task of schedule.originalData) {
       const existingTask = existingTasks.find(et => et.id === task.id);
-      
+
       // Check if task time or notification settings changed
-      const timeChanged = existingTask && 
+      const timeChanged = existingTask &&
         new Date(existingTask.time).getTime() !== new Date(task.time).getTime();
       const settingsChanged = existingTask && (
         existingTask.isEmailEnabled !== task.isEmailEnabled ||
