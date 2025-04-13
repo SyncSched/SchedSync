@@ -314,13 +314,13 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             <div className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-gray-100 p-3 lg:pl-3 flex flex-col backdrop-blur-sm">
               <div className="flex-1 space-y-2.5">
                 {/* Location Field */}
-                {/* <div className="bg-white rounded-lg p-2 shadow-sm border border-gray-100/80">
+                <div className="bg-white rounded-lg p-2 shadow-sm border border-gray-100/80">
                   <label className="block text-[11px] font-medium text-gray-600 mb-1">Location</label>
                   <div className="relative">
                     <input
                       type="text"
                       name="location"
-                      value={formData.location}
+                      value={formData.location?? ''}
                       onChange={handleChange}
                       placeholder="Enter location"
                       className="w-full px-2 py-2 sm:py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg text-xs font-medium text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-200"
@@ -332,7 +332,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                       </svg>
                     </div>
                   </div>
-                </div> */}
+                </div>
 
                 {/* Time Details */}
                 <div className="bg-white rounded-lg p-2 shadow-sm border border-gray-100/80">
