@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import {  useState } from "react";
 import { useMapEvents, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 

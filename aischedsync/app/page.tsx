@@ -13,10 +13,6 @@ import Goals from './components/Goals';
 
 
 
-import dynamic from "next/dynamic";
-
-
-
 export default function Home() {
 
 
@@ -71,11 +67,6 @@ export default function Home() {
       }
     }
   }, [mainTasks]); // Re-run when tasks change
-
-  const handleLocationSelect = (latlng: { lat: number; lng: number }) => {
-    console.log("Selected location:", latlng);
-    // You can update state here or save to DB etc.
-  };
 
   interface TaskFormData {
     name: string;
