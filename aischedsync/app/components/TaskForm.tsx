@@ -42,17 +42,17 @@ export interface TaskFormData {
   isCallEnabled: boolean;
 }
 
-export const TaskForm: React.FC<TaskFormProps> = ({ 
-  onSubmit, 
-  onClose, 
+export const TaskForm: React.FC<TaskFormProps> = ({
+  onSubmit,
+  onClose,
   onDelete,
   mode = 'add',
-  initialTask 
+  initialTask
 }) => {
   const { isDark } = useTheme();
   const [activeTab, setActiveTab] = useState<'details' | 'second'>('details');
   const [showMap, setShowMap] = useState(false);
-  const [location, setLocation] = useState<string | null>(null); 
+  const [location, setLocation] = useState<string | null>(null);
   // Initialize the time value correctly
   const getInitialTime = () => {
     if (initialTask?.time) {
@@ -111,7 +111,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, type } = e.target;
     const value = type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
-    
+
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -140,7 +140,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             onClick={() => setActiveTab('details')}
             className={`relative flex-1 sm:flex-none px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-t-lg transition-all duration-200 ${
               activeTab === 'details'
-              ? isDark 
+              ? isDark
                 ? 'text-blue-400 bg-blue-900/50 border border-gray-700 border-b-gray-800'
                 : 'text-blue-700 bg-blue-50 border border-gray-200 border-b-white'
               : isDark
@@ -158,7 +158,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             onClick={() => setActiveTab('second')}
             className={`relative flex-1 sm:flex-none px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-t-lg transition-all duration-200 ${
               activeTab === 'second'
-              ? isDark 
+              ? isDark
                 ? 'text-blue-400 bg-blue-900/50 border border-gray-700 border-b-gray-800'
                 : 'text-blue-700 bg-blue-50 border border-gray-200 border-b-white'
               : isDark
@@ -546,7 +546,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 >
                   Set location
                 </button>
-                
+
                 {mode === 'edit' && onDelete && (
                   <button
                     type="button"
@@ -577,20 +577,28 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
     {showMap && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-          <div className="bg-white p-4 rounded-lg shadow-lg w-[90%] max-w-3xl">
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg w-[90%] max-w-3xl">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-lg font-medium text-gray-800 dark:text-white">Select Location</h3>
+              <button
+                onClick={() => setShowMap(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+
             <LocationPicker
               onSelect={(coords) => {
                 if (coords) {
                   setLocation(`${coords.lat},${coords.lng}`);
+                  handleLocationChange();
+                  setShowMap(false);
                 }
               }}
             />
-            <button
-              onClick={() =>  { handleLocationChange(); setShowMap(false)}}
-              className="mt-4 bg-red-500 text-white px-4 py-2 rounded"
-            >
-              Close Map
-            </button>
           </div>
         </div>
       )}
