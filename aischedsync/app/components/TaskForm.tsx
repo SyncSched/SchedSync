@@ -17,13 +17,16 @@ interface TaskFormProps {
   mode?: 'edit' | 'add';
   initialTask?: {
     name?: string;
+    description?: string;
     time?: string;
     duration?: number;
+    priority?: 'HIGH' | 'MEDIUM' | 'LOW';
+    status?: 'PENDING' | 'COMPLETED';
+    location?: string | null;
     isEmailEnabled?: boolean;
     isWhatsAppEnabled?: boolean;
     isTelegramEnabled?: boolean;
     isCallEnabled?: boolean;
-    location?: string| null
   };
 }
 
@@ -68,12 +71,12 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
   const [formData, setFormData] = useState<TaskFormData>({
     name: initialTask?.name || '',
-    description: '',
+    description: initialTask?.description || '',
     time: getInitialTime(),
     duration: initialTask?.duration || 30,
     endTime: '',
-    priority: 'MEDIUM',
-    status: 'PENDING',
+    priority: initialTask?.priority || 'MEDIUM',
+    status: initialTask?.status || 'PENDING',
     location: initialTask?.location,
     isEmailEnabled: initialTask?.isEmailEnabled || false,
     isWhatsAppEnabled: initialTask?.isWhatsAppEnabled || false,
@@ -449,9 +452,9 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                         )
                       }`}
                     >
-                      <option value="high" className={isDark ? 'bg-gray-800 text-red-400' : 'bg-red-50 text-red-700'}>High</option>
-                      <option value="medium" className={isDark ? 'bg-gray-800 text-amber-400' : 'bg-amber-50 text-amber-700'}>Medium</option>
-                      <option value="low" className={isDark ? 'bg-gray-800 text-green-400' : 'bg-green-50 text-green-700'}>Low</option>
+                      <option value="HIGH" className={isDark ? 'bg-gray-800 text-red-400' : 'bg-red-50 text-red-700'}>High</option>
+                      <option value="MEDIUM" className={isDark ? 'bg-gray-800 text-amber-400' : 'bg-amber-50 text-amber-700'}>Medium</option>
+                      <option value="LOW" className={isDark ? 'bg-gray-800 text-green-400' : 'bg-green-50 text-green-700'}>Low</option>
                     </select>
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
                       <svg className={`size-3.5 ${
@@ -499,8 +502,8 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                         )
                       }`}
                     >
-                      <option value="pending" className={isDark ? 'bg-gray-800 text-blue-400' : 'bg-blue-50 text-blue-700'}>Pending</option>
-                      <option value="completed" className={isDark ? 'bg-gray-800 text-emerald-400' : 'bg-emerald-50 text-emerald-700'}>Completed</option>
+                      <option value="PENDING" className={isDark ? 'bg-gray-800 text-blue-400' : 'bg-blue-50 text-blue-700'}>Pending</option>
+                      <option value="COMPLETED" className={isDark ? 'bg-gray-800 text-emerald-400' : 'bg-emerald-50 text-emerald-700'}>Completed</option>
                     </select>
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
                       <svg className={`size-3.5 ${
