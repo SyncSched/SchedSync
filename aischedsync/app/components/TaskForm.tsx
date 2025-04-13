@@ -537,6 +537,17 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 >
                   {mode === 'edit' ? 'Update' : 'Create'}
                 </button>
+                <button
+                  type="button"
+                  className={`w-full px-3 py-1.5 text-xs font-medium text-white ${
+                    isDark ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-600 hover:bg-blue-700'
+                  } rounded-lg focus:outline-none focus:ring-1 focus:ring-offset-1 ${
+                    isDark ? 'focus:ring-blue-500' : 'focus:ring-blue-500'
+                  } transition-all duration-200 shadow-sm`}
+                  onClick={() => setShowMap(true)}
+                >
+                  Set location
+                </button>
                 
                 {mode === 'edit' && onDelete && (
                   <button

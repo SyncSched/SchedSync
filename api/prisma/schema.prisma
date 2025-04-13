@@ -39,6 +39,7 @@ model User {
   notifications      TaskNotification[]
   telegramAuth       TelegramAuth[]
   calendarToken      CalendarToken?
+  weights    Int[]
 }
 
 model TaskNotification {
