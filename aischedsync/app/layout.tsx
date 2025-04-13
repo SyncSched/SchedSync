@@ -403,8 +403,10 @@ export default function RootLayout({
           media="(prefers-color-scheme: dark)"
         />
 
-        {/* Google verification */}
+        {/* Google verification and site name */}
         <meta name="google-site-verification" content="_DpLsLw2ZcBy38Nj9u_6Oy6odc5K_3UXTzVnRSyQEzQ" />
+        <meta name="application-name" content="SchedSync" />
+        <meta name="apple-mobile-web-app-title" content="SchedSync" />
 
         {/* Primary Meta Tags */}
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -414,8 +416,10 @@ export default function RootLayout({
         <meta name="theme-color" content={siteConfig.themeColor} />
 
         {/* Favicon and App Icons */}
-        <link rel="shortcut icon" type="image/x-icon" href={siteConfig.icons.shortcut} />
-        <link rel="apple-touch-icon" href={siteConfig.icons.apple} />
+        <link rel="shortcut icon" type="image/x-icon" href="/favicon-black.ico" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/images/logo-192.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/images/logo-512.png" />
+        <link rel="apple-touch-icon" href="/images/logo-192.png" />
         <link rel="manifest" href="/manifest.json" />
 
         {/* Open Graph / Facebook */}
@@ -451,6 +455,24 @@ export default function RootLayout({
                 "@type": "Offer",
                 "price": "0",
                 "priceCurrency": "USD"
+              }
+            })
+          }}
+        />
+
+        {/* Structured Data - Website */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "name": "SchedSync",
+              "url": "https://ai.schedsync.com",
+              "potentialAction": {
+                "@type": "SearchAction",
+                "target": "https://ai.schedsync.com/search?q={search_term_string}",
+                "query-input": "required name=search_term_string"
               }
             })
           }}

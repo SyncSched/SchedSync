@@ -13,12 +13,12 @@ export const siteConfig = {
   keywords: "AI scheduler, task management, productivity, calendar, time management, reminders",
   author: "SchedSync Team",
   icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-icon.png",
-    shortcut: "/favicon-16x16.png",
+    icon: "/favicon-black.ico",
+    apple: "/images/logo-192.png",
+    shortcut: "/favicon-black.ico",
     androidChrome: {
-      "192": "/android-chrome-192x192.png",
-      "512": "/android-chrome-512x512.png",
+      "192": "/images/logo-192.png",
+      "512": "/images/logo-512.png",
     },
   },
 };
