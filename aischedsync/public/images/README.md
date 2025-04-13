@@ -9,43 +9,29 @@ This directory should contain optimized images for social media sharing and SEO 
    - Format: PNG or JPG
    - Purpose: Displayed when sharing links on Facebook, LinkedIn, etc.
 
-2. **twitter-image.png** - Twitter card image
-   - Dimensions: 1200 x 600 pixels
-   - Format: PNG or JPG
-   - Purpose: Displayed when sharing links on Twitter
-
-3. **logo.png** - Company logo for structured data
-   - Dimensions: At least 112 x 112 pixels, with a 1:1 aspect ratio
+2. **logo-192.png** - Small logo for PWA and favicons
+   - Dimensions: 192 x 192 pixels
    - Format: PNG with transparency
-   - Purpose: Used in structured data for search engines
+   - Purpose: Used for app icons and smaller displays
 
-## Favicon and App Icons
+3. **logo-512.png** - Large logo for PWA and high-res displays
+   - Dimensions: 512 x 512 pixels
+   - Format: PNG with transparency
+   - Purpose: Used for app icons on high-resolution displays
 
-The following icons should be placed in the root public directory:
+## Favicon Files
 
-1. **favicon.ico** - Standard favicon
+The following icons are placed in the root public directory:
+
+1. **favicon-black.ico** - Standard favicon for light mode
    - Dimensions: 48 x 48 pixels
    - Format: ICO
+   - Purpose: Displayed in browser tabs in light mode
 
-2. **favicon-16x16.png** - Small favicon
-   - Dimensions: 16 x 16 pixels
-   - Format: PNG
-
-3. **favicon-32x32.png** - Medium favicon
-   - Dimensions: 32 x 32 pixels
-   - Format: PNG
-
-4. **apple-icon.png** - Apple touch icon
-   - Dimensions: 180 x 180 pixels
-   - Format: PNG
-
-5. **android-chrome-192x192.png** - Android Chrome icon (small)
-   - Dimensions: 192 x 192 pixels
-   - Format: PNG
-
-6. **android-chrome-512x512.png** - Android Chrome icon (large)
-   - Dimensions: 512 x 512 pixels
-   - Format: PNG
+2. **favicon-white.ico** - Standard favicon for dark mode
+   - Dimensions: 48 x 48 pixels
+   - Format: ICO
+   - Purpose: Displayed in browser tabs in dark mode
 
 ## Design Guidelines
 
