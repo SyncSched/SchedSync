@@ -3,8 +3,6 @@ import TimeInput from './ui/TimeInput';
 import { formatToHHMM, convertHHMMToISO } from '../utils/dateUtils';
 import { useTheme } from '@/contexts/ThemeContext';
 import dynamic from "next/dynamic";
-import { LatLngLiteral } from "leaflet";
-import { div } from 'framer-motion/client';
 
 
 // Load Leaflet dynamically to avoid SSR issues
