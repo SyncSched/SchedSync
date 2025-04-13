@@ -1,0 +1,7 @@
+This directory should contain the following images:
+
+1. og-image.png (1200x630px) - For Facebook, LinkedIn, etc.
+2. logo-192.png (192x192px) - For PWA and smaller displays
+3. logo-512.png (512x512px) - For PWA and high-res displays
+
+Please add these image files to complete the SEO setup.
