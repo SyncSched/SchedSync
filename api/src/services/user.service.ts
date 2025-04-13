@@ -11,7 +11,6 @@ export const createUser = async (data: CreateUserInput): Promise<User | null> =>
   });
 
   if (existingUser) {
-    console.log('User already exists:', existingUser);
     return existingUser; 
   }
   

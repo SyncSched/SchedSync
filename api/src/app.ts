@@ -31,7 +31,11 @@ app.use(passport.session());
 app.use(cors());
 app.use(express.json());
 
-app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+app.get('/auth/google', passport.authenticate('google', {
+  scope: ['profile', 'email', 'https://www.googleapis.com/auth/calendar.readonly'],
+  accessType: 'offline',
+  prompt: 'consent'
+}));
 
 app.get(
   '/auth/google/callback',
@@ -41,7 +45,6 @@ app.get(
   }),
   (req, res) => {
     const user = req.user as User;
-    console.log(user);
     if (user && user.id) {
       const token = generateToken({
         id: user.id.toString(),
@@ -49,10 +52,8 @@ app.get(
         name: user.name,
         avatarUrl: user.avatarUrl
       });
-      console.log('Login successful. User details:', req.user);
       res.redirect(`${process.env.CLIENT_URL}/login?token=${token}`);
     } else {
-      console.log('Login failed. User not authenticated.');
       res.redirect(process.env.CLIENT_URL || 'http://localhost:8080');
     }
   },
@@ -72,7 +73,6 @@ app.use(handleError);
 
 // Initialize cron jobs only in local development
 if (process.env.NODE_ENV !== 'production') {
-  console.log('Initializing local cron jobs...');
   initLocalScheduleCron();
   initNotificationCron();
 } else {

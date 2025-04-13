@@ -1,0 +1,7 @@
+This directory should contain the following images:
+
+1. og-image.png (1200x630px) - For Facebook, LinkedIn, etc.
+2. twitter-image.png (1200x600px) - For Twitter
+3. logo.png (at least 112x112px) - For structured data
+
+Please refer to the README.md file in this directory for detailed specifications.

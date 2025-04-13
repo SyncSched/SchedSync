@@ -1,5 +1,31 @@
 import Cookies from 'js-cookie';
 
+// Calendar event interface
+export interface CalendarEvent {
+  id: string;
+  summary: string;
+  description?: string;
+  location?: string;
+  start: {
+    dateTime: string;
+    timeZone: string;
+  };
+  end: {
+    dateTime: string;
+    timeZone: string;
+  };
+  status: string;
+  htmlLink: string;
+  creator?: {
+    email: string;
+    displayName?: string;
+  };
+  organizer?: {
+    email: string;
+    displayName?: string;
+  };
+}
+
 export interface UserSettings {
   timezone: string;
   isEmailEnabled: boolean;
@@ -82,7 +108,7 @@ export interface Schedule {
     workingEnd: string;
     userId: string;
   }
-  
+
   export interface Onboarding {
     id: string;
     profession: string;
@@ -96,7 +122,7 @@ export interface Schedule {
     userId: string;
     createdAt: Date;
   }
-  
+
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
   /**
    * Fetches the schedule for today.
@@ -108,14 +134,14 @@ export interface Schedule {
     try {
       const now = new Date();
       const timezoneOffset = now.getTimezoneOffset();
-      
+
       const res = await fetch(`${API_URL}/getSchedule`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${getStoredAuthToken()}`
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           date: now.toISOString(),
           timezoneOffset: timezoneOffset
         })
@@ -128,14 +154,14 @@ export interface Schedule {
       // If not found, try generating a new schedule
       if (!isGeneratingSchedule) {
         isGeneratingSchedule = true;
-        
+
         const createRes = await fetch(`${API_URL}/generateSchedule`, {
           method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json', 
+          headers: {
+            'Content-Type': 'application/json',
             'Authorization': `Bearer ${getStoredAuthToken()}`
           },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             date: now.toISOString(),
             timezoneOffset: timezoneOffset
           })
@@ -184,7 +210,7 @@ export const checkOnboardingStatus = async (token: string): Promise<boolean> => 
     return false;
   }
 };
-  
+
   /**
    * Sends a createOnboarding API call with the onboarding data.
    */
@@ -198,23 +224,23 @@ export const checkOnboardingStatus = async (token: string): Promise<boolean> => 
         workingStart: onboardingData.workingStart,
         workingEnd: onboardingData.workingEnd
       };
-  
+
       console.log(onboardingData.sleepingStart, formattedData.sleepingStart);
       console.log(formattedData, "before calling api, checking the onboarding data");
       const res = await fetch(`${API_URL}/createOnboarding`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${getStoredAuthToken()}`
         },
         body: JSON.stringify(formattedData)
       });
-  
+
       if (!res.ok) {
         console.error('Failed to save onboarding data:', res.status, res.statusText);
         throw new Error('Failed to save onboarding data');
       }
-  
+
       return res.json();
     } catch (error) {
       console.error('Error during createOnboarding:', error);
@@ -227,7 +253,7 @@ export const checkOnboardingStatus = async (token: string): Promise<boolean> => 
    */
   export const getCurrentUser = async (): Promise<UserInfo> => {
     const token = getStoredAuthToken();
-    
+
     // Check token validity before making the request
     if (token && !isTokenValid(token)) {
       throw new Error('Token expired');
@@ -238,11 +264,11 @@ export const checkOnboardingStatus = async (token: string): Promise<boolean> => 
         'Authorization': `Bearer ${token}`
       }
     });
-    
+
     if (!res.ok) {
       throw new Error('Failed to fetch current user');
     }
-    
+
     const data = await res.json();
     return data.currentUser;
   };
@@ -267,11 +293,11 @@ export const updateSchedule = async (scheduleId: string, tasks: Task[]): Promise
   try {
     const response = await fetch(`${API_URL}/schedule/${scheduleId}/update`, {
       method: 'PUT',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${getStoredAuthToken()}`
       },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         originalData: tasks.map(task => ({
           ...task,
           // Ensure boolean values are properly set
@@ -319,7 +345,7 @@ export interface NotificationSettings {
  */
 export const updateUserSettings = async (settings: NotificationSettings): Promise<void> => {
   const token = getStoredAuthToken();
-  
+
   if (token && !isTokenValid(token)) {
     throw new Error('Token expired');
   }
@@ -357,7 +383,7 @@ export const updateUserSettings = async (settings: NotificationSettings): Promis
  */
 export const getUserSettings = async (): Promise<UserSettings> => {
   const token = getStoredAuthToken();
-  
+
   if (token && !isTokenValid(token)) {
     throw new Error('Token expired');
   }
@@ -378,7 +404,7 @@ export const getUserSettings = async (): Promise<UserSettings> => {
 
 export const updateUserTimezone = async (timezone: string): Promise<void> => {
   const token = getStoredAuthToken();
-  
+
   if (token && !isTokenValid(token)) {
     throw new Error('Token expired');
   }
@@ -412,4 +438,171 @@ export const getTelegramAuthLink = async (userId: string): Promise<{ authLink: s
   }
 
   return response.json();
+};
+
+export interface NotificationTask {
+  id: string;
+  name: string;
+  time: string;
+  duration: number;
+}
+
+export interface Notification {
+  id: string;
+  taskId: string;
+  userId: string;
+  channel: 'email' | 'whatsapp' | 'telegram' | 'call';
+  status: 'pending' | 'sent' | 'failed';
+  notifyAt: string;
+  createdAt: string;
+  task: NotificationTask;
+}
+
+/**
+ * Gets upcoming notifications for the user
+ */
+export const getUpcomingNotifications = async (): Promise<Notification[]> => {
+  const token = getStoredAuthToken();
+
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/notifications/upcoming`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch upcoming notifications');
+  }
+
+  return await response.json();
+};
+
+/**
+ * Updates a notification's time
+ */
+export const updateNotificationTime = async (notificationId: string, newTime: string): Promise<Notification> => {
+  const token = getStoredAuthToken();
+
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/notifications/${notificationId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ notifyAt: newTime })
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to update notification time');
+  }
+
+  return response.json();
+};
+
+/**
+ * Get user's calendar events
+ */
+export const getCalendarEvents = async (timeMin?: Date, timeMax?: Date): Promise<CalendarEvent[]> => {
+  try {
+    // Build query parameters
+    const params = new URLSearchParams();
+    if (timeMin) params.append('timeMin', timeMin.toISOString());
+    if (timeMax) params.append('timeMax', timeMax.toISOString());
+
+    const response = await fetch(`${API_URL}/calendar/events?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${getStoredAuthToken()}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch calendar events');
+    }
+
+    const data = await response.json();
+    return data.data || [];
+  } catch (error) {
+    console.error('Error fetching calendar events:', error);
+    throw error;
+  }
+}
+
+/**
+ * Check if user has calendar integration
+ */
+export const hasCalendarIntegration = async (): Promise<boolean> => {
+  try {
+    const response = await fetch(`${API_URL}/calendar/integration`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${getStoredAuthToken()}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to check calendar integration');
+    }
+
+    const data = await response.json();
+    return data.data.hasCalendarIntegration;
+  } catch (error) {
+    console.error('Error checking calendar integration:', error);
+    return false;
+  }
+}
+
+/**
+ * Remove calendar integration
+ */
+export const removeCalendarIntegration = async (): Promise<boolean> => {
+  try {
+    const response = await fetch(`${API_URL}/calendar/integration`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${getStoredAuthToken()}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to remove calendar integration');
+    }
+
+    const data = await response.json();
+    return data.success;
+  } catch (error) {
+    console.error('Error removing calendar integration:', error);
+    return false;
+  }
+}
+
+/**
+ * Deletes a notification
+ */
+export const deleteNotification = async (notificationId: string): Promise<void> => {
+  const token = getStoredAuthToken();
+
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/notifications/${notificationId}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to delete notification');
+  }
 };

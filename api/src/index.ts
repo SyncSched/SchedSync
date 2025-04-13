@@ -7,25 +7,20 @@ import { processUserSchedules } from "./cron/scheduleCron";
 const server = serverless.createServer(app);
 
 export const handler = async (event: any, context: Context) => {
-  console.log("🔍 Event Received:", JSON.stringify(event, null, 2));
 
   // Check directly for jobType in the event
   const jobType = event.jobType;
   if (jobType) {
     try {
-      console.log(`Executing scheduled job of type: ${jobType}`);
       
       switch (jobType) {
         case 'process-notifications':
           await processNotifications();
-          console.log("Notifications processed successfully");
           break;
         case 'process-schedules':
           await processUserSchedules();
-          console.log("Schedules processed successfully");
           break;
         default:
-          console.warn(`Unknown job type: ${jobType}`);
           return { 
             statusCode: 400, 
             body: JSON.stringify({ error: `Unknown job type: ${jobType}` }) 
@@ -37,7 +32,6 @@ export const handler = async (event: any, context: Context) => {
         body: JSON.stringify({ message: "Scheduled job executed successfully" }) 
       };
     } catch (error) {
-      console.error("❌ Error in scheduled job:", error);
       return { 
         statusCode: 500, 
         body: JSON.stringify({ error: "Scheduled job execution failed" }) 
@@ -45,10 +39,35 @@ export const handler = async (event: any, context: Context) => {
     }
   }
 
+  console.log('[LAMBDA] Incoming event:', JSON.stringify(event, null, 2));
+
+  if (event.path === '/telegram/webhook' && event.httpMethod === 'POST') {
+    console.log('[LAMBDA] Processing Telegram webhook');
+  }
+  
+
   // 🟢 Handle API Gateway requests
   return new Promise((resolve, reject) => {
+    console.log('[API Call]:', {
+      path: event.path,
+      method: event.httpMethod,
+      body: event.body,
+      queryParams: event.queryStringParameters
+    });
+
     serverless.proxy(server, event, context, "CALLBACK", (err, res) => {
-      if (err) return reject(err);
+      if (err) {
+        console.error('[API Response Error]:', err);
+        return reject(err);
+      }
+      
+      console.log('[API Response]:', {
+        path: event.path,
+        method: event.httpMethod,
+        statusCode: res?.statusCode,
+        body: res?.body
+      });
+      
       resolve(res);
     });
   });

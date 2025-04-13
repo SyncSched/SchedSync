@@ -43,7 +43,6 @@ export async function processUserSchedules() {
           }
         });
 
-        console.log(`Processing ${todaySchedules.length} schedules for timezone ${timezone}`);
         
         for (const schedule of todaySchedules) {
           if (!schedule.user) {
@@ -69,7 +68,6 @@ export async function processUserSchedules() {
 export const initLocalScheduleCron = () => {
   // Run every 5 minutes
   cron.schedule('*/5 * * * *', async () => {
-    console.log('Running schedule check...');
     try {
       await processUserSchedules();
     } catch (error) {
