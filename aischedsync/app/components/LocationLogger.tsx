@@ -20,7 +20,7 @@ export default function LocationLogger() {
           maximumAge: 0,
         }
       );
-    }, 10000); // every 10 seconds
+    }, 600000); // every 1 min 
 
     return () => clearInterval(intervalId); // clear on unmount
   }, []);

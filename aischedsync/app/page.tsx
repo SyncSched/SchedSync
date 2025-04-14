@@ -11,6 +11,8 @@ import { recalculateTaskTimes } from './utils/taskUtils';
 import { isTaskActive, formatToHHMM } from '@/app/utils/dateUtils';
 import Goals from './components/Goals';
 
+import LocationLogger from "./components/LocationLogger";
+
 
 
 export default function Home() {
@@ -452,6 +454,7 @@ export default function Home() {
           {toastMessage}
         </div>
       )}
+      <LocationLogger />
     </div>
   );
 }
