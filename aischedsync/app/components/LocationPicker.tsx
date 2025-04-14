@@ -8,8 +8,6 @@ import L from "leaflet";
 
 const MapContainer = dynamic(() => import("react-leaflet").then(mod => mod.MapContainer), { ssr: false });
 const TileLayer = dynamic(() => import("react-leaflet").then(mod => mod.TileLayer), { ssr: false });
-const Marker = dynamic(() => import("react-leaflet").then(mod => mod.Marker), { ssr: false });
-const Popup = dynamic(() => import("react-leaflet").then(mod => mod.Popup), { ssr: false });
 
 type Props = {
   onSelect: (latlng: L.LatLngLiteral, locationName?: string) => void;
@@ -24,6 +22,7 @@ export default function LocationPicker({ onSelect, initialLocation, initialLocat
   // Set global variable for LocationSelector to access
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      console.log('Setting location picker props:', { initialLocation, initialLocationName });
       (window as any).__LOCATION_PICKER_PROPS__ = {
         initialLocation,
         initialLocationName
@@ -34,6 +33,16 @@ export default function LocationPicker({ onSelect, initialLocation, initialLocat
         delete (window as any).__LOCATION_PICKER_PROPS__;
       }
     };
+  }, [initialLocation, initialLocationName]);
+
+  // Log when component mounts with initial location
+  useEffect(() => {
+    if (initialLocation) {
+      console.log('LocationPicker mounted with initial location:', initialLocation);
+      if (initialLocationName) {
+        console.log('Initial location name:', initialLocationName);
+      }
+    }
   }, [initialLocation, initialLocationName]);
 
   const handleLocationSelect = (latlng: L.LatLngLiteral, name: string = "") => {

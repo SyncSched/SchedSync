@@ -141,8 +141,13 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   // Get location name for initial location if available
   useEffect(() => {
     if (initialTask?.location && !locationName) {
+      console.log('Initial task location found:', initialTask.location);
+      setLocation(initialTask.location);
       getLocationNameFromCoords(initialTask.location).then(name => {
-        if (name) setLocationName(name);
+        if (name) {
+          console.log('Got location name:', name);
+          setLocationName(name);
+        }
       });
     }
   }, [initialTask?.location, locationName, getLocationNameFromCoords]);
