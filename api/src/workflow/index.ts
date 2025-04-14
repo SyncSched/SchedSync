@@ -166,12 +166,28 @@ export const storeDailySchedules = async (
 
 export const generateSchedule = async ( user: any) => {
   try {
-    console.log("starting...")
+    // Start time tracking
+    const startTime = Date.now();
+    console.log(`[TIME] Workflow started at: ${new Date().toISOString()}`);
+
+    // Check if there are calendar events to include
+    const hasCalendarEvents = user.calendarEvents && Array.isArray(user.calendarEvents) && user.calendarEvents.length > 0;
+    console.log(`[TIME] Calendar events check completed at: ${new Date().toISOString()} (${Date.now() - startTime}ms)`);
+    console.log(`Found ${hasCalendarEvents ? user.calendarEvents.length : 0} calendar events`);
+
+    // Initialize Pinecone
+    const pineconeStartTime = Date.now();
+    console.log(`[TIME] Starting Pinecone initialization at: ${new Date().toISOString()}`);
     const pinecone = new PineconeManager("rag-index");
     const embeddingsManager = new EmbeddingManager();
     await pinecone.initializeVectorStore(embeddingsManager.getEmbeddingsModel());
-    console.log("vector db pinecone setup complete");
+    console.log(`[TIME] Pinecone initialization completed at: ${new Date().toISOString()} (${Date.now() - pineconeStartTime}ms)`);
+
     const vectorStore = pinecone.getVectorStore();
+
+    // Create retriever
+    const retrieverStartTime = Date.now();
+    console.log(`[TIME] Starting retriever creation at: ${new Date().toISOString()}`);
     // Customize retriever to get more relevant documents
     const retriever = vectorStore.asRetriever({
       k: 5,
@@ -181,10 +197,7 @@ export const generateSchedule = async ( user: any) => {
       //   dayOfWeek: new Date().toLocaleDateString('en-US', { weekday: 'long' })
       // }
     });
-    console.log("got retreiver");
-    // Check if there are calendar events to include
-    const hasCalendarEvents = user.calendarEvents && Array.isArray(user.calendarEvents) && user.calendarEvents.length > 0;
-
+    console.log(`[TIME] Retriever creation completed at: ${new Date().toISOString()} (${Date.now() - retrieverStartTime}ms)`);
     // Debug log to verify calendar events in workflow
     console.log('Workflow received user data with calendar events:',
       hasCalendarEvents ? `${user.calendarEvents.length} events found` : 'No events found',
@@ -247,22 +260,41 @@ export const generateSchedule = async ( user: any) => {
       **Return ONLY the JSON array with no additional text or explanation.**
     `;
 
+    // Create and execute chain
+    const contextStartTime = Date.now();
+    console.log(`[TIME] Starting context retrieval from Pinecone at: ${new Date().toISOString()}`);
+
     const chain = RunnableSequence.from([
       retriever,
       formatDocumentsAsString,
       async (context: string) => {
+        console.log(`[TIME] Context retrieved from Pinecone at: ${new Date().toISOString()} (${Date.now() - contextStartTime}ms)`);
+        console.log(`Context length: ${context.length} characters`);
+
+        const generationStartTime = Date.now();
+        console.log(`[TIME] Starting schedule generation at: ${new Date().toISOString()}`);
+
         const prompt = `
           Context: ${context}
 
           Question: ${question}
         `.trim();
-         console.log(prompt)
-        return await callGeminiAPI(prompt);
+        // console.log(prompt)
+        const response = await callGeminiAPI(prompt);
+
+        console.log(`[TIME] Schedule generation completed at: ${new Date().toISOString()} (${Date.now() - generationStartTime}ms)`);
+        return response;
       },
     ]);
 
     const result = await chain.invoke(question);
-    console.log(result);
+
+    // Log total time
+    const totalTime = Date.now() - startTime;
+    console.log(`[TIME] Total workflow execution time: ${totalTime}ms (${totalTime/1000} seconds)`);
+    console.log(`[TIME] Workflow completed at: ${new Date().toISOString()}`);
+
+    // console.log(result);
     return result;
 
   } catch(err) {
