@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import TimeInput from './ui/TimeInput';
 import { formatToHHMM, convertHHMMToISO } from '../utils/dateUtils';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -56,6 +56,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   const [activeTab, setActiveTab] = useState<'details' | 'second'>('details');
   const [showMap, setShowMap] = useState(false);
   const [location, setLocation] = useState<string | null>(null);
+  const [locationName, setLocationName] = useState<string>('');
   // Initialize the time value correctly
   const getInitialTime = () => {
     if (initialTask?.time) {
@@ -103,13 +104,48 @@ export const TaskForm: React.FC<TaskFormProps> = ({
       time: timeString
     }));
   };
-  const handleLocationChange = (locationValue: string | null = null) => {
-    console.log({location: locationValue || location},"location######")
+  // Function to get location name from coordinates using reverse geocoding
+  const getLocationNameFromCoords = useCallback(async (coords: string) => {
+    try {
+      const [lat, lng] = coords.split(',').map(Number);
+      if (isNaN(lat) || isNaN(lng)) return null;
+
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
+      );
+      const data = await response.json();
+      return data.display_name || null;
+    } catch (error) {
+      console.error('Error getting location name:', error);
+      return null;
+    }
+  }, []);
+
+  const handleLocationChange = (locationValue: string | null = null, locName: string = '') => {
+    console.log({location: locationValue || location, locationName: locName || locationName},"location######")
     setFormData(prev => ({
       ...prev,
       location: locationValue || location
     }));
+
+    // If we have coordinates but no location name, try to get it
+    if (locationValue && !locName) {
+      getLocationNameFromCoords(locationValue).then(name => {
+        if (name) setLocationName(name);
+      });
+    } else if (locName) {
+      setLocationName(locName);
+    }
   };
+
+  // Get location name for initial location if available
+  useEffect(() => {
+    if (initialTask?.location && !locationName) {
+      getLocationNameFromCoords(initialTask.location).then(name => {
+        if (name) setLocationName(name);
+      });
+    }
+  }, [initialTask?.location, locationName, getLocationNameFromCoords]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, type } = e.target;
@@ -362,9 +398,9 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                     <input
                       type="text"
                       name="location"
-                      value={formData.location?? ''}
-                      onChange={handleChange}
-                      placeholder="Enter location"
+                      value={locationName || 'No location selected'}
+                      readOnly
+                      placeholder="Select a location"
                       className={`w-full px-2 py-2 sm:py-1.5 ${
                         isDark ? 'bg-gradient-to-r from-blue-900/30 to-indigo-900/30 text-gray-300' : 'bg-gradient-to-r from-blue-50 to-indigo-50 text-gray-700'
                       } rounded-lg text-xs font-medium focus:outline-none focus:ring-1 ${
@@ -594,11 +630,11 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             </div>
 
             <LocationPicker
-              onSelect={(coords) => {
+              onSelect={(coords, name) => {
                 if (coords) {
                   const locationString = `${coords.lat},${coords.lng}`;
                   setLocation(locationString);
-                  handleLocationChange(locationString);
+                  handleLocationChange(locationString, name);
                   setShowMap(false);
                 }
               }}

@@ -10,16 +10,18 @@ const MapContainer = dynamic(() => import("react-leaflet").then(mod => mod.MapCo
 const TileLayer = dynamic(() => import("react-leaflet").then(mod => mod.TileLayer), { ssr: false });
 
 type Props = {
-  onSelect: (latlng: L.LatLngLiteral) => void;
+  onSelect: (latlng: L.LatLngLiteral, locationName?: string) => void;
 };
 
 export default function LocationPicker({ onSelect }: Props) {
   const [selectedLocation, setSelectedLocation] = useState<L.LatLngLiteral | null>(null);
+  const [locationDisplayName, setLocationDisplayName] = useState<string>("");
 
-  const handleLocationSelect = (latlng: L.LatLngLiteral) => {
-    console.log("Selected Location:", latlng);
+  const handleLocationSelect = (latlng: L.LatLngLiteral, name: string = "") => {
+    console.log("Selected Location:", latlng, "Name:", name);
     setSelectedLocation(latlng);
-    onSelect(latlng);
+    setLocationDisplayName(name);
+    onSelect(latlng, name);
     // You can store it in form state or send it to backend here
   };
 
@@ -39,11 +41,15 @@ export default function LocationPicker({ onSelect }: Props) {
         <div className="mt-4 text-sm text-gray-700 dark:text-gray-300">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span>Location selected at coordinates:</span>
+            <span>{locationDisplayName ? 'Selected location:' : 'Location selected at coordinates:'}</span>
           </div>
-          <div className="mt-1 pl-4">
-            <span className="font-medium">Lat:</span> {selectedLocation.lat.toFixed(6)}, <span className="font-medium">Lng:</span> {selectedLocation.lng.toFixed(6)}
-          </div>
+          {locationDisplayName ? (
+            <div className="mt-1 pl-4 font-medium">{locationDisplayName}</div>
+          ) : (
+            <div className="mt-1 pl-4">
+              <span className="font-medium">Lat:</span> {selectedLocation.lat.toFixed(6)}, <span className="font-medium">Lng:</span> {selectedLocation.lng.toFixed(6)}
+            </div>
+          )}
         </div>
       )}
     </div>

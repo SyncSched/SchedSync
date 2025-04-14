@@ -5,7 +5,7 @@ import L from "leaflet";
 import LocationSearch from "./LocationSearch";
 
 type Props = {
-  onSelect: (latlng: L.LatLngLiteral) => void;
+  onSelect: (latlng: L.LatLngLiteral, locationName?: string) => void;
 };
 
 const LocationSelector = ({ onSelect }: Props) => {
@@ -27,11 +27,11 @@ const LocationSelector = ({ onSelect }: Props) => {
   }, []);
 
   const handleConfirmLocation = useCallback(() => {
-    console.log("Confirmed Location:", position);
+    console.log("Confirmed Location:", position, "Name:", locationName);
     if (position) {
-      onSelect(position);
+      onSelect(position, locationName);
     }
-  }, [position, onSelect]);
+  }, [position, locationName, onSelect]);
 
   return (
     <>
