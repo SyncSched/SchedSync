@@ -27,6 +27,7 @@ const LocationSelector = ({ onSelect }: Props) => {
   }, []);
 
   const handleConfirmLocation = useCallback(() => {
+    console.log("Confirmed Location:", position);
     if (position) {
       onSelect(position);
     }

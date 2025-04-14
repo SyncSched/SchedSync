@@ -103,11 +103,11 @@ export const TaskForm: React.FC<TaskFormProps> = ({
       time: timeString
     }));
   };
-  const handleLocationChange = () => {
-    console.log({location: location})
-   setFormData(prev => ({
+  const handleLocationChange = (locationValue: string | null = null) => {
+    console.log({location: locationValue || location},"location######")
+    setFormData(prev => ({
       ...prev,
-      location: location
+      location: locationValue || location
     }));
   };
 
@@ -596,8 +596,9 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             <LocationPicker
               onSelect={(coords) => {
                 if (coords) {
-                  setLocation(`${coords.lat},${coords.lng}`);
-                  handleLocationChange();
+                  const locationString = `${coords.lat},${coords.lng}`;
+                  setLocation(locationString);
+                  handleLocationChange(locationString);
                   setShowMap(false);
                 }
               }}
