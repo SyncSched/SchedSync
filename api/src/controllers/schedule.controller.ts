@@ -84,6 +84,8 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
         }
 
         // Check if user has calendar integration and fetch calendar events
+        console.log(`[TIME] Starting calendar integration check at: ${new Date().toISOString()}`);
+        const calendarStartTime = Date.now();
         let calendarEvents: any[] = [];
         const hasCalendar = await hasCalendarIntegration(userId);
 
@@ -91,7 +93,9 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
             try {
                 // Get calendar events for today
                 const today = new Date();
+                console.log(`[TIME] Fetching calendar events at: ${new Date().toISOString()}`);
                 const events = await getCurrentDayCalendarEvents(userId, today);
+                console.log(`[TIME] Calendar events received at: ${new Date().toISOString()} (${Date.now() - calendarStartTime}ms)`);
 
                 // Transform events into task format
                 calendarEvents = events.map(event => {
@@ -127,10 +131,14 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
                 });
 
                 console.log(`Found ${calendarEvents.length} calendar events for today`);
+                console.log(`[TIME] Calendar events processing completed at: ${new Date().toISOString()} (${Date.now() - calendarStartTime}ms)`);
             } catch (error) {
                 console.error('Error fetching calendar events for schedule generation:', error);
+                console.log(`[TIME] Calendar events fetch failed at: ${new Date().toISOString()} (${Date.now() - calendarStartTime}ms)`);
                 // Continue without calendar events if there's an error
             }
+        } else {
+            console.log(`[TIME] No calendar integration found at: ${new Date().toISOString()} (${Date.now() - calendarStartTime}ms)`);
         }
 
         // Add calendar events to user data for schedule generation
@@ -144,7 +152,11 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
             calendarEvents.map(event => ({ name: event.name, time: event.time, duration: event.duration })));
 
         // Generate the schedule with complete user information including calendar events
+        console.log(`[TIME] Starting schedule generation workflow at: ${new Date().toISOString()}`);
+        const scheduleGenStartTime = Date.now();
         const generatedSchedule = await generateSchedule(userDataWithCalendar);
+        console.log(`[TIME] Schedule generation workflow completed at: ${new Date().toISOString()} (${Date.now() - scheduleGenStartTime}ms)`);
+
         if (!generatedSchedule) {
             await prisma.schedule.delete({ where: { id: lockedSchedule.id } });
             return next(new EntityNotFoundError("Failed to generate schedule"));

@@ -389,7 +389,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Add these new favicon links while keeping existing meta tags */}
+        {/* Favicon links with media queries for browser theme */}
         <link
           rel="icon"
           type="image/x-icon"
@@ -416,10 +416,14 @@ export default function RootLayout({
         <meta name="theme-color" content={siteConfig.themeColor} />
 
         {/* Favicon and App Icons */}
-        <link rel="shortcut icon" type="image/x-icon" href="/favicon-black.ico" />
-        <link rel="icon" type="image/png" sizes="192x192" href="/images/logo-192.png" />
-        <link rel="icon" type="image/png" sizes="512x512" href="/images/logo-512.png" />
-        <link rel="apple-touch-icon" href="/images/logo-192.png" />
+        <link rel="shortcut icon" type="image/x-icon" href="/favicon-black.ico" media="(prefers-color-scheme: light)" />
+        <link rel="shortcut icon" type="image/x-icon" href="/favicon-white.ico" media="(prefers-color-scheme: dark)" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/images/logo-192-black.png" media="(prefers-color-scheme: light)" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/images/logo-192-white.png" media="(prefers-color-scheme: dark)" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/images/logo-512-black.png" media="(prefers-color-scheme: light)" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/images/logo-512-white.png" media="(prefers-color-scheme: dark)" />
+        <link rel="apple-touch-icon" href="/images/logo-192-black.png" media="(prefers-color-scheme: light)" />
+        <link rel="apple-touch-icon" href="/images/logo-192-white.png" media="(prefers-color-scheme: dark)" />
         <link rel="manifest" href="/manifest.json" />
 
         {/* Open Graph / Facebook */}
