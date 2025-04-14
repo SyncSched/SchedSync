@@ -82,17 +82,18 @@ export default function Home() {
 
   interface TaskFormData {
     name: string;
-  description: string;
-  time: string;
-  duration: number;
-  endTime: string;
-  priority: 'HIGH' | 'MEDIUM' | 'LOW';
-  status: 'PENDING' | 'COMPLETED';
-  location?: string| null;
-  isEmailEnabled: boolean;
-  isWhatsAppEnabled: boolean;
-  isTelegramEnabled: boolean;
-  isCallEnabled: boolean;
+    description: string;
+    notes?: string;
+    time: string;
+    duration: number;
+    endTime: string;
+    priority: 'HIGH' | 'MEDIUM' | 'LOW';
+    status: 'PENDING' | 'COMPLETED';
+    location?: string| null;
+    isEmailEnabled: boolean;
+    isWhatsAppEnabled: boolean;
+    isTelegramEnabled: boolean;
+    isCallEnabled: boolean;
   }
 
   useEffect(() => {
@@ -198,6 +199,7 @@ export default function Home() {
         ...selectedTask,
         name: formData.name,
         description: formData.description,
+        notes: formData.notes,
         time: formData.time,
         duration: formData.duration,
         status: formData.status,
@@ -234,6 +236,7 @@ export default function Home() {
       const isOtherFieldsChanged =
         updatedTask.name !== selectedTask.name ||
         updatedTask.description !== selectedTask.description ||
+        updatedTask.notes !== selectedTask.notes ||
         updatedTask.status !== selectedTask.status ||
         updatedTask.priority !== selectedTask.priority ||
         updatedTask.location !== selectedTask.location;
@@ -262,6 +265,7 @@ export default function Home() {
           ...updatedTasks[currentIndex],
           name: updatedTask.name,
           description: updatedTask.description,
+          notes: updatedTask.notes,
           status: updatedTask.status,
           priority: updatedTask.priority,
           location: updatedTask.location,
@@ -403,6 +407,7 @@ export default function Home() {
               initialTask={{
                 name: selectedTask!.name,
                 description: selectedTask!.description || '',
+                notes: selectedTask!.notes || '',
                 time: renderTaskTime(selectedTask!),
                 duration: selectedTask!.duration,
                 priority: selectedTask!.priority || 'MEDIUM',

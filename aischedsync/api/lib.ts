@@ -94,6 +94,7 @@ export interface Schedule {
   export interface TaskFormData {
     name: string;
     description: string;
+    notes?: string;
     time: string;
     duration: number;
     endTime: string;

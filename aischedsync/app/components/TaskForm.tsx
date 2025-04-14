@@ -18,6 +18,7 @@ interface TaskFormProps {
   initialTask?: {
     name?: string;
     description?: string;
+    notes?: string;
     time?: string;
     duration?: number;
     priority?: 'HIGH' | 'MEDIUM' | 'LOW';
@@ -33,6 +34,7 @@ interface TaskFormProps {
 export interface TaskFormData {
   name: string;
   description: string;
+  notes?: string;
   time: string;
   duration: number;
   endTime: string;
@@ -53,7 +55,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   initialTask
 }) => {
   const { isDark } = useTheme();
-  const [activeTab, setActiveTab] = useState<'details' | 'second'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'notes'>('details');
   const [showMap, setShowMap] = useState(false);
   const [location, setLocation] = useState<string | null>(null);
   const [locationName, setLocationName] = useState<string>('');
@@ -73,6 +75,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   const [formData, setFormData] = useState<TaskFormData>({
     name: initialTask?.name || '',
     description: initialTask?.description || '',
+    notes: initialTask?.notes || '',
     time: getInitialTime(),
     duration: initialTask?.duration || 30,
     endTime: '',
@@ -199,9 +202,9 @@ export const TaskForm: React.FC<TaskFormProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab('second')}
+            onClick={() => setActiveTab('notes')}
             className={`relative flex-1 sm:flex-none px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-t-lg transition-all duration-200 ${
-              activeTab === 'second'
+              activeTab === 'notes'
               ? isDark
                 ? 'text-blue-400 bg-blue-900/50 border border-gray-700 border-b-gray-800'
                 : 'text-blue-700 bg-blue-50 border border-gray-200 border-b-white'
@@ -211,7 +214,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             }`}
           >
             <span className="relative z-10">Notes</span>
-            {activeTab === 'second' && (
+            {activeTab === 'notes' && (
               <div className={`absolute inset-x-0 -bottom-[1px] h-[1px] ${isDark ? 'bg-gray-800' : 'bg-white'}`}></div>
             )}
           </button>
@@ -610,11 +613,32 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             </div>
           </>
         ) : (
-          <div className={`flex-1 p-4 ${
-            isDark ? 'bg-gray-800/50' : 'bg-gradient-to-br from-gray-50/50 via-white to-blue-50/30'
-          }`}>
-            <div className={`text-center ${isDark ? 'text-gray-400' : 'text-gray-500'} mt-8`}>
-              <p className="text-sm">Second tab content will be added here</p>
+          <div className={`flex-1 pr-0 lg:pr-3.5 ${isDark ? 'bg-gray-800/50' : 'bg-gradient-to-br from-gray-50/50 via-white to-blue-50/30'} overflow-y-auto`}>
+            <div className="space-y-4 p-3">
+              {/* Notes */}
+              <div className="group">
+                <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-sm border ${isDark ? 'border-gray-700' : 'border-gray-100'} hover:shadow-md ${isDark ? 'hover:border-purple-500/50' : 'hover:border-purple-100'} transition-all duration-300 overflow-hidden`}>
+                  <div className="relative">
+                    <textarea
+                      name="notes"
+                      value={formData.notes || ''}
+                      onChange={handleChange}
+                      rows={12}
+                      className={`w-full px-4 py-3 text-sm ${
+                        isDark ? 'text-gray-200 bg-gray-800 placeholder-gray-500' : 'text-gray-700 bg-white placeholder-gray-400'
+                      } rounded-lg focus:outline-none transition-all duration-300 resize-none`}
+                      placeholder="Add your notes here..."
+                    />
+                    <div className={`absolute top-3 right-4 pointer-events-none ${
+                      isDark ? 'text-gray-500' : 'text-gray-400'
+                    } transition-colors duration-300`}>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
