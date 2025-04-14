@@ -1,6 +1,6 @@
 "use client";
-import { useState, useCallback } from "react";
-import { useMapEvents, Marker, Popup } from "react-leaflet";
+import { useState, useCallback, useEffect } from "react";
+import { useMapEvents, useMap, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import LocationSearch from "./LocationSearch";
 
@@ -9,13 +9,41 @@ type Props = {
 };
 
 const LocationSelector = ({ onSelect }: Props) => {
+  const map = useMap();
   const [position, setPosition] = useState<L.LatLngLiteral | null>(null);
   const [locationName, setLocationName] = useState<string>("");
+
+  // Check if there's an initial location in the parent component
+  useEffect(() => {
+    // Get the parent LocationPicker component props
+    if (typeof window !== 'undefined') {
+      const parentProps = (window as any).__LOCATION_PICKER_PROPS__;
+      if (parentProps?.initialLocation) {
+        setPosition(parentProps.initialLocation);
+        if (parentProps.initialLocationName) {
+          setLocationName(parentProps.initialLocationName);
+        }
+        map.setView(parentProps.initialLocation, 15);
+      }
+    }
+  }, [map]);
 
   useMapEvents({
     dblclick(e) {
       setPosition(e.latlng);
-      setLocationName("Selected location");
+      // Get location name from reverse geocoding
+      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}&zoom=18&addressdetails=1`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.display_name) {
+            setLocationName(data.display_name);
+          } else {
+            setLocationName(`Location at ${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`);
+          }
+        })
+        .catch(() => {
+          setLocationName(`Location at ${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`);
+        });
       // We don't call onSelect here anymore, user needs to confirm
     },
   });

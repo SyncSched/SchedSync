@@ -407,7 +407,9 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                         isDark ? 'focus:ring-blue-500/30' : 'focus:ring-blue-200'
                       } ${isDark ? 'placeholder-gray-500' : ''}`}
                     />
-                    <div className={`absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none ${
+                    <div
+                      onClick={() => setShowMap(true)}
+                      className={`absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer hover:text-blue-500 transition-colors duration-200 ${
                       isDark ? 'text-gray-500' : 'text-gray-400'
                     }`}>
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -638,6 +640,11 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   setShowMap(false);
                 }
               }}
+              initialLocation={location ? {
+                lat: parseFloat(location.split(',')[0]),
+                lng: parseFloat(location.split(',')[1])
+              } : undefined}
+              initialLocationName={locationName}
             />
           </div>
         </div>
