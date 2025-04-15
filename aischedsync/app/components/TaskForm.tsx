@@ -101,11 +101,13 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   };
 
   const handleTimeChange = (date: Date) => {
+    // Only update the form data when the time is confirmed in the TimeInput component
     const timeString = formatToHHMM(date);
     setFormData(prev => ({
       ...prev,
       time: timeString
     }));
+    // The task will only be updated when the user clicks the Update/Create button
   };
   // Function to get location name from coordinates using reverse geocoding
   const getLocationNameFromCoords = useCallback(async (coords: string) => {
