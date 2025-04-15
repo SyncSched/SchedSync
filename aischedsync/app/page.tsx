@@ -289,8 +289,39 @@ export default function Home() {
   const handleTaskDelete = async () => {
     if (!selectedTask) return;
     try {
-      const updatedTasks = mainTasks.filter(task => task.id !== selectedTask.id);
+      // Find the index of the task to be deleted
+      const taskIndex = mainTasks.findIndex(task => task.id === selectedTask.id);
+      if (taskIndex === -1) return;
+
+      // Create a copy of tasks without the deleted task
+      const updatedTasks = [...mainTasks];
+      updatedTasks.splice(taskIndex, 1);
+
+      // If there are tasks below the deleted task, adjust their start times
+      if (taskIndex < updatedTasks.length) {
+        // If the deleted task is not the last one, we need to shift up all tasks below it
+        // Get the start time of the task that was deleted
+        const deletedTaskTime = new Date(selectedTask.time);
+
+        // Update all subsequent tasks to shift them up
+        let currentTime = new Date(deletedTaskTime);
+
+        for (let i = taskIndex; i < updatedTasks.length; i++) {
+          // Set the start time of this task to the current time
+          updatedTasks[i] = {
+            ...updatedTasks[i],
+            time: currentTime.toISOString()
+          };
+
+          // Move the current time forward by this task's duration
+          currentTime = new Date(currentTime.getTime() + (updatedTasks[i].duration * 60000));
+        }
+      }
+
+      // Update the backend
       await updateSchedule(selectedTask.scheduleId, updatedTasks);
+
+      // Update the state
       setMainTasks(updatedTasks);
       setIsEditModalOpen(false);
       setShowDeleteWarning(false);
