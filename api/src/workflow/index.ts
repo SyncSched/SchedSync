@@ -190,7 +190,7 @@ export const generateSchedule = async ( user: any) => {
     console.log(`[TIME] Starting retriever creation at: ${new Date().toISOString()}`);
     // Customize retriever to get more relevant documents
     const retriever = vectorStore.asRetriever({
-      k: 5,
+      k: 3,
       // filter: {
       //   userId: user.id,
       //   profession: user.onboardingData?.profession,
