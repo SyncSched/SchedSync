@@ -7,23 +7,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import './globals.css';
 import { usePathname } from 'next/navigation';
-import { getTodaySchedule, updateSchedule, type Task } from '@/api/lib';
 import Header from './components/Header';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { siteConfig } from './metadata-config';
 import PageMetadata from './components/PageMetadata';
+import AddTaskModal from './components/AddTaskModal';
 
 const inter = Inter({ subsets: ['latin'] });
 
-interface NewTaskState {
-  name: string;
-  time: string;
-  duration: number;
-  isEmailEnabled: boolean;
-  isWhatsAppEnabled: boolean;
-  isTelegramEnabled: boolean;
-  isCallEnabled: boolean;
-}
+
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -36,111 +28,6 @@ function MainLayout({ children }: MainLayoutProps) {
   const pathname = usePathname();
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [newTask, setNewTask] = useState<NewTaskState>({
-    name: '',
-    time: '',
-    duration: 30,
-    isEmailEnabled: false,
-    isWhatsAppEnabled: false,
-    isTelegramEnabled: false,
-    isCallEnabled: false
-  });
-
-  const handleNotificationChange = (setting: keyof NewTaskState) => {
-    setNewTask(prev => ({
-      ...prev,
-      [setting]: !prev[setting]
-    }));
-  };
-
-  const handleAddTask = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const schedule = await getTodaySchedule();
-      const scheduleId = schedule?.originalData?.[0]?.scheduleId || '';
-
-      let taskTime: string;
-      const now = new Date();
-
-      if (schedule?.originalData?.length > 0) {
-        // If there are existing tasks, set time after the last task
-        const lastTask = schedule.originalData[schedule.originalData.length - 1];
-        const lastTaskTime = new Date(lastTask.time);
-        const lastTaskEndTime = new Date(lastTaskTime.getTime() + (lastTask.duration * 60000));
-        taskTime = lastTaskEndTime.toISOString();
-      } else {
-        // If no tasks, handle the new task time
-        if (newTask.time) {
-          // Handle both 24-hour and 12-hour formats
-          let hours: number;
-          let minutes: number;
-
-          if (newTask.time.includes('AM') || newTask.time.includes('PM')) {
-            // 12-hour format
-            const [timeStr, period] = newTask.time.split(' ');
-            const [h, m] = timeStr.split(':').map(Number);
-            hours = h;
-            minutes = m;
-
-            if (period === 'PM' && hours !== 12) {
-              hours += 12;
-            } else if (period === 'AM' && hours === 12) {
-              hours = 0;
-            }
-          } else {
-            // 24-hour format
-            [hours, minutes] = newTask.time.split(':').map(Number);
-          }
-
-          const selectedTime = new Date();
-          selectedTime.setHours(hours, minutes, 0, 0);
-
-          // If the time is in the past, move it to tomorrow
-          if (selectedTime < now) {
-            selectedTime.setDate(selectedTime.getDate() + 1);
-          }
-          taskTime = selectedTime.toISOString();
-        } else {
-          // Round current time to nearest 5 minutes
-          const roundedMinutes = Math.ceil(now.getMinutes() / 5) * 5;
-          now.setMinutes(roundedMinutes, 0, 0);
-          taskTime = now.toISOString();
-        }
-      }
-
-      // Create new task
-      const newTaskObject: Task = {
-        id: `temp-${Date.now()}`,
-        name: newTask.name,
-        time: taskTime,
-        duration: Number(newTask.duration),
-        scheduleId: scheduleId,
-        isEmailEnabled: newTask.isEmailEnabled,
-        isWhatsAppEnabled: newTask.isWhatsAppEnabled,
-        isTelegramEnabled: newTask.isTelegramEnabled,
-        isCallEnabled: newTask.isCallEnabled
-      };
-
-      const updatedTasks = [...(schedule?.originalData || []), newTaskObject];
-      await updateSchedule(scheduleId, updatedTasks);
-
-      setIsAddTaskModalOpen(false);
-      setNewTask({
-        name: '',
-        time: '',
-        duration: 30,
-        isEmailEnabled: false,
-        isWhatsAppEnabled: false,
-        isTelegramEnabled: false,
-        isCallEnabled: false
-      });
-
-      // Refresh the page to show the new task
-      window.location.reload();
-    } catch (error) {
-      console.error('Error adding task:', error);
-    }
-  };
 
   // Get page title and subtitle based on pathname
   const getPageMeta = () => {
@@ -257,126 +144,7 @@ function MainLayout({ children }: MainLayoutProps) {
       </main>
 
       {/* Add Task Modal */}
-      {isAddTaskModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-full max-w-md mx-4 transition-colors duration-300`}>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className={`text-lg font-semibold ${isDark ? 'text-gray-100' : 'text-gray-900'} transition-colors duration-300`}>Add New Task</h3>
-              <button
-                onClick={() => setIsAddTaskModalOpen(false)}
-                className={`${isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-500'} transition-colors duration-300`}
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <form onSubmit={handleAddTask}>
-              <div className="space-y-4">
-                <div>
-                  <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} transition-colors duration-300`}>Task Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={newTask.name}
-                    onChange={(e) => setNewTask({...newTask, name: e.target.value})}
-                    className={`mt-1 block w-full rounded-md ${
-                      isDark ? 'bg-gray-700 border-gray-600 text-gray-100' : 'border-gray-300 text-gray-900'
-                    } shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors duration-300`}
-                    placeholder="Enter task name"
-                  />
-                </div>
-
-                <div>
-                  <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} transition-colors duration-300`}>Time</label>
-                  <input
-                    type="time"
-                    required
-                    value={newTask.time}
-                    onChange={(e) => setNewTask({...newTask, time: e.target.value})}
-                    className={`mt-1 block w-full rounded-md ${
-                      isDark ? 'bg-gray-700 border-gray-600 text-gray-100' : 'border-gray-300 text-gray-900'
-                    } shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors duration-300`}
-                  />
-                </div>
-
-                <div>
-                  <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} transition-colors duration-300`}>Duration (minutes)</label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    value={newTask.duration}
-                    onChange={(e) => setNewTask({...newTask, duration: parseInt(e.target.value)})}
-                    className={`mt-1 block w-full rounded-md ${
-                      isDark ? 'bg-gray-700 border-gray-600 text-gray-100' : 'border-gray-300 text-gray-900'
-                    } shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors duration-300`}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} transition-colors duration-300`}>Notification Settings</label>
-                  <div className="space-y-2">
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={newTask.isEmailEnabled}
-                        onChange={() => handleNotificationChange('isEmailEnabled')}
-                        className={`rounded ${
-                          isDark ? 'bg-gray-700 border-gray-600' : 'border-gray-300'
-                        } text-blue-600 focus:ring-blue-500 transition-colors duration-300`}
-                      />
-                      <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'} transition-colors duration-300`}>Email Notifications</span>
-                    </label>
-
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={newTask.isWhatsAppEnabled}
-                        onChange={() => handleNotificationChange('isWhatsAppEnabled')}
-                        className={`rounded ${
-                          isDark ? 'bg-gray-700 border-gray-600' : 'border-gray-300'
-                        } text-blue-600 focus:ring-blue-500 transition-colors duration-300`}
-                      />
-                      <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'} transition-colors duration-300`}>WhatsApp Notifications</span>
-                    </label>
-
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={newTask.isTelegramEnabled}
-                        onChange={() => handleNotificationChange('isTelegramEnabled')}
-                        className={`rounded ${
-                          isDark ? 'bg-gray-700 border-gray-600' : 'border-gray-300'
-                        } text-blue-600 focus:ring-blue-500 transition-colors duration-300`}
-                      />
-                      <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'} transition-colors duration-300`}>Telegram Notifications</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setIsAddTaskModalOpen(false)}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="submit"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
-                >
-                  Add Task
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <AddTaskModal isOpen={isAddTaskModalOpen} onClose={() => setIsAddTaskModalOpen(false)} />
     </div>
   );
 }
