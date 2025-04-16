@@ -200,7 +200,8 @@ export default function Home() {
         name: formData.name,
         description: formData.description,
         notes: formData.notes,
-        time: formData.time,
+        // Use the original time from selectedTask to ensure it doesn't change
+        time: selectedTask.time,
         duration: formData.duration,
         status: formData.status,
         priority: formData.priority,
@@ -226,7 +227,8 @@ export default function Home() {
       const updatedTasks = [...mainTasks];
 
       // Check what type of update occurred
-      const isTimeChanged = new Date(updatedTask.time).getTime() !== new Date(selectedTask.time).getTime();
+      // Time should never change during edit, but we'll keep the check for safety
+      const isTimeChanged = false; // We're preventing time changes in edit mode
       const isDurationChanged = updatedTask.duration !== selectedTask.duration;
       const isNotificationSettingsChanged =
         updatedTask.isEmailEnabled !== selectedTask.isEmailEnabled ||

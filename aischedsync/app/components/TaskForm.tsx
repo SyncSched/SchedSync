@@ -171,7 +171,11 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     e.preventDefault();
     const submissionData = {
       ...formData,
-      time: convertHHMMToISO(formData.time),
+      // When in edit mode, ensure we're using the original time value
+      time: mode === 'edit' && initialTask?.time ?
+        (typeof initialTask.time === 'string' && initialTask.time.includes(':') ?
+          convertHHMMToISO(initialTask.time) : initialTask.time) :
+        convertHHMMToISO(formData.time),
       duration: Number(formData.duration)
     };
     onSubmit(submissionData);
@@ -437,13 +441,21 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   <label className={`block text-[11px] font-medium ${
                     isDark ? 'text-gray-400' : 'text-gray-600'
                   } mb-1`}>Start Time</label>
-                  <TimeInput
-                    value={getTimeAsDate(formData.time)}
-                    onChange={handleTimeChange}
-                    className={`!bg-gradient-to-r ${
-                      isDark ? '!from-green-900/30 !to-emerald-900/30 !text-gray-300' : '!from-green-50 !to-emerald-50'
-                    } !border-0 !shadow-none !text-xs !py-2 sm:!py-1.5`}
-                  />
+                  {mode === 'edit' ? (
+                    <div className={`w-full px-4 py-2 rounded-xl text-xs font-medium ${
+                      isDark ? 'bg-gray-800/80 text-gray-400 border border-gray-700' : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      {formatToHHMM(formData.time)}
+                    </div>
+                  ) : (
+                    <TimeInput
+                      value={getTimeAsDate(formData.time)}
+                      onChange={handleTimeChange}
+                      className={`!bg-gradient-to-r ${
+                        isDark ? '!from-green-900/30 !to-emerald-900/30 !text-gray-300' : '!from-green-50 !to-emerald-50'
+                      } !border-0 !shadow-none !text-xs !py-2 sm:!py-1.5`}
+                    />
+                  )}
                 </div>
 
                 <div className={`${isDark ? 'bg-gray-700' : 'bg-white'} rounded-lg p-2 shadow-sm border ${
