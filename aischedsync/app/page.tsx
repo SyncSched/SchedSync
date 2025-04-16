@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { getTodaySchedule, updateSchedule, updateUserTimezone, type Task } from '../api/lib';
+import { getTodaySchedule, locationNotify, updateSchedule, updateUserTimezone, type Task } from '../api/lib';
 import { useAuth } from '@/contexts/AuthContext';
 import Modal from './components/ui/Modal';
 import { TaskForm } from './components/TaskForm';
@@ -69,6 +69,62 @@ export default function Home() {
       }
     }
   }, [mainTasks]); // Re-run when tasks change
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude: userLat, longitude: userLng } = position.coords;
+          console.log("Current Location:", userLat, userLng);
+  
+          const nearbyTaskIds = mainTasks
+            .filter((task) => {
+              if (!task.location) return false;
+              const [latStr, lngStr] = task.location.split(",");
+              const taskLat = parseFloat(latStr);
+              const taskLng = parseFloat(lngStr);
+              if (isNaN(taskLat) || isNaN(taskLng)) return false;
+  
+              const distance = getDistanceInMeters(userLat, userLng, taskLat, taskLng);
+              return distance <= 100;
+            })
+            .map((task) => task.id);
+  
+          if (nearbyTaskIds.length > 0) {
+            locationNotify(nearbyTaskIds);
+          }
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0,
+        }
+      );
+    }, 60000); // every 1 minute
+  
+    return () => clearInterval(intervalId); // cleanup
+  }, [mainTasks]);
+  const toRadians = (degree: number) => degree * (Math.PI / 180);
+
+// Haversine formula to calculate distance between two coordinates
+function getDistanceInMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371e3; // radius of Earth in meters
+  const φ1 = toRadians(lat1);
+  const φ2 = toRadians(lat2);
+  const Δφ = toRadians(lat2 - lat1);
+  const Δλ = toRadians(lon2 - lon1);
+
+  const a =
+    Math.sin(Δφ / 2) ** 2 +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c; // in meters
+}
 
   interface TaskFormData {
     name: string;
