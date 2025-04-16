@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { BadUserInputError } from '../errors';
+import { sendEmail } from "../utils/email";
 
 const prisma = new PrismaClient();
 
@@ -89,3 +90,21 @@ export const deleteNotification = async (
         }
     });
 };
+
+export const sendLocationNotifications = async (userId: string, taskIds: string[]) => {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+  
+    if (!user || !user.email) {
+      throw new Error('User not found or email is missing');
+    }
+  
+    const toAddress = user.email;
+  
+    // Create a message listing all task IDs
+    const message = `You have tasks nearby: ${taskIds.join(', ')}`;
+  
+    // Send the email
+    return await sendEmail(toAddress, "Nearby Task Notification", message);
+  };

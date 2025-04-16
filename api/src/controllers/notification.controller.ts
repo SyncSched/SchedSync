@@ -4,9 +4,11 @@ import { PrismaClient } from "@prisma/client";
 import {
     getUpcomingNotifications,
     updateNotificationTime,
-    deleteNotification
+    deleteNotification,
+    sendLocationNotifications
 } from '../services/notification.service';
 import { generateTelegramAuthLink } from '../utils/telegram';
+import { sendEmail } from "../utils/email";
 
 const prisma = new PrismaClient();
 
@@ -105,3 +107,31 @@ export const getTelegramAuthLink = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Error generating Telegram auth link" });
   }
 };
+
+export const locationNotifyHandler = async (
+    req: AuthenticatedRequest,
+    res: Response
+  ) => {
+    try {
+      const userId = req.user?.id;
+      const { taskIds } = req.body;
+  
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+  
+      if (!Array.isArray(taskIds) || taskIds.length === 0) {
+        return res.status(400).json({ error: 'taskIds must be a non-empty array' });
+      }
+  
+      const response = await sendLocationNotifications(userId, taskIds);
+  
+      return res.status(200).json({
+        message: 'Location-based notifications sent successfully',
+        result: response
+      });
+    } catch (error) {
+      console.error('Error sending location-based notifications:', error);
+      return res.status(500).json({ error: 'Failed to send location-based notifications' });
+    }
+  };

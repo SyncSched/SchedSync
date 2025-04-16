@@ -8,7 +8,7 @@ import {
     getUserSettingsHandler
 } from '../controllers/user.controller';
 import { updateTaskNotificationSettings } from '../controllers/task.controller';
-import { getUpcomingNotificationsHandler , updateNotificationTimeHandler, deleteNotificationHandler } from '../controllers/notification.controller';
+import { getUpcomingNotificationsHandler , updateNotificationTimeHandler, deleteNotificationHandler, locationNotifyHandler } from '../controllers/notification.controller';
 import { getTelegramAuthLink } from '../controllers/notification.controller';
 import { telegramWebhookHandler, setTelegramWebhook } from '../controllers/telegram.controller';
 import {
@@ -63,4 +63,7 @@ export const attachPrivateRoutes = (app: any): void => {
     app.delete('/calendar/integration', removeCalendarIntegrationHandler);
     app.post('/calendar/today', getCurrentDayEventsHandler);
     app.post('/calendar/tasks', getCalendarEventsAsTasksHandler);
+
+    // Location notification
+    app.post('/locationNotify', locationNotifyHandler);
 }
