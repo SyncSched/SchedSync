@@ -86,10 +86,10 @@ export default function Home() {
               if (isNaN(taskLat) || isNaN(taskLng)) return false;
   
               const distance = getDistanceInMeters(userLat, userLng, taskLat, taskLng);
-              return distance <= 100;
+              return distance <= 2000;
             })
             .map((task) => task.id);
-  
+            console.log(nearbyTaskIds)
           if (nearbyTaskIds.length > 0) {
             locationNotify(nearbyTaskIds);
           }
@@ -103,7 +103,7 @@ export default function Home() {
           maximumAge: 0,
         }
       );
-    }, 60000); // every 1 minute
+    }, 10000); // every 1 minute
   
     return () => clearInterval(intervalId); // cleanup
   }, [mainTasks]);
