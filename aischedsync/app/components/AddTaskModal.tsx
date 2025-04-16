@@ -28,8 +28,9 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose }) => {
         // Use the end time of the last task as the start time for the new task
         taskTime = lastTaskEndTime.toISOString();
       } else {
-        // If no tasks, use the time from the form
-        taskTime = formData.time;
+        // If no tasks, use the current time
+        const now = new Date();
+        taskTime = now.toISOString();
       }
 
       // Create new task

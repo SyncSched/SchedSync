@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import TimeInput from './ui/TimeInput';
 import { formatToHHMM, convertHHMMToISO } from '../utils/dateUtils';
 import { useTheme } from '@/contexts/ThemeContext';
 import dynamic from "next/dynamic";
@@ -88,27 +87,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     isCallEnabled: initialTask?.isCallEnabled || false
   });
 
-  // Helper function to convert HH:mm to Date object
-  const getTimeAsDate = (timeStr: string): Date => {
-    const date = new Date();
-    if (timeStr && timeStr.includes(':')) {
-      const [hours, minutes] = timeStr.split(':').map(Number);
-      if (!isNaN(hours) && !isNaN(minutes)) {
-        date.setHours(hours, minutes, 0, 0);
-      }
-    }
-    return date;
-  };
 
-  const handleTimeChange = (date: Date) => {
-    // Only update the form data when the time is confirmed in the TimeInput component
-    const timeString = formatToHHMM(date);
-    setFormData(prev => ({
-      ...prev,
-      time: timeString
-    }));
-    // The task will only be updated when the user clicks the Update/Create button
-  };
   // Function to get location name from coordinates using reverse geocoding
   const getLocationNameFromCoords = useCallback(async (coords: string) => {
     try {
@@ -172,10 +151,13 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     const submissionData = {
       ...formData,
       // When in edit mode, ensure we're using the original time value
+      // For add mode, we'll let the parent component handle the time
       time: mode === 'edit' && initialTask?.time ?
         (typeof initialTask.time === 'string' && initialTask.time.includes(':') ?
           convertHHMMToISO(initialTask.time) : initialTask.time) :
-        convertHHMMToISO(formData.time),
+        // For add mode, just pass the current time as a placeholder
+        // The actual time will be determined by the parent component
+        new Date().toISOString(),
       duration: Number(formData.duration)
     };
     onSubmit(submissionData);
@@ -434,28 +416,27 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   </div>
                 </div>
 
-                {/* Time Details */}
-                <div className={`${isDark ? 'bg-gray-700' : 'bg-white'} rounded-lg p-2 shadow-sm border ${
+                {/* Task Placement Note */}
+                <div className={`${isDark ? 'bg-gray-700' : 'bg-white'} rounded-lg p-3 shadow-sm border ${
                   isDark ? 'border-gray-600/80' : 'border-gray-100/80'
                 }`}>
-                  <label className={`block text-[11px] font-medium ${
-                    isDark ? 'text-gray-400' : 'text-gray-600'
-                  } mb-1`}>Start Time</label>
-                  {mode === 'edit' ? (
-                    <div className={`w-full px-4 py-2 rounded-xl text-xs font-medium ${
-                      isDark ? 'bg-gray-800/80 text-gray-400 border border-gray-700' : 'bg-gray-100 text-gray-500'
-                    }`}>
-                      {formatToHHMM(formData.time)}
+                  <div className="flex items-start gap-3">
+                    <div className={`flex-shrink-0 p-2 rounded-full ${isDark ? 'bg-blue-900/30' : 'bg-blue-50'}`}>
+                      <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      </svg>
                     </div>
-                  ) : (
-                    <TimeInput
-                      value={getTimeAsDate(formData.time)}
-                      onChange={handleTimeChange}
-                      className={`!bg-gradient-to-r ${
-                        isDark ? '!from-green-900/30 !to-emerald-900/30 !text-gray-300' : '!from-green-50 !to-emerald-50'
-                      } !border-0 !shadow-none !text-xs !py-2 sm:!py-1.5`}
-                    />
-                  )}
+                    <div>
+                      <h4 className={`text-xs font-semibold ${isDark ? 'text-blue-400' : 'text-blue-600'} mb-1`}>Task Placement</h4>
+                      <p className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                        {mode === 'edit' ? (
+                          <span>Start time: {formatToHHMM(formData.time)}</span>
+                        ) : (
+                          <span>This task will be automatically added below the last task in your schedule.</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className={`${isDark ? 'bg-gray-700' : 'bg-white'} rounded-lg p-2 shadow-sm border ${
