@@ -57,9 +57,12 @@ export default function Sidebar({ isSidebarOpen, user, onLogout, onAddTask, curr
               <span>Add New Task</span>
             </button>
 
-            <button className={`flex items-center space-x-3 px-3 py-2 ${currentPath === '/dashboard' ? (isDark ? 'bg-gray-800 text-white' : 'bg-[#EDEDED] text-black') : (isDark ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100')} rounded-lg`}>
+            <button
+              onClick={() => router.push('/dashboard')}
+              className={`flex items-center space-x-3 px-3 py-2 ${currentPath === '/dashboard' ? (isDark ? 'bg-gray-800 text-white' : 'bg-[#EDEDED] text-black') : (isDark ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100')} rounded-lg`}
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
               </svg>
               <span>Dashboard</span>
             </button>

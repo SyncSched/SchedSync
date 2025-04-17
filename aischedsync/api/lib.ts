@@ -469,6 +469,52 @@ export interface Notification {
   task: NotificationTask;
 }
 
+// Dashboard interfaces
+export interface TaskStats {
+  total: number;
+  completed: number;
+  pending: number;
+  missed: number;
+  adherenceRate: number;
+}
+
+export interface CategoryBreakdown {
+  work: number;
+  personal: number;
+  health: number;
+  learning: number;
+  other: number;
+}
+
+export interface TaskCompletionData {
+  labels: string[];
+  completed: number[];
+  total: number[];
+}
+
+export interface ProductivityTrend {
+  labels: string[];
+  productivityScore: number[];
+  completionRate: number[];
+}
+
+export interface StreakData {
+  currentStreak: number;
+  longestStreak: number;
+  adherenceRate: number;
+  lastSevenDays: boolean[];
+}
+
+export interface DashboardData {
+  taskStats: TaskStats;
+  categoryBreakdown: CategoryBreakdown;
+  taskCompletion: TaskCompletionData;
+  productivityTrend: ProductivityTrend;
+  streakData: StreakData;
+  upcomingTasks: Task[];
+  mostActiveHour: string;
+}
+
 /**
  * Gets upcoming notifications for the user
  */
@@ -491,6 +537,199 @@ export const getUpcomingNotifications = async (): Promise<Notification[]> => {
   }
 
   return await response.json();
+};
+
+/**
+ * Gets all dashboard data for the user
+ */
+export const getDashboardData = async (timeframe: 'daily' | 'weekly' | 'monthly' = 'weekly'): Promise<DashboardData> => {
+  const token = getStoredAuthToken();
+
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/dashboard/data?timeframe=${timeframe}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch dashboard data');
+  }
+
+  return await response.json();
+};
+
+/**
+ * Gets task statistics for the user
+ */
+export const getTaskStats = async (timeframe: 'daily' | 'weekly' | 'monthly' = 'weekly'): Promise<TaskStats> => {
+  const token = getStoredAuthToken();
+
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/dashboard/task-stats?timeframe=${timeframe}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch task statistics');
+  }
+
+  return await response.json();
+};
+
+/**
+ * Gets category breakdown for the user
+ */
+export const getCategoryBreakdown = async (timeframe: 'daily' | 'weekly' | 'monthly' = 'weekly'): Promise<CategoryBreakdown> => {
+  const token = getStoredAuthToken();
+
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/dashboard/category-breakdown?timeframe=${timeframe}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch category breakdown');
+  }
+
+  return await response.json();
+};
+
+/**
+ * Gets task completion data for the user
+ */
+export const getTaskCompletionData = async (timeframe: 'daily' | 'weekly' | 'monthly' = 'weekly'): Promise<TaskCompletionData> => {
+  const token = getStoredAuthToken();
+
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/dashboard/task-completion?timeframe=${timeframe}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch task completion data');
+  }
+
+  return await response.json();
+};
+
+/**
+ * Gets productivity trend data for the user
+ */
+export const getProductivityTrend = async (timeframe: 'daily' | 'weekly' | 'monthly' = 'weekly'): Promise<ProductivityTrend> => {
+  const token = getStoredAuthToken();
+
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/dashboard/productivity-trend?timeframe=${timeframe}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch productivity trend');
+  }
+
+  return await response.json();
+};
+
+/**
+ * Gets streak data for the user
+ */
+export const getStreakData = async (): Promise<StreakData> => {
+  const token = getStoredAuthToken();
+
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/dashboard/streak-data`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch streak data');
+  }
+
+  return await response.json();
+};
+
+/**
+ * Gets upcoming tasks for the user
+ */
+export const getDashboardUpcomingTasks = async (limit: number = 5): Promise<Task[]> => {
+  const token = getStoredAuthToken();
+
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/dashboard/upcoming-tasks?limit=${limit}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch upcoming tasks');
+  }
+
+  return await response.json();
+};
+
+/**
+ * Gets most active hour for the user
+ */
+export const getMostActiveHour = async (): Promise<string> => {
+  const token = getStoredAuthToken();
+
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/dashboard/most-active-hour`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch most active hour');
+  }
+
+  const data = await response.json();
+  return data.mostActiveHour;
 };
 
 /**

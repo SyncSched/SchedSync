@@ -18,6 +18,16 @@ import {
     getCurrentDayEventsHandler,
     getCalendarEventsAsTasksHandler
 } from '../controllers/calendar.controller';
+import {
+    getDashboardDataHandler,
+    getTaskStatsHandler,
+    getCategoryBreakdownHandler,
+    getTaskCompletionDataHandler,
+    getProductivityTrendHandler,
+    getStreakDataHandler,
+    getUpcomingTasksHandler,
+    getMostActiveHourHandler
+} from '../controllers/dashboard.controller';
 
 export const attachPublicRoutes = (app: any): void => {
     app.get('/users', getAllUsersHandler);
@@ -63,4 +73,14 @@ export const attachPrivateRoutes = (app: any): void => {
     app.delete('/calendar/integration', removeCalendarIntegrationHandler);
     app.post('/calendar/today', getCurrentDayEventsHandler);
     app.post('/calendar/tasks', getCalendarEventsAsTasksHandler);
+
+    // Dashboard routes
+    app.get('/dashboard/data', getDashboardDataHandler);
+    app.get('/dashboard/task-stats', getTaskStatsHandler);
+    app.get('/dashboard/category-breakdown', getCategoryBreakdownHandler);
+    app.get('/dashboard/task-completion', getTaskCompletionDataHandler);
+    app.get('/dashboard/productivity-trend', getProductivityTrendHandler);
+    app.get('/dashboard/streak-data', getStreakDataHandler);
+    app.get('/dashboard/upcoming-tasks', getUpcomingTasksHandler);
+    app.get('/dashboard/most-active-hour', getMostActiveHourHandler);
 }

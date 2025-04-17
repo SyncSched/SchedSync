@@ -37,6 +37,11 @@ function MainLayout({ children }: MainLayoutProps) {
           title: "Today's Schedule",
           subtitle: "Plan your day effectively"
         };
+      case '/dashboard':
+        return {
+          title: "Dashboard",
+          subtitle: "Your productivity overview"
+        };
       case '/settings':
         return {
           title: "Settings",
