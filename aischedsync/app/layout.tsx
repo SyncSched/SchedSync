@@ -116,6 +116,7 @@ function MainLayout({ children }: MainLayoutProps) {
         user={user}
         onLogout={logout}
         onAddTask={() => setIsAddTaskModalOpen(true)}
+        currentPath={pathname}
       />
 
       {/* Main Content */}
