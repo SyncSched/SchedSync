@@ -77,8 +77,13 @@ export interface Schedule {
   export interface Task {
     id: string;
     name: string;
+    description?: string;
+    notes?: string;
     time: string;    // ISO format string
     duration: number;
+    status?: 'PENDING' | 'COMPLETED' | 'IN_PROGRESS' | 'OVERDUE';
+    priority?: 'LOW' | 'MEDIUM' | 'HIGH';
+    location?: string | null;
     scheduleId: string;
     location: string;
     isEmailEnabled: boolean;
@@ -89,8 +94,14 @@ export interface Schedule {
 
   export interface TaskFormData {
     name: string;
+    description: string;
+    notes?: string;
     time: string;
     duration: number;
+    endTime: string;
+    priority: 'HIGH' | 'MEDIUM' | 'LOW';
+    status: 'PENDING' | 'COMPLETED';
+    location?: string | null;
     isEmailEnabled: boolean;
     isWhatsAppEnabled: boolean;
     isTelegramEnabled: boolean;

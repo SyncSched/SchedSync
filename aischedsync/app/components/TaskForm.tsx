@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import TimeInput from './ui/TimeInput';
 import { formatToHHMM, convertHHMMToISO } from '../utils/dateUtils';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -17,19 +17,24 @@ interface TaskFormProps {
   mode?: 'edit' | 'add';
   initialTask?: {
     name?: string;
+    description?: string;
+    notes?: string;
     time?: string;
     duration?: number;
+    priority?: 'HIGH' | 'MEDIUM' | 'LOW';
+    status?: 'PENDING' | 'COMPLETED';
+    location?: string | null;
     isEmailEnabled?: boolean;
     isWhatsAppEnabled?: boolean;
     isTelegramEnabled?: boolean;
     isCallEnabled?: boolean;
-    location?: string| null
   };
 }
 
 export interface TaskFormData {
   name: string;
   description: string;
+  notes?: string;
   time: string;
   duration: number;
   endTime: string;
@@ -42,17 +47,18 @@ export interface TaskFormData {
   isCallEnabled: boolean;
 }
 
-export const TaskForm: React.FC<TaskFormProps> = ({ 
-  onSubmit, 
-  onClose, 
+export const TaskForm: React.FC<TaskFormProps> = ({
+  onSubmit,
+  onClose,
   onDelete,
   mode = 'add',
-  initialTask 
+  initialTask
 }) => {
   const { isDark } = useTheme();
-  const [activeTab, setActiveTab] = useState<'details' | 'second'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'notes'>('details');
   const [showMap, setShowMap] = useState(false);
-  const [location, setLocation] = useState<string | null>(null); 
+  const [location, setLocation] = useState<string | null>(null);
+  const [locationName, setLocationName] = useState<string>('');
   // Initialize the time value correctly
   const getInitialTime = () => {
     if (initialTask?.time) {
@@ -68,12 +74,13 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
   const [formData, setFormData] = useState<TaskFormData>({
     name: initialTask?.name || '',
-    description: '',
+    description: initialTask?.description || '',
+    notes: initialTask?.notes || '',
     time: getInitialTime(),
     duration: initialTask?.duration || 30,
     endTime: '',
-    priority: 'MEDIUM',
-    status: 'PENDING',
+    priority: initialTask?.priority || 'MEDIUM',
+    status: initialTask?.status || 'PENDING',
     location: initialTask?.location,
     isEmailEnabled: initialTask?.isEmailEnabled || false,
     isWhatsAppEnabled: initialTask?.isWhatsAppEnabled || false,
@@ -100,18 +107,58 @@ export const TaskForm: React.FC<TaskFormProps> = ({
       time: timeString
     }));
   };
-  const handleLocationChange = () => {
-    console.log({location: location})
-   setFormData(prev => ({
+  // Function to get location name from coordinates using reverse geocoding
+  const getLocationNameFromCoords = useCallback(async (coords: string) => {
+    try {
+      const [lat, lng] = coords.split(',').map(Number);
+      if (isNaN(lat) || isNaN(lng)) return null;
+
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
+      );
+      const data = await response.json();
+      return data.display_name || null;
+    } catch (error) {
+      console.error('Error getting location name:', error);
+      return null;
+    }
+  }, []);
+
+  const handleLocationChange = (locationValue: string | null = null, locName: string = '') => {
+    console.log({location: locationValue || location, locationName: locName || locationName},"location######")
+    setFormData(prev => ({
       ...prev,
-      location: location
+      location: locationValue || location
     }));
+
+    // If we have coordinates but no location name, try to get it
+    if (locationValue && !locName) {
+      getLocationNameFromCoords(locationValue).then(name => {
+        if (name) setLocationName(name);
+      });
+    } else if (locName) {
+      setLocationName(locName);
+    }
   };
+
+  // Get location name for initial location if available
+  useEffect(() => {
+    if (initialTask?.location && !locationName) {
+      console.log('Initial task location found:', initialTask.location);
+      setLocation(initialTask.location);
+      getLocationNameFromCoords(initialTask.location).then(name => {
+        if (name) {
+          console.log('Got location name:', name);
+          setLocationName(name);
+        }
+      });
+    }
+  }, [initialTask?.location, locationName, getLocationNameFromCoords]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, type } = e.target;
     const value = type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
-    
+
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -140,7 +187,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             onClick={() => setActiveTab('details')}
             className={`relative flex-1 sm:flex-none px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-t-lg transition-all duration-200 ${
               activeTab === 'details'
-              ? isDark 
+              ? isDark
                 ? 'text-blue-400 bg-blue-900/50 border border-gray-700 border-b-gray-800'
                 : 'text-blue-700 bg-blue-50 border border-gray-200 border-b-white'
               : isDark
@@ -155,10 +202,10 @@ export const TaskForm: React.FC<TaskFormProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab('second')}
+            onClick={() => setActiveTab('notes')}
             className={`relative flex-1 sm:flex-none px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-t-lg transition-all duration-200 ${
-              activeTab === 'second'
-              ? isDark 
+              activeTab === 'notes'
+              ? isDark
                 ? 'text-blue-400 bg-blue-900/50 border border-gray-700 border-b-gray-800'
                 : 'text-blue-700 bg-blue-50 border border-gray-200 border-b-white'
               : isDark
@@ -167,7 +214,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             }`}
           >
             <span className="relative z-10">Notes</span>
-            {activeTab === 'second' && (
+            {activeTab === 'notes' && (
               <div className={`absolute inset-x-0 -bottom-[1px] h-[1px] ${isDark ? 'bg-gray-800' : 'bg-white'}`}></div>
             )}
           </button>
@@ -359,16 +406,18 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                     <input
                       type="text"
                       name="location"
-                      value={formData.location?? ''}
-                      onChange={handleChange}
-                      placeholder="Enter location"
+                      value={locationName || 'No location selected'}
+                      readOnly
+                      placeholder="Select a location"
                       className={`w-full px-2 py-2 sm:py-1.5 ${
                         isDark ? 'bg-gradient-to-r from-blue-900/30 to-indigo-900/30 text-gray-300' : 'bg-gradient-to-r from-blue-50 to-indigo-50 text-gray-700'
                       } rounded-lg text-xs font-medium focus:outline-none focus:ring-1 ${
                         isDark ? 'focus:ring-blue-500/30' : 'focus:ring-blue-200'
                       } ${isDark ? 'placeholder-gray-500' : ''}`}
                     />
-                    <div className={`absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none ${
+                    <div
+                      onClick={() => setShowMap(true)}
+                      className={`absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer hover:text-blue-500 transition-colors duration-200 ${
                       isDark ? 'text-gray-500' : 'text-gray-400'
                     }`}>
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -449,9 +498,9 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                         )
                       }`}
                     >
-                      <option value="high" className={isDark ? 'bg-gray-800 text-red-400' : 'bg-red-50 text-red-700'}>High</option>
-                      <option value="medium" className={isDark ? 'bg-gray-800 text-amber-400' : 'bg-amber-50 text-amber-700'}>Medium</option>
-                      <option value="low" className={isDark ? 'bg-gray-800 text-green-400' : 'bg-green-50 text-green-700'}>Low</option>
+                      <option value="HIGH" className={isDark ? 'bg-gray-800 text-red-400' : 'bg-red-50 text-red-700'}>High</option>
+                      <option value="MEDIUM" className={isDark ? 'bg-gray-800 text-amber-400' : 'bg-amber-50 text-amber-700'}>Medium</option>
+                      <option value="LOW" className={isDark ? 'bg-gray-800 text-green-400' : 'bg-green-50 text-green-700'}>Low</option>
                     </select>
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
                       <svg className={`size-3.5 ${
@@ -499,8 +548,8 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                         )
                       }`}
                     >
-                      <option value="pending" className={isDark ? 'bg-gray-800 text-blue-400' : 'bg-blue-50 text-blue-700'}>Pending</option>
-                      <option value="completed" className={isDark ? 'bg-gray-800 text-emerald-400' : 'bg-emerald-50 text-emerald-700'}>Completed</option>
+                      <option value="PENDING" className={isDark ? 'bg-gray-800 text-blue-400' : 'bg-blue-50 text-blue-700'}>Pending</option>
+                      <option value="COMPLETED" className={isDark ? 'bg-gray-800 text-emerald-400' : 'bg-emerald-50 text-emerald-700'}>Completed</option>
                     </select>
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
                       <svg className={`size-3.5 ${
@@ -546,7 +595,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 >
                   Set location
                 </button>
-                
+
                 {mode === 'edit' && onDelete && (
                   <button
                     type="button"
@@ -564,11 +613,32 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             </div>
           </>
         ) : (
-          <div className={`flex-1 p-4 ${
-            isDark ? 'bg-gray-800/50' : 'bg-gradient-to-br from-gray-50/50 via-white to-blue-50/30'
-          }`}>
-            <div className={`text-center ${isDark ? 'text-gray-400' : 'text-gray-500'} mt-8`}>
-              <p className="text-sm">Second tab content will be added here</p>
+          <div className={`flex-1 pr-0 lg:pr-3.5 ${isDark ? 'bg-gray-800/50' : 'bg-gradient-to-br from-gray-50/50 via-white to-blue-50/30'} overflow-y-auto`}>
+            <div className="space-y-4 p-3">
+              {/* Notes */}
+              <div className="group">
+                <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-sm border ${isDark ? 'border-gray-700' : 'border-gray-100'} hover:shadow-md ${isDark ? 'hover:border-purple-500/50' : 'hover:border-purple-100'} transition-all duration-300 overflow-hidden`}>
+                  <div className="relative">
+                    <textarea
+                      name="notes"
+                      value={formData.notes || ''}
+                      onChange={handleChange}
+                      rows={12}
+                      className={`w-full px-4 py-3 text-sm ${
+                        isDark ? 'text-gray-200 bg-gray-800 placeholder-gray-500' : 'text-gray-700 bg-white placeholder-gray-400'
+                      } rounded-lg focus:outline-none transition-all duration-300 resize-none`}
+                      placeholder="Add your notes here..."
+                    />
+                    <div className={`absolute top-3 right-4 pointer-events-none ${
+                      isDark ? 'text-gray-500' : 'text-gray-400'
+                    } transition-colors duration-300`}>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -577,20 +647,34 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
     {showMap && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-          <div className="bg-white p-4 rounded-lg shadow-lg w-[90%] max-w-3xl">
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg w-[90%] max-w-3xl">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-lg font-medium text-gray-800 dark:text-white">Select Location</h3>
+              <button
+                onClick={() => setShowMap(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+
             <LocationPicker
-              onSelect={(coords) => {
+              onSelect={(coords, name) => {
                 if (coords) {
-                  setLocation(`${coords.lat},${coords.lng}`);
+                  const locationString = `${coords.lat},${coords.lng}`;
+                  setLocation(locationString);
+                  handleLocationChange(locationString, name);
+                  setShowMap(false);
                 }
               }}
+              initialLocation={location ? {
+                lat: parseFloat(location.split(',')[0]),
+                lng: parseFloat(location.split(',')[1])
+              } : undefined}
+              initialLocationName={locationName}
             />
-            <button
-              onClick={() =>  { handleLocationChange(); setShowMap(false)}}
-              className="mt-4 bg-red-500 text-white px-4 py-2 rounded"
-            >
-              Close Map
-            </button>
           </div>
         </div>
       )}
