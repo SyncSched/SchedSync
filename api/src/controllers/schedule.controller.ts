@@ -26,7 +26,16 @@ export const getScheduleHandler = async(req:AuthenticatedRequest, res:Response, 
 
         res.status(201).json(requiredSchedule);
     }catch(err){
-        next(err);
+        // Check if this is a 'schedule not found' error
+        if (err instanceof Error && (err as any).code === 'SCHEDULE_NOT_FOUND') {
+            // Return a specific status code for schedule not found
+            res.status(404).json({
+                error: 'SCHEDULE_NOT_FOUND',
+                message: err.message
+            });
+        } else {
+            next(err);
+        }
     }
 }
 
@@ -87,6 +96,11 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
         console.log(`[TIME] Starting calendar integration check at: ${new Date().toISOString()}`);
         const calendarStartTime = Date.now();
         let calendarEvents: any[] = [];
+
+        // Create variables to track calendar integration errors
+        let calendarEventsError = false;
+        let calendarEventsErrorMessage = '';
+
         const hasCalendar = await hasCalendarIntegration(userId);
 
         if (hasCalendar) {
@@ -135,7 +149,15 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
             } catch (error) {
                 console.error('Error fetching calendar events for schedule generation:', error);
                 console.log(`[TIME] Calendar events fetch failed at: ${new Date().toISOString()} (${Date.now() - calendarStartTime}ms)`);
-                // Continue without calendar events if there's an error
+
+                // Log a warning to the user about calendar events
+                console.warn('Calendar events could not be fetched. Schedule will be generated without calendar events.');
+
+                // Set the error flags to be used later
+                calendarEventsError = true;
+                calendarEventsErrorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+                // Continue without calendar events
             }
         } else {
             console.log(`[TIME] No calendar integration found at: ${new Date().toISOString()} (${Date.now() - calendarStartTime}ms)`);
@@ -144,7 +166,9 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
         // Add calendar events to user data for schedule generation
         const userDataWithCalendar = {
             ...userWithOnboarding,
-            calendarEvents: calendarEvents
+            calendarEvents: calendarEvents,
+            calendarEventsError,
+            calendarEventsErrorMessage
         };
 
         // Debug log to verify calendar events
@@ -165,6 +189,7 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
         // Clean and parse the schedule
         let cleanedSchedule = generatedSchedule.trim().replace(/^```json/, "").replace(/```$/, "");
         let parsedSchedule = JSON.parse(cleanedSchedule);
+        console.log(parsedSchedule,"GENERATED SCHEDULE");
 
         // Convert time strings to UTC DateTime format
         const formattedTasks = parsedSchedule.map((task: any) => {

@@ -11,13 +11,13 @@ export interface Task {
     name: string;
     description: string | null;
     notes: string | null;
-    time: Date | string;
+    time: Date;
     duration: number;
     status: TaskStatus;
     priority: Priority;
     location: string | null;
     scheduleId: string;
-
+    
     // Notification preferences
     isEmailEnabled: boolean;
     isWhatsAppEnabled: boolean;
@@ -29,8 +29,8 @@ export interface Task {
     updatedAt: Date;
     completedAt: Date | null;
 }
-
-
+  
+  
   // For Prisma Schema interfaces
   export interface Schedule {
     id: string;
@@ -41,7 +41,7 @@ export interface Task {
     createdAt: Date;
     updatedAt: Date;
   }
-
+  
   // Input types for creating/updating
   export interface CreateScheduleInput {
     userId: string;
@@ -49,7 +49,7 @@ export interface Task {
         name: string;
         description?: string | null;
         notes?: string | null;
-        time: Date | string; // Accept both Date objects and string (HH:mm format)
+        time: Date;
         duration: number;
         status?: TaskStatus;
         priority?: Priority;
@@ -60,12 +60,12 @@ export interface Task {
         isCallEnabled?: boolean;
     }[];
   }
-
+  
   export type UpdateScheduleInput = Partial<CreateScheduleInput>;
-
+  
   // Task input types
   export type CreateTaskInput = Omit<Task, 'id'>;
   export type UpdateTaskInput = Partial<CreateTaskInput>;
-
+  
   // Utility type to represent a schedule without relations
   export type ScheduleWithoutRelations = Omit<Schedule, 'user'>;

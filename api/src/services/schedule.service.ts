@@ -118,24 +118,8 @@ export const createSchedule = async (
 ): Promise<ScheduleWithRelations> => {
   const { userId, originalData } = input;
 
-  console.log('Input received in createSchedule:', JSON.stringify(input, (key, value) => {
-    // Handle Date objects for better logging
-    if (value instanceof Date) {
-      return `Date(${value.toISOString()})`;
-    }
-    return value;
-  }, 2));
-
-  // Log the type of time field for each task
-  originalData.forEach((task, index) => {
-    console.log(`Task ${index} time type:`, typeof task.time,
-      task.time instanceof Date ? 'Is Date object' : 'Not a Date object',
-      'Value:', task.time);
-  });
-
   const parsedInput = createScheduleSchema.safeParse(input);
   if (!parsedInput.success) {
-    console.log('Validation error details:', parsedInput.error.format());
     throw new Error(`Validation error: ${parsedInput.error.issues.map(issue => issue.message).join(", ")}`);
   }
 
@@ -156,38 +140,23 @@ export const createSchedule = async (
         userId,
         status: 'PENDING',
         originalData: {
-          create: originalData.map((task) => {
-            // Convert string time to Date if needed
-            let taskTime: Date;
-            if (typeof task.time === 'string' && task.time.includes(':')) {
-              // Parse HH:mm format to Date
-              const [hours, minutes] = task.time.split(':').map(Number);
-              taskTime = new Date();
-              taskTime.setHours(hours, minutes, 0, 0);
-              console.log(`Converted string time ${task.time} to Date: ${taskTime.toISOString()}`);
-            } else {
-              // Already a Date object
-              taskTime = task.time as Date;
-            }
-
-            return {
-              name: task.name,
-              description: task.description ?? "",
-              notes: task.notes ?? "",
-              time: taskTime,
-              duration: task.duration,
-              status: TaskStatus.PENDING,
-              priority: task.priority ?? Priority.MEDIUM,
-              location: task.location ?? null,
-              isEmailEnabled: task.isEmailEnabled ?? user.isEmailEnabled,
-              isWhatsAppEnabled: task.isWhatsAppEnabled ?? user.isWhatsAppEnabled,
-              isTelegramEnabled: task.isTelegramEnabled ?? user.isTelegramEnabled,
-              isCallEnabled: task.isCallEnabled ?? user.isCallEnabled,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-              completedAt: null
-            };
-          })
+          create: originalData.map((task) => ({
+            name: task.name,
+            description: task.description ?? "",
+            notes: task.notes ?? "",
+            time: task.time,
+            duration: task.duration,
+            status: TaskStatus.PENDING,
+            priority: task.priority ?? Priority.MEDIUM,
+            location: task.location ?? null,
+            isEmailEnabled: task.isEmailEnabled ?? user.isEmailEnabled,
+            isWhatsAppEnabled: task.isWhatsAppEnabled ?? user.isWhatsAppEnabled,
+            isTelegramEnabled: task.isTelegramEnabled ?? user.isTelegramEnabled,
+            isCallEnabled: task.isCallEnabled ?? user.isCallEnabled,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            completedAt: null
+          }))
         }
       },
       include: {
@@ -404,26 +373,15 @@ export const getSchedule = async (
     if (previousSchedule) {
       // Create task data based on previous schedule's tasks
       const taskData = previousSchedule.originalData.map(task => {
-        // Convert time to string format if it's a Date object
-        let timeValue: string | Date = task.time;
-        if (timeValue instanceof Date) {
-          // Format to HH:mm string
-          const hours = timeValue.getHours().toString().padStart(2, '0');
-          const minutes = timeValue.getMinutes().toString().padStart(2, '0');
-          timeValue = `${hours}:${minutes}`;
-        }
-
-        console.log(`Converting task time from ${task.time} to ${timeValue}`);
-
         return {
           name: task.name,
-          time: timeValue,
+          time: task.time,
           duration: task.duration,
           isEmailEnabled: task.isEmailEnabled,
           isWhatsAppEnabled: task.isWhatsAppEnabled,
           isTelegramEnabled: task.isTelegramEnabled,
           isCallEnabled: task.isCallEnabled
-        };
+        } as Task; // Cast to Task to satisfy TypeScript
       });
 
       // Create the input with the properly typed tasks
@@ -431,8 +389,6 @@ export const getSchedule = async (
         userId,
         originalData: taskData
       };
-
-      console.log('Creating new schedule with input:', JSON.stringify(createInput, null, 2));
 
       // Create a new schedule using the existing function
       const newSchedule = await createSchedule(createInput);
@@ -543,16 +499,7 @@ export const updateSchedule = async (
             name: task.name,
             description: task.description,
             notes: task.notes,
-            time: typeof task.time === 'string' && task.time.includes(':')
-              ? (() => {
-                  // Parse HH:mm format to Date
-                  const [hours, minutes] = task.time.split(':').map(Number);
-                  const date = new Date();
-                  date.setHours(hours, minutes, 0, 0);
-                  console.log(`Update: Converted string time ${task.time} to Date: ${date.toISOString()}`);
-                  return date;
-                })()
-              : task.time,
+            time: task.time,
             duration: task.duration,
             status: task.status,
             priority: task.priority,
@@ -570,16 +517,7 @@ export const updateSchedule = async (
             name: task.name,
             description: task.description,
             notes: task.notes,
-            time: typeof task.time === 'string' && task.time.includes(':')
-              ? (() => {
-                  // Parse HH:mm format to Date
-                  const [hours, minutes] = task.time.split(':').map(Number);
-                  const date = new Date();
-                  date.setHours(hours, minutes, 0, 0);
-                  console.log(`Create: Converted string time ${task.time} to Date: ${date.toISOString()}`);
-                  return date;
-                })()
-              : task.time,
+            time: task.time,
             duration: task.duration,
             status: 'PENDING',
             priority: task.priority,

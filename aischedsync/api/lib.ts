@@ -151,32 +151,51 @@ export interface Schedule {
         return res.json();
       }
 
-      // If not found, try generating a new schedule
-      if (!isGeneratingSchedule) {
-        isGeneratingSchedule = true;
+      // Check if this is a 'schedule not found' error
+      if (res.status === 404) {
+        const errorData = await res.json();
+        if (errorData.error === 'SCHEDULE_NOT_FOUND') {
+          console.log('No schedule found, generating a new one...');
 
-        const createRes = await fetch(`${API_URL}/generateSchedule`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${getStoredAuthToken()}`
-          },
-          body: JSON.stringify({
-            date: now.toISOString(),
-            timezoneOffset: timezoneOffset
-          })
-        });
+          // If not found, try generating a new schedule
+          if (!isGeneratingSchedule) {
+            isGeneratingSchedule = true;
 
-        isGeneratingSchedule = false;
+            try {
+              const createRes = await fetch(`${API_URL}/generateSchedule`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${getStoredAuthToken()}`
+                },
+                body: JSON.stringify({
+                  date: now.toISOString(),
+                  timezoneOffset: timezoneOffset
+                })
+              });
 
-        if (!createRes.ok) {
-          throw new Error("Failed to create today's schedule");
+              if (!createRes.ok) {
+                const errorText = await createRes.text();
+                console.error('Schedule generation failed:', errorText);
+                throw new Error(`Failed to create today's schedule: ${createRes.status} ${createRes.statusText}`);
+              }
+
+              return createRes.json();
+            } catch (genError) {
+              console.error('Error during schedule generation:', genError);
+              throw genError;
+            } finally {
+              isGeneratingSchedule = false;
+            }
+          } else {
+            console.warn("Schedule generation already in progress");
+            throw new Error("Duplicate schedule generation request blocked");
+          }
         }
-        return createRes.json();
-      } else {
-        console.warn("Schedule generation already in progress");
-        throw new Error("Duplicate schedule generation request blocked");
       }
+
+      // For other errors
+      throw new Error(`Failed to fetch schedule: ${res.status} ${res.statusText}`);
     } catch (error) {
       isGeneratingSchedule = false;
       console.error('Error fetching schedule:', error);
