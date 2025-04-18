@@ -8,11 +8,6 @@ import {
   getDashboardUpcomingTasks,
   type Task,
   type DashboardData,
-  type TaskStats,
-  type CategoryBreakdown,
-  type TaskCompletionData,
-  type ProductivityTrend,
-  type StreakData
 } from '../../api/lib';
 import Loading from '../components/Loading';
 import DashboardStats from '../components/dashboard/DashboardStats';
@@ -23,7 +18,7 @@ import UpcomingTasksWidget from '../components/dashboard/UpcomingTasksWidget';
 import StreakWidget from '../components/dashboard/StreakWidget';
 
 export default function Dashboard() {
-  const { user, isAuthenticated } = useAuth();
+  const {  isAuthenticated } = useAuth();
   const { isDark } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
   const [timeframe, setTimeframe] = useState<'daily' | 'weekly' | 'monthly'>('weekly');

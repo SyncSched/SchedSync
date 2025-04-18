@@ -42,7 +42,7 @@ const LocationSelector = ({ onSelect }: Props) => {
   useEffect(() => {
     // Get the parent LocationPicker component props
     if (typeof window !== 'undefined') {
-      const parentProps = (window as any).__LOCATION_PICKER_PROPS__;
+      const parentProps = (window as Window & { __LOCATION_PICKER_PROPS__?: { initialLocation?: L.LatLngLiteral; initialLocationName?: string } }).__LOCATION_PICKER_PROPS__;
       if (parentProps?.initialLocation) {
         console.log('Found initial location:', parentProps.initialLocation);
 

@@ -23,14 +23,14 @@ export default function LocationPicker({ onSelect, initialLocation, initialLocat
   useEffect(() => {
     if (typeof window !== 'undefined') {
       console.log('Setting location picker props:', { initialLocation, initialLocationName });
-      (window as any).__LOCATION_PICKER_PROPS__ = {
+      (window as Window & { __LOCATION_PICKER_PROPS__?: { initialLocation?: L.LatLngLiteral; initialLocationName?: string } }).__LOCATION_PICKER_PROPS__ = {
         initialLocation,
         initialLocationName
       };
     }
     return () => {
       if (typeof window !== 'undefined') {
-        delete (window as any).__LOCATION_PICKER_PROPS__;
+        delete (window as Window & { __LOCATION_PICKER_PROPS__?: { initialLocation?: L.LatLngLiteral; initialLocationName?: string } }).__LOCATION_PICKER_PROPS__;
       }
     };
   }, [initialLocation, initialLocationName]);

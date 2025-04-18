@@ -65,10 +65,12 @@ export default function TaskCategoryChart({ isDark, categoryData }: TaskCategory
         padding: 12,
         displayColors: true,
         callbacks: {
-          label: function(context: any) {
-            const label = context.label || '';
-            const value = context.raw || 0;
-            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+          label: function(context: unknown) {
+            // Using type assertion to avoid TypeScript errors
+            const ctx = context as unknown as { label: string; raw: number; dataset: { data: number[] } };
+            const label = ctx.label || '';
+            const value = ctx.raw || 0;
+            const total = ctx.dataset.data.reduce((a: number, b: number) => a + b, 0);
             const percentage = Math.round((value / total) * 100);
             return `${label}: ${percentage}% (${value} tasks)`;
           }

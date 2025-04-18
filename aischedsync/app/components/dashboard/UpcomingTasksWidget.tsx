@@ -1,6 +1,6 @@
 import React from 'react';
 import { Task } from '@/api/lib';
-import { formatToHHMM, formatTimeForDisplay } from '@/app/utils/dateUtils';
+import {  formatTimeForDisplay } from '@/app/utils/dateUtils';
 
 interface UpcomingTasksWidgetProps {
   tasks: Task[];
