@@ -129,6 +129,33 @@ export interface Schedule {
    * If no schedule exists, it calls the schedule creation endpoint.
    */
   let isGeneratingSchedule = false; // Prevent duplicate schedule generation
+  let scheduleGenerationTimeout: NodeJS.Timeout | null = null;
+
+  /**
+   * Cleans up any pending schedules for the current user
+   */
+  const cleanupPendingSchedules = async (): Promise<void> => {
+    try {
+      const response = await fetch(`${API_URL}/cleanupPendingSchedules`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getStoredAuthToken()}`
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.deletedCount > 0) {
+          console.log(`Cleaned up ${result.deletedCount} pending schedules`);
+        }
+      }
+    } catch (error) {
+      console.error('Error cleaning up pending schedules:', error);
+    } finally {
+      isGeneratingSchedule = false;
+    }
+  };
 
   export const getTodaySchedule = async (): Promise<Schedule> => {
     try {
@@ -161,6 +188,17 @@ export interface Schedule {
           if (!isGeneratingSchedule) {
             isGeneratingSchedule = true;
 
+            // Set a timeout to clean up pending schedules if generation takes too long
+            if (scheduleGenerationTimeout) {
+              clearTimeout(scheduleGenerationTimeout);
+            }
+
+            // After 30 seconds, clean up any pending schedules
+            scheduleGenerationTimeout = setTimeout(() => {
+              console.warn('Schedule generation timeout reached, cleaning up pending schedules');
+              cleanupPendingSchedules();
+            }, 30000); // 30 seconds timeout
+
             try {
               const createRes = await fetch(`${API_URL}/generateSchedule`, {
                 method: 'POST',
@@ -174,18 +212,27 @@ export interface Schedule {
                 })
               });
 
+              // Clear the timeout since we got a response
+              if (scheduleGenerationTimeout) {
+                clearTimeout(scheduleGenerationTimeout);
+                scheduleGenerationTimeout = null;
+              }
+
               if (!createRes.ok) {
                 const errorText = await createRes.text();
                 console.error('Schedule generation failed:', errorText);
+                // Clean up any pending schedules
+                await cleanupPendingSchedules();
                 throw new Error(`Failed to create today's schedule: ${createRes.status} ${createRes.statusText}`);
               }
 
+              isGeneratingSchedule = false;
               return createRes.json();
             } catch (genError) {
               console.error('Error during schedule generation:', genError);
+              // Clean up any pending schedules
+              await cleanupPendingSchedules();
               throw genError;
-            } finally {
-              isGeneratingSchedule = false;
             }
           } else {
             console.warn("Schedule generation already in progress");
