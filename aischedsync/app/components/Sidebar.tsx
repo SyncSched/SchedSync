@@ -9,9 +9,10 @@ interface SidebarProps {
   user: UserInfo | null;
   onLogout: () => void;
   onAddTask?: () => void;
+  currentPath: string;
 }
 
-export default function Sidebar({ isSidebarOpen, user, onLogout, onAddTask }: SidebarProps) {
+export default function Sidebar({ isSidebarOpen, user, onLogout, onAddTask, currentPath }: SidebarProps) {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const { isDark } = useTheme();
   const router = useRouter();
@@ -33,7 +34,7 @@ export default function Sidebar({ isSidebarOpen, user, onLogout, onAddTask }: Si
               {/* <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={isDark ? "white" : "black"} className="size-6">
                 <path fillRule="evenodd" d="M9 4.5a.75.75 0 0 1 .721.544l.813 2.846a3.75 3.75 0 0 0 2.576 2.576l2.846.813a.75.75 0 0 1 0 1.442l-2.846.813a3.75 3.75 0 0 0-2.576 2.576l-.813 2.846a.75.75 0 0 1-1.442 0l-.813-2.846a3.75 3.75 0 0 0-2.576-2.576l-2.846-.813a.75.75 0 0 1 0-1.442l2.846-.813A3.75 3.75 0 0 0 7.466 7.89l.813-2.846A.75.75 0 0 1 9 4.5ZM18 1.5a.75.75 0 0 1 .728.568l.258 1.036c.236.94.97 1.674 1.91 1.91l1.036.258a.75.75 0 0 1 0 1.456l-1.036.258c-.94.236-1.674.97-1.91 1.91l-.258 1.036a.75.75 0 0 1-1.456 0l-.258-1.036a2.625 2.625 0 0 0-1.91-1.91l-1.036-.258a.75.75 0 0 1 0-1.456l1.036-.258a2.625 2.625 0 0 0 1.91-1.91l.258-1.036A.75.75 0 0 1 18 1.5ZM16.5 15a.75.75 0 0 1 .712.513l.394 1.183c.15.447.5.799.948.948l1.183.395a.75.75 0 0 1 0 1.422l-1.183.395c-.447.15-.799.5-.948.948l-.395 1.183a.75.75 0 0 1-1.422 0l-.395-1.183a1.5 1.5 0 0 0-.948-.948l-1.183-.395a.75.75 0 0 1 0-1.422l1.183-.395c.447-.15.799-.5.948-.948l.395-1.183A.75.75 0 0 1 16.5 15Z" clipRule="evenodd" />
               </svg> */}
-              <Image 
+              <Image
                 src="/favicon-black.ico"
                 alt="SchedSync Logo"
                 width={48}
@@ -44,9 +45,9 @@ export default function Sidebar({ isSidebarOpen, user, onLogout, onAddTask }: Si
             </div>
             <div className={`text-xl ${isDark ? 'text-white' : 'text-gray-900'} font-semibold`}>SchedSync</div>
           </div>
-          
+
           <nav className="flex flex-col space-y-2 flex-grow">
-            <button 
+            <button
               onClick={onAddTask}
               className={`flex items-center space-x-3 px-3 py-2 ${isDark ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100'} rounded-lg`}
             >
@@ -56,53 +57,56 @@ export default function Sidebar({ isSidebarOpen, user, onLogout, onAddTask }: Si
               <span>Add New Task</span>
             </button>
 
-            <button className={`flex items-center space-x-3 px-3 py-2 ${isDark ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100'} rounded-lg`}>
+            <button
+              onClick={() => router.push('/dashboard')}
+              className={`flex items-center space-x-3 px-3 py-2 ${currentPath === '/dashboard' ? (isDark ? 'bg-gray-800 text-white' : 'bg-[#EDEDED] text-black') : (isDark ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100')} rounded-lg`}
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
               </svg>
               <span>Dashboard</span>
             </button>
-            
-            <button className={`flex items-center space-x-3 px-3 py-2 ${isDark ? 'bg-gray-800 text-white' : 'bg-[#EDEDED] text-black'} rounded-lg`} onClick={() => router.push('/')}>
+
+            <button className={`flex items-center space-x-3 px-3 py-2 ${currentPath === '/' ? (isDark ? 'bg-gray-800 text-white' : 'bg-[#EDEDED] text-black') : (isDark ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100')} rounded-lg`} onClick={() => router.push('/')}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
               </svg>
               <span>Schedule</span>
             </button>
-            
-            <button className={`flex items-center space-x-3 px-3 py-2 ${isDark ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100'} rounded-lg`} onClick={() => router.push('/calendar')}>
+
+            <button className={`flex items-center space-x-3 px-3 py-2 ${currentPath === '/calendar' ? (isDark ? 'bg-gray-800 text-white' : 'bg-[#EDEDED] text-black') : (isDark ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100')} rounded-lg`} onClick={() => router.push('/calendar')}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
               </svg>
               <span>Calendar</span>
             </button>
-            
-            <button className={`flex items-center space-x-3 px-3 py-2 ${isDark ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100'} rounded-lg`} onClick={() => router.push('/reminders')}>
+
+            <button className={`flex items-center space-x-3 px-3 py-2 ${currentPath === '/reminders' ? (isDark ? 'bg-gray-800 text-white' : 'bg-[#EDEDED] text-black') : (isDark ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100')} rounded-lg`} onClick={() => router.push('/reminders')}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
               <span>Reminders</span>
             </button>
-            
-            <button className={`flex items-center space-x-3 px-3 py-2 ${isDark ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100'} rounded-lg`}>
+
+            <button className={`flex items-center space-x-3 px-3 py-2 ${currentPath === '/tools' ? (isDark ? 'bg-gray-800 text-white' : 'bg-[#EDEDED] text-black') : (isDark ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100')} rounded-lg`}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
               </svg>
               <span>Tools</span>
             </button>
-            
-            <button className={`flex items-center space-x-3 px-3 py-2 ${isDark ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100'} rounded-lg`}>
+
+            <button className={`flex items-center space-x-3 px-3 py-2 ${currentPath === '/share' ? (isDark ? 'bg-gray-800 text-white' : 'bg-[#EDEDED] text-black') : (isDark ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100')} rounded-lg`}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
               </svg>
               <span>Share</span>
             </button>
           </nav>
-          
+
           <div className={`mt-auto pt-4 border-t ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
-            <button 
+            <button
               onClick={handleSettingsClick}
-              className={`flex items-center space-x-3 px-3 py-2 ${isDark ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100'} rounded-lg w-full`}
+              className={`flex items-center space-x-3 px-3 py-2 ${currentPath === '/settings' ? (isDark ? 'bg-gray-800 text-white' : 'bg-[#EDEDED] text-black') : (isDark ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100')} rounded-lg w-full`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
@@ -110,27 +114,27 @@ export default function Sidebar({ isSidebarOpen, user, onLogout, onAddTask }: Si
               </svg>
               <span>Settings</span>
             </button>
-            
+
             <div className="relative mt-2">
-              <button 
+              <button
                 className={`flex items-center space-x-3 px-3 py-2 w-full ${isDark ? 'hover:bg-gray-800' : 'hover:bg-gray-100'} rounded-lg`}
                 onClick={() => setShowProfileModal(!showProfileModal)}
               >
                 <div className="w-8 h-8 rounded-full overflow-hidden">
                   {user?.avatarUrl ? (
-                    <Image 
+                    <Image
                       src={user.avatarUrl}
                       width={32}
                       height={32}
-                      alt={user.name || 'Profile'} 
+                      alt={user.name || 'Profile'}
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <Image 
+                    <Image
                       src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'Anonymous')}&background=0D8ABC&color=fff`}
                       width={32}
                       height={32}
-                      alt={user?.name || 'Profile'} 
+                      alt={user?.name || 'Profile'}
                       className="w-full h-full object-cover"
                     />
                   )}
@@ -143,11 +147,11 @@ export default function Sidebar({ isSidebarOpen, user, onLogout, onAddTask }: Si
 
               {showProfileModal && (
                 <>
-                  <div 
-                    className="fixed inset-0 z-30" 
+                  <div
+                    className="fixed inset-0 z-30"
                     onClick={() => setShowProfileModal(false)}
                   />
-                  
+
                   <div className={`absolute right-0 mt-2 w-48 ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} rounded-lg shadow-lg border z-40`}>
                     <div className={`p-3 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
                       <p className={`font-medium text-sm ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
@@ -180,4 +184,4 @@ export default function Sidebar({ isSidebarOpen, user, onLogout, onAddTask }: Si
       </aside>
     </>
   );
-} 
+}

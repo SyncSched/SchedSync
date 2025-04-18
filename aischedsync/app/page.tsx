@@ -13,7 +13,11 @@ import { isTaskActive, formatToHHMM } from '@/app/utils/dateUtils';
 import Goals from './components/Goals';
 
 
+
 export default function Home() {
+
+
+
   const [mainTasks, setMainTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [quickTasks, setQuickTasks] = useState([
@@ -39,7 +43,7 @@ export default function Home() {
       try {
         // Get timezone information
         const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        
+
         if (isAuthenticated) {
           await updateUserTimezone(timezone);
           console.log('✅ Timezone updated successfully:', timezone);
@@ -55,18 +59,18 @@ export default function Home() {
   useEffect(() => {
     // Find the first active task
     const activeTask = mainTasks.find(task => isTaskActive(task.time, task.duration));
-    
+
     if (activeTask) {
       // Find the task element and the scrollable container
       const taskElement = document.querySelector(`[data-task-id="${activeTask.id}"]`);
       const scrollContainer = document.querySelector('.scrollable');
-      
+
       if (taskElement && scrollContainer) {
         // Calculate the scroll position
         const containerRect = scrollContainer.getBoundingClientRect();
         const taskRect = taskElement.getBoundingClientRect();
         const scrollTop = taskRect.top - containerRect.top - (containerRect.height / 2) + scrollContainer.scrollTop;
-        
+
         // Smooth scroll the container
         scrollContainer.scrollTo({
           top: scrollTop,
@@ -76,11 +80,16 @@ export default function Home() {
     }
   }, [mainTasks]); // Re-run when tasks change
 
-
   interface TaskFormData {
     name: string;
+    description: string;
+    notes?: string;
     time: string;
     duration: number;
+    endTime: string;
+    priority: 'HIGH' | 'MEDIUM' | 'LOW';
+    status: 'PENDING' | 'COMPLETED';
+    location?: string| null;
     isEmailEnabled: boolean;
     isWhatsAppEnabled: boolean;
     isTelegramEnabled: boolean;
@@ -131,7 +140,7 @@ export default function Home() {
 
   const handleDrop = async (e: React.DragEvent, targetColumnType: 'main' | 'quick', targetIndex: number) => {
     e.preventDefault();
-    
+
     try {
       const data = JSON.parse(e.dataTransfer.getData('text/plain'));
       const { columnType: sourceColumnType, index: sourceIndex } = data;
@@ -139,13 +148,13 @@ export default function Home() {
       if (sourceColumnType === targetColumnType && sourceColumnType === 'main') {
         // Create a copy of the tasks
         const tasksCopy = [...mainTasks];
-        
+
         // Recalculate times
         const updatedTasks = recalculateTaskTimes(tasksCopy, sourceIndex, targetIndex);
-        
+
         // Update the state first
         setMainTasks(updatedTasks);
-        
+
         try {
           // Then update the backend
           await updateSchedule(updatedTasks[0].scheduleId, updatedTasks);
@@ -184,12 +193,19 @@ export default function Home() {
 
   const handleEditTaskSubmit = async (formData: TaskFormData) => {
     try {
+      console.log(selectedTask)
       if (!selectedTask) return;
       const updatedTask: Task = {
         ...selectedTask,
         name: formData.name,
-        time: formData.time,
+        description: formData.description,
+        notes: formData.notes,
+        // Use the original time from selectedTask to ensure it doesn't change
+        time: selectedTask.time,
         duration: formData.duration,
+        status: formData.status,
+        priority: formData.priority,
+        location: formData.location,
         isEmailEnabled: formData.isEmailEnabled,
         isWhatsAppEnabled: formData.isWhatsAppEnabled,
         isTelegramEnabled: formData.isTelegramEnabled,
@@ -209,15 +225,23 @@ export default function Home() {
       if (currentIndex === -1) return;
 
       const updatedTasks = [...mainTasks];
-      
+
       // Check what type of update occurred
-      const isTimeChanged = new Date(updatedTask.time).getTime() !== new Date(selectedTask.time).getTime();
+      // Time should never change during edit, but we'll keep the check for safety
+      const isTimeChanged = false; // We're preventing time changes in edit mode
       const isDurationChanged = updatedTask.duration !== selectedTask.duration;
-      const isNotificationSettingsChanged = 
+      const isNotificationSettingsChanged =
         updatedTask.isEmailEnabled !== selectedTask.isEmailEnabled ||
         updatedTask.isWhatsAppEnabled !== selectedTask.isWhatsAppEnabled ||
         updatedTask.isTelegramEnabled !== selectedTask.isTelegramEnabled ||
         updatedTask.isCallEnabled !== selectedTask.isCallEnabled;
+      const isOtherFieldsChanged =
+        updatedTask.name !== selectedTask.name ||
+        updatedTask.description !== selectedTask.description ||
+        updatedTask.notes !== selectedTask.notes ||
+        updatedTask.status !== selectedTask.status ||
+        updatedTask.priority !== selectedTask.priority ||
+        updatedTask.location !== selectedTask.location;
 
       // Update the current task
       updatedTasks[currentIndex] = updatedTask;
@@ -226,7 +250,7 @@ export default function Home() {
       if (isTimeChanged || isDurationChanged) {
         let currentTime = new Date(updatedTask.time);
         currentTime = new Date(currentTime.getTime() + (updatedTask.duration * 60000));
-        
+
         // Update all subsequent tasks
         for (let i = currentIndex + 1; i < updatedTasks.length; i++) {
           updatedTasks[i] = {
@@ -236,11 +260,17 @@ export default function Home() {
           currentTime = new Date(currentTime.getTime() + (updatedTasks[i].duration * 60000));
         }
       }
-      // If only notification settings changed, no need to update times
-      else if (isNotificationSettingsChanged) {
-        // Just update the current task's notification settings
+      // If only notification settings or other fields changed, no need to update times
+      else if (isNotificationSettingsChanged || isOtherFieldsChanged) {
+        // Just update the current task with all the new values
         updatedTasks[currentIndex] = {
           ...updatedTasks[currentIndex],
+          name: updatedTask.name,
+          description: updatedTask.description,
+          notes: updatedTask.notes,
+          status: updatedTask.status,
+          priority: updatedTask.priority,
+          location: updatedTask.location,
           isEmailEnabled: updatedTask.isEmailEnabled,
           isWhatsAppEnabled: updatedTask.isWhatsAppEnabled,
           isTelegramEnabled: updatedTask.isTelegramEnabled,
@@ -261,8 +291,39 @@ export default function Home() {
   const handleTaskDelete = async () => {
     if (!selectedTask) return;
     try {
-      const updatedTasks = mainTasks.filter(task => task.id !== selectedTask.id);
+      // Find the index of the task to be deleted
+      const taskIndex = mainTasks.findIndex(task => task.id === selectedTask.id);
+      if (taskIndex === -1) return;
+
+      // Create a copy of tasks without the deleted task
+      const updatedTasks = [...mainTasks];
+      updatedTasks.splice(taskIndex, 1);
+
+      // If there are tasks below the deleted task, adjust their start times
+      if (taskIndex < updatedTasks.length) {
+        // If the deleted task is not the last one, we need to shift up all tasks below it
+        // Get the start time of the task that was deleted
+        const deletedTaskTime = new Date(selectedTask.time);
+
+        // Update all subsequent tasks to shift them up
+        let currentTime = new Date(deletedTaskTime);
+
+        for (let i = taskIndex; i < updatedTasks.length; i++) {
+          // Set the start time of this task to the current time
+          updatedTasks[i] = {
+            ...updatedTasks[i],
+            time: currentTime.toISOString()
+          };
+
+          // Move the current time forward by this task's duration
+          currentTime = new Date(currentTime.getTime() + (updatedTasks[i].duration * 60000));
+        }
+      }
+
+      // Update the backend
       await updateSchedule(selectedTask.scheduleId, updatedTasks);
+
+      // Update the state
       setMainTasks(updatedTasks);
       setIsEditModalOpen(false);
       setShowDeleteWarning(false);
@@ -307,7 +368,7 @@ export default function Home() {
   };
 
   const handleGoalEdit = (id: number, newTitle: string) => {
-    setGoals(prev => prev.map(goal => 
+    setGoals(prev => prev.map(goal =>
       goal.id === id ? { ...goal, title: newTitle } : goal
     ));
   };
@@ -330,7 +391,7 @@ export default function Home() {
         <div className={`h-full space-y-4 ${isDark ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}>
           <div className={`flex flex-col md:flex-row gap-4 md:gap-6 h-full ${isDark ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}>
             <div className={`flex-1 ${isDark ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}>
-              <TaskList 
+              <TaskList
                 tasks={mainTasks}
                 isLoading={isLoading}
                 onTaskClick={handleTaskClick}
@@ -349,8 +410,8 @@ export default function Home() {
                 onGoalEdit={handleGoalEdit}
                 onGoalToggle={handleGoalToggle}
               />
-              
-              <QuickTasks 
+
+              <QuickTasks
                 tasks={quickTasks}
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
@@ -378,8 +439,13 @@ export default function Home() {
               onDelete={() => setShowDeleteWarning(true)}
               initialTask={{
                 name: selectedTask!.name,
+                description: selectedTask!.description || '',
+                notes: selectedTask!.notes || '',
                 time: renderTaskTime(selectedTask!),
                 duration: selectedTask!.duration,
+                priority: selectedTask!.priority || 'MEDIUM',
+                status: (selectedTask!.status === 'PENDING' || selectedTask!.status === 'COMPLETED') ? selectedTask!.status : 'PENDING',
+                location: selectedTask!.location,
                 isEmailEnabled: selectedTask!.isEmailEnabled,
                 isWhatsAppEnabled: selectedTask!.isWhatsAppEnabled,
                 isTelegramEnabled: selectedTask!.isTelegramEnabled,
@@ -397,7 +463,7 @@ export default function Home() {
             <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-6 transition-colors duration-300`}>
               Are you sure you want to delete this task? This action cannot be undone.
             </p>
-            
+
             <div className="flex justify-end space-x-4">
               <button
                 onClick={() => setShowDeleteWarning(false)}
@@ -407,7 +473,7 @@ export default function Home() {
               >
                 Cancel
               </button>
-              
+
               <button
                 onClick={handleTaskDelete}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
@@ -426,7 +492,7 @@ export default function Home() {
             <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-6 transition-colors duration-300`}>
               Was this task completed?
             </p>
-            
+
             <div className="flex justify-end space-x-4">
               <button
                 onClick={() => {
@@ -439,7 +505,7 @@ export default function Home() {
               >
                 Not Done
               </button>
-              
+
               <button
                 onClick={() => {
                   setShowTaskStatusModal(false);

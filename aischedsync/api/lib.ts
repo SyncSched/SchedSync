@@ -77,8 +77,13 @@ export interface Schedule {
   export interface Task {
     id: string;
     name: string;
+    description?: string;
+    notes?: string;
     time: string;    // ISO format string
     duration: number;
+    status?: 'PENDING' | 'COMPLETED' | 'IN_PROGRESS' | 'OVERDUE';
+    priority?: 'LOW' | 'MEDIUM' | 'HIGH';
+    location?: string | null;
     scheduleId: string;
     isEmailEnabled: boolean;
     isWhatsAppEnabled: boolean;
@@ -88,8 +93,14 @@ export interface Schedule {
 
   export interface TaskFormData {
     name: string;
+    description: string;
+    notes?: string;
     time: string;
     duration: number;
+    endTime: string;
+    priority: 'HIGH' | 'MEDIUM' | 'LOW';
+    status: 'PENDING' | 'COMPLETED';
+    location?: string | null;
     isEmailEnabled: boolean;
     isWhatsAppEnabled: boolean;
     isTelegramEnabled: boolean;
@@ -129,6 +140,33 @@ export interface Schedule {
    * If no schedule exists, it calls the schedule creation endpoint.
    */
   let isGeneratingSchedule = false; // Prevent duplicate schedule generation
+  let scheduleGenerationTimeout: NodeJS.Timeout | null = null;
+
+  /**
+   * Cleans up any pending schedules for the current user
+   */
+  const cleanupPendingSchedules = async (): Promise<void> => {
+    try {
+      const response = await fetch(`${API_URL}/cleanupPendingSchedules`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getStoredAuthToken()}`
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.deletedCount > 0) {
+          console.log(`Cleaned up ${result.deletedCount} pending schedules`);
+        }
+      }
+    } catch (error) {
+      console.error('Error cleaning up pending schedules:', error);
+    } finally {
+      isGeneratingSchedule = false;
+    }
+  };
 
   export const getTodaySchedule = async (): Promise<Schedule> => {
     try {
@@ -151,32 +189,71 @@ export interface Schedule {
         return res.json();
       }
 
-      // If not found, try generating a new schedule
-      if (!isGeneratingSchedule) {
-        isGeneratingSchedule = true;
+      // Check if this is a 'schedule not found' error
+      if (res.status === 404) {
+        const errorData = await res.json();
+        if (errorData.error === 'SCHEDULE_NOT_FOUND') {
+          console.log('No schedule found, generating a new one...');
 
-        const createRes = await fetch(`${API_URL}/generateSchedule`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${getStoredAuthToken()}`
-          },
-          body: JSON.stringify({
-            date: now.toISOString(),
-            timezoneOffset: timezoneOffset
-          })
-        });
+          // If not found, try generating a new schedule
+          if (!isGeneratingSchedule) {
+            isGeneratingSchedule = true;
 
-        isGeneratingSchedule = false;
+            // Set a timeout to clean up pending schedules if generation takes too long
+            if (scheduleGenerationTimeout) {
+              clearTimeout(scheduleGenerationTimeout);
+            }
 
-        if (!createRes.ok) {
-          throw new Error("Failed to create today's schedule");
+            // After 30 seconds, clean up any pending schedules
+            scheduleGenerationTimeout = setTimeout(() => {
+              console.warn('Schedule generation timeout reached, cleaning up pending schedules');
+              cleanupPendingSchedules();
+            }, 30000); // 30 seconds timeout
+
+            try {
+              const createRes = await fetch(`${API_URL}/generateSchedule`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${getStoredAuthToken()}`
+                },
+                body: JSON.stringify({
+                  date: now.toISOString(),
+                  timezoneOffset: timezoneOffset
+                })
+              });
+
+              // Clear the timeout since we got a response
+              if (scheduleGenerationTimeout) {
+                clearTimeout(scheduleGenerationTimeout);
+                scheduleGenerationTimeout = null;
+              }
+
+              if (!createRes.ok) {
+                const errorText = await createRes.text();
+                console.error('Schedule generation failed:', errorText);
+                // Clean up any pending schedules
+                await cleanupPendingSchedules();
+                throw new Error(`Failed to create today's schedule: ${createRes.status} ${createRes.statusText}`);
+              }
+
+              isGeneratingSchedule = false;
+              return createRes.json();
+            } catch (genError) {
+              console.error('Error during schedule generation:', genError);
+              // Clean up any pending schedules
+              await cleanupPendingSchedules();
+              throw genError;
+            }
+          } else {
+            console.warn("Schedule generation already in progress");
+            throw new Error("Duplicate schedule generation request blocked");
+          }
         }
-        return createRes.json();
-      } else {
-        console.warn("Schedule generation already in progress");
-        throw new Error("Duplicate schedule generation request blocked");
       }
+
+      // For other errors
+      throw new Error(`Failed to fetch schedule: ${res.status} ${res.statusText}`);
     } catch (error) {
       isGeneratingSchedule = false;
       console.error('Error fetching schedule:', error);
@@ -458,6 +535,52 @@ export interface Notification {
   task: NotificationTask;
 }
 
+// Dashboard interfaces
+export interface TaskStats {
+  total: number;
+  completed: number;
+  pending: number;
+  missed: number;
+  adherenceRate: number;
+}
+
+export interface CategoryBreakdown {
+  work: number;
+  personal: number;
+  health: number;
+  learning: number;
+  other: number;
+}
+
+export interface TaskCompletionData {
+  labels: string[];
+  completed: number[];
+  total: number[];
+}
+
+export interface ProductivityTrend {
+  labels: string[];
+  productivityScore: number[];
+  completionRate: number[];
+}
+
+export interface StreakData {
+  currentStreak: number;
+  longestStreak: number;
+  adherenceRate: number;
+  lastSevenDays: boolean[];
+}
+
+export interface DashboardData {
+  taskStats: TaskStats;
+  categoryBreakdown: CategoryBreakdown;
+  taskCompletion: TaskCompletionData;
+  productivityTrend: ProductivityTrend;
+  streakData: StreakData;
+  upcomingTasks: Task[];
+  mostActiveHour: string;
+}
+
 /**
  * Gets upcoming notifications for the user
  */
@@ -480,6 +603,199 @@ export const getUpcomingNotifications = async (): Promise<Notification[]> => {
   }
 
   return await response.json();
+};
+
+/**
+ * Gets all dashboard data for the user
+ */
+export const getDashboardData = async (timeframe: 'daily' | 'weekly' | 'monthly' = 'weekly'): Promise<DashboardData> => {
+  const token = getStoredAuthToken();
+
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/dashboard/data?timeframe=${timeframe}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch dashboard data');
+  }
+
+  return await response.json();
+};
+
+/**
+ * Gets task statistics for the user
+ */
+export const getTaskStats = async (timeframe: 'daily' | 'weekly' | 'monthly' = 'weekly'): Promise<TaskStats> => {
+  const token = getStoredAuthToken();
+
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/dashboard/task-stats?timeframe=${timeframe}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch task statistics');
+  }
+
+  return await response.json();
+};
+
+/**
+ * Gets category breakdown for the user
+ */
+export const getCategoryBreakdown = async (timeframe: 'daily' | 'weekly' | 'monthly' = 'weekly'): Promise<CategoryBreakdown> => {
+  const token = getStoredAuthToken();
+
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/dashboard/category-breakdown?timeframe=${timeframe}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch category breakdown');
+  }
+
+  return await response.json();
+};
+
+/**
+ * Gets task completion data for the user
+ */
+export const getTaskCompletionData = async (timeframe: 'daily' | 'weekly' | 'monthly' = 'weekly'): Promise<TaskCompletionData> => {
+  const token = getStoredAuthToken();
+
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/dashboard/task-completion?timeframe=${timeframe}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch task completion data');
+  }
+
+  return await response.json();
+};
+
+/**
+ * Gets productivity trend data for the user
+ */
+export const getProductivityTrend = async (timeframe: 'daily' | 'weekly' | 'monthly' = 'weekly'): Promise<ProductivityTrend> => {
+  const token = getStoredAuthToken();
+
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/dashboard/productivity-trend?timeframe=${timeframe}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch productivity trend');
+  }
+
+  return await response.json();
+};
+
+/**
+ * Gets streak data for the user
+ */
+export const getStreakData = async (): Promise<StreakData> => {
+  const token = getStoredAuthToken();
+
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/dashboard/streak-data`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch streak data');
+  }
+
+  return await response.json();
+};
+
+/**
+ * Gets upcoming tasks for the user
+ */
+export const getDashboardUpcomingTasks = async (limit: number = 5): Promise<Task[]> => {
+  const token = getStoredAuthToken();
+
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/dashboard/upcoming-tasks?limit=${limit}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch upcoming tasks');
+  }
+
+  return await response.json();
+};
+
+/**
+ * Gets most active hour for the user
+ */
+export const getMostActiveHour = async (): Promise<string> => {
+  const token = getStoredAuthToken();
+
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/dashboard/most-active-hour`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch most active hour');
+  }
+
+  const data = await response.json();
+  return data.mostActiveHour;
 };
 
 /**

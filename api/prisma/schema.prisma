@@ -39,6 +39,7 @@ model User {
   notifications      TaskNotification[]
   telegramAuth       TelegramAuth[]
   calendarToken      CalendarToken?
+  weights    Int[]
 }
 
 model TaskNotification {
@@ -89,7 +90,7 @@ model Task {
   duration          Int               // Planned duration in minutes
   status            TaskStatus        @default(PENDING)
   priority          Priority          @default(MEDIUM)
-  location          String?           // Optional location field
+  location          String?         // Optional location field
   scheduleId        String
 
   // Notification settings

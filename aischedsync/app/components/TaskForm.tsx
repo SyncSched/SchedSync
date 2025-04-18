@@ -1,7 +1,13 @@
-import React, { useState } from 'react';
-import TimeInput from './ui/TimeInput';
+import React, { useState, useEffect, useCallback } from 'react';
 import { formatToHHMM, convertHHMMToISO } from '../utils/dateUtils';
 import { useTheme } from '@/contexts/ThemeContext';
+import dynamic from "next/dynamic";
+
+
+// Load Leaflet dynamically to avoid SSR issues
+const LocationPicker = dynamic(() => import("../components/LocationPicker"), {
+  ssr: false,
+});
 
 interface TaskFormProps {
   onSubmit: (task: TaskFormData) => void;
@@ -10,41 +16,48 @@ interface TaskFormProps {
   mode?: 'edit' | 'add';
   initialTask?: {
     name?: string;
+    description?: string;
+    notes?: string;
     time?: string;
     duration?: number;
+    priority?: 'HIGH' | 'MEDIUM' | 'LOW';
+    status?: 'PENDING' | 'COMPLETED';
+    location?: string | null;
     isEmailEnabled?: boolean;
     isWhatsAppEnabled?: boolean;
     isTelegramEnabled?: boolean;
     isCallEnabled?: boolean;
-    location?: string;
   };
 }
 
 export interface TaskFormData {
   name: string;
   description: string;
+  notes?: string;
   time: string;
   duration: number;
   endTime: string;
-  priority: 'high' | 'medium' | 'low';
-  status: 'pending' | 'completed';
-  location: string;
+  priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  status: 'PENDING' | 'COMPLETED';
+  location?: string | null;
   isEmailEnabled: boolean;
   isWhatsAppEnabled: boolean;
   isTelegramEnabled: boolean;
   isCallEnabled: boolean;
 }
 
-export const TaskForm: React.FC<TaskFormProps> = ({ 
-  onSubmit, 
-  onClose, 
+export const TaskForm: React.FC<TaskFormProps> = ({
+  onSubmit,
+  onClose,
   onDelete,
   mode = 'add',
-  initialTask 
+  initialTask
 }) => {
   const { isDark } = useTheme();
-  const [activeTab, setActiveTab] = useState<'details' | 'second'>('details');
-
+  const [activeTab, setActiveTab] = useState<'details' | 'notes'>('details');
+  const [showMap, setShowMap] = useState(false);
+  const [location, setLocation] = useState<string | null>(null);
+  const [locationName, setLocationName] = useState<string>('');
   // Initialize the time value correctly
   const getInitialTime = () => {
     if (initialTask?.time) {
@@ -60,43 +73,73 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
   const [formData, setFormData] = useState<TaskFormData>({
     name: initialTask?.name || '',
-    description: '',
+    description: initialTask?.description || '',
+    notes: initialTask?.notes || '',
     time: getInitialTime(),
     duration: initialTask?.duration || 30,
     endTime: '',
-    priority: 'medium',
-    status: 'pending',
-    location: initialTask?.location || '',
+    priority: initialTask?.priority || 'MEDIUM',
+    status: initialTask?.status || 'PENDING',
+    location: initialTask?.location,
     isEmailEnabled: initialTask?.isEmailEnabled || false,
     isWhatsAppEnabled: initialTask?.isWhatsAppEnabled || false,
     isTelegramEnabled: initialTask?.isTelegramEnabled || false,
     isCallEnabled: initialTask?.isCallEnabled || false
   });
 
-  // Helper function to convert HH:mm to Date object
-  const getTimeAsDate = (timeStr: string): Date => {
-    const date = new Date();
-    if (timeStr && timeStr.includes(':')) {
-      const [hours, minutes] = timeStr.split(':').map(Number);
-      if (!isNaN(hours) && !isNaN(minutes)) {
-        date.setHours(hours, minutes, 0, 0);
-      }
-    }
-    return date;
-  };
 
-  const handleTimeChange = (date: Date) => {
-    const timeString = formatToHHMM(date);
+  // Function to get location name from coordinates using reverse geocoding
+  const getLocationNameFromCoords = useCallback(async (coords: string) => {
+    try {
+      const [lat, lng] = coords.split(',').map(Number);
+      if (isNaN(lat) || isNaN(lng)) return null;
+
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
+      );
+      const data = await response.json();
+      return data.display_name || null;
+    } catch (error) {
+      console.error('Error getting location name:', error);
+      return null;
+    }
+  }, []);
+
+  const handleLocationChange = (locationValue: string | null = null, locName: string = '') => {
+    console.log({location: locationValue || location, locationName: locName || locationName},"location######")
     setFormData(prev => ({
       ...prev,
-      time: timeString
+      location: locationValue || location
     }));
+
+    // If we have coordinates but no location name, try to get it
+    if (locationValue && !locName) {
+      getLocationNameFromCoords(locationValue).then(name => {
+        if (name) setLocationName(name);
+      });
+    } else if (locName) {
+      setLocationName(locName);
+    }
   };
+
+  // Get location name for initial location if available
+  useEffect(() => {
+    if (initialTask?.location && !locationName) {
+      console.log('Initial task location found:', initialTask.location);
+      setLocation(initialTask.location);
+      getLocationNameFromCoords(initialTask.location).then(name => {
+        if (name) {
+          console.log('Got location name:', name);
+          setLocationName(name);
+        }
+      });
+    }
+  }, [initialTask?.location, locationName, getLocationNameFromCoords]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, type } = e.target;
     const value = type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
-    
+
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -107,7 +150,14 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     e.preventDefault();
     const submissionData = {
       ...formData,
-      time: convertHHMMToISO(formData.time),
+      // When in edit mode, ensure we're using the original time value
+      // For add mode, we'll let the parent component handle the time
+      time: mode === 'edit' && initialTask?.time ?
+        (typeof initialTask.time === 'string' && initialTask.time.includes(':') ?
+          convertHHMMToISO(initialTask.time) : initialTask.time) :
+        // For add mode, just pass the current time as a placeholder
+        // The actual time will be determined by the parent component
+        new Date().toISOString(),
       duration: Number(formData.duration)
     };
     onSubmit(submissionData);
@@ -115,6 +165,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   };
 
   return (
+    <div>
     <form onSubmit={handleSubmit} className={`flex flex-col h-full ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
       {/* Tabs Header */}
       <div className={`flex items-end px-2 sm:px-4 pt-2 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
@@ -124,7 +175,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             onClick={() => setActiveTab('details')}
             className={`relative flex-1 sm:flex-none px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-t-lg transition-all duration-200 ${
               activeTab === 'details'
-              ? isDark 
+              ? isDark
                 ? 'text-blue-400 bg-blue-900/50 border border-gray-700 border-b-gray-800'
                 : 'text-blue-700 bg-blue-50 border border-gray-200 border-b-white'
               : isDark
@@ -139,10 +190,10 @@ export const TaskForm: React.FC<TaskFormProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab('second')}
+            onClick={() => setActiveTab('notes')}
             className={`relative flex-1 sm:flex-none px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-t-lg transition-all duration-200 ${
-              activeTab === 'second'
-              ? isDark 
+              activeTab === 'notes'
+              ? isDark
                 ? 'text-blue-400 bg-blue-900/50 border border-gray-700 border-b-gray-800'
                 : 'text-blue-700 bg-blue-50 border border-gray-200 border-b-white'
               : isDark
@@ -151,7 +202,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             }`}
           >
             <span className="relative z-10">Notes</span>
-            {activeTab === 'second' && (
+            {activeTab === 'notes' && (
               <div className={`absolute inset-x-0 -bottom-[1px] h-[1px] ${isDark ? 'bg-gray-800' : 'bg-white'}`}></div>
             )}
           </button>
@@ -343,16 +394,18 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                     <input
                       type="text"
                       name="location"
-                      value={formData.location}
-                      onChange={handleChange}
-                      placeholder="Enter location"
+                      value={locationName || 'No location selected'}
+                      readOnly
+                      placeholder="Select a location"
                       className={`w-full px-2 py-2 sm:py-1.5 ${
                         isDark ? 'bg-gradient-to-r from-blue-900/30 to-indigo-900/30 text-gray-300' : 'bg-gradient-to-r from-blue-50 to-indigo-50 text-gray-700'
                       } rounded-lg text-xs font-medium focus:outline-none focus:ring-1 ${
                         isDark ? 'focus:ring-blue-500/30' : 'focus:ring-blue-200'
                       } ${isDark ? 'placeholder-gray-500' : ''}`}
                     />
-                    <div className={`absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none ${
+                    <div
+                      onClick={() => setShowMap(true)}
+                      className={`absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer hover:text-blue-500 transition-colors duration-200 ${
                       isDark ? 'text-gray-500' : 'text-gray-400'
                     }`}>
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -363,20 +416,27 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   </div>
                 </div>
 
-                {/* Time Details */}
-                <div className={`${isDark ? 'bg-gray-700' : 'bg-white'} rounded-lg p-2 shadow-sm border ${
+                {/* Task Placement Note */}
+                <div className={`${isDark ? 'bg-gray-700' : 'bg-white'} rounded-lg p-3 shadow-sm border ${
                   isDark ? 'border-gray-600/80' : 'border-gray-100/80'
                 }`}>
-                  <label className={`block text-[11px] font-medium ${
-                    isDark ? 'text-gray-400' : 'text-gray-600'
-                  } mb-1`}>Start Time</label>
-                  <TimeInput
-                    value={getTimeAsDate(formData.time)}
-                    onChange={handleTimeChange}
-                    className={`!bg-gradient-to-r ${
-                      isDark ? '!from-green-900/30 !to-emerald-900/30 !text-gray-300' : '!from-green-50 !to-emerald-50'
-                    } !border-0 !shadow-none !text-xs !py-2 sm:!py-1.5`}
-                  />
+                  <div className="flex items-start gap-3">
+                    <div className={`flex-shrink-0 p-2 rounded-full ${isDark ? 'bg-blue-900/30' : 'bg-blue-50'}`}>
+                      <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className={`text-xs font-semibold ${isDark ? 'text-blue-400' : 'text-blue-600'} mb-1`}>Task Placement</h4>
+                      <p className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                        {mode === 'edit' ? (
+                          <span>Start time: {formatToHHMM(formData.time)}</span>
+                        ) : (
+                          <span>This task will be automatically added below the last task in your schedule.</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className={`${isDark ? 'bg-gray-700' : 'bg-white'} rounded-lg p-2 shadow-sm border ${
@@ -419,36 +479,36 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                       onChange={handleChange}
                       className={`w-full px-2 py-1.5 appearance-none rounded-lg text-xs font-medium focus:outline-none focus:ring-1 transition-colors duration-200 ${
                         isDark ? (
-                          formData.priority === 'high'
+                          formData.priority === 'HIGH'
                             ? 'bg-red-900/30 text-red-400 focus:ring-red-500/30'
-                            : formData.priority === 'medium'
+                            : formData.priority === 'MEDIUM'
                             ? 'bg-amber-900/30 text-amber-400 focus:ring-amber-500/30'
                             : 'bg-green-900/30 text-green-400 focus:ring-green-500/30'
                         ) : (
-                          formData.priority === 'high'
+                          formData.priority === 'HIGH'
                             ? 'bg-red-50 text-red-700 focus:ring-red-200'
-                            : formData.priority === 'medium'
+                            : formData.priority === 'MEDIUM'
                             ? 'bg-amber-50 text-amber-700 focus:ring-amber-200'
                             : 'bg-green-50 text-green-700 focus:ring-green-200'
                         )
                       }`}
                     >
-                      <option value="high" className={isDark ? 'bg-gray-800 text-red-400' : 'bg-red-50 text-red-700'}>High</option>
-                      <option value="medium" className={isDark ? 'bg-gray-800 text-amber-400' : 'bg-amber-50 text-amber-700'}>Medium</option>
-                      <option value="low" className={isDark ? 'bg-gray-800 text-green-400' : 'bg-green-50 text-green-700'}>Low</option>
+                      <option value="HIGH" className={isDark ? 'bg-gray-800 text-red-400' : 'bg-red-50 text-red-700'}>High</option>
+                      <option value="MEDIUM" className={isDark ? 'bg-gray-800 text-amber-400' : 'bg-amber-50 text-amber-700'}>Medium</option>
+                      <option value="LOW" className={isDark ? 'bg-gray-800 text-green-400' : 'bg-green-50 text-green-700'}>Low</option>
                     </select>
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
                       <svg className={`size-3.5 ${
                         isDark ? (
-                          formData.priority === 'high'
+                          formData.priority === 'HIGH'
                             ? 'text-red-400'
-                            : formData.priority === 'medium'
+                            : formData.priority === 'MEDIUM'
                             ? 'text-amber-400'
                             : 'text-green-400'
                         ) : (
-                          formData.priority === 'high'
+                          formData.priority === 'HIGH'
                             ? 'text-red-500'
-                            : formData.priority === 'medium'
+                            : formData.priority === 'MEDIUM'
                             ? 'text-amber-500'
                             : 'text-green-500'
                         )
@@ -473,27 +533,27 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                       onChange={handleChange}
                       className={`w-full px-2 py-1.5 appearance-none rounded-lg text-xs font-medium focus:outline-none focus:ring-1 transition-colors duration-200 ${
                         isDark ? (
-                          formData.status === 'pending'
+                          formData.status === 'PENDING'
                             ? 'bg-blue-900/30 text-blue-400 focus:ring-blue-500/30'
                             : 'bg-emerald-900/30 text-emerald-400 focus:ring-emerald-500/30'
                         ) : (
-                          formData.status === 'pending'
+                          formData.status === 'PENDING'
                             ? 'bg-blue-50 text-blue-700 focus:ring-blue-200'
                             : 'bg-emerald-50 text-emerald-700 focus:ring-emerald-200'
                         )
                       }`}
                     >
-                      <option value="pending" className={isDark ? 'bg-gray-800 text-blue-400' : 'bg-blue-50 text-blue-700'}>Pending</option>
-                      <option value="completed" className={isDark ? 'bg-gray-800 text-emerald-400' : 'bg-emerald-50 text-emerald-700'}>Completed</option>
+                      <option value="PENDING" className={isDark ? 'bg-gray-800 text-blue-400' : 'bg-blue-50 text-blue-700'}>Pending</option>
+                      <option value="COMPLETED" className={isDark ? 'bg-gray-800 text-emerald-400' : 'bg-emerald-50 text-emerald-700'}>Completed</option>
                     </select>
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
                       <svg className={`size-3.5 ${
                         isDark ? (
-                          formData.status === 'pending'
+                          formData.status === 'PENDING'
                             ? 'text-blue-400'
                             : 'text-emerald-400'
                         ) : (
-                          formData.status === 'pending'
+                          formData.status === 'PENDING'
                             ? 'text-blue-500'
                             : 'text-emerald-500'
                         )
@@ -519,7 +579,18 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 >
                   {mode === 'edit' ? 'Update' : 'Create'}
                 </button>
-                
+                <button
+                  type="button"
+                  className={`w-full px-3 py-1.5 text-xs font-medium text-white ${
+                    isDark ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-600 hover:bg-blue-700'
+                  } rounded-lg focus:outline-none focus:ring-1 focus:ring-offset-1 ${
+                    isDark ? 'focus:ring-blue-500' : 'focus:ring-blue-500'
+                  } transition-all duration-200 shadow-sm`}
+                  onClick={() => setShowMap(true)}
+                >
+                  Set location
+                </button>
+
                 {mode === 'edit' && onDelete && (
                   <button
                     type="button"
@@ -537,15 +608,72 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             </div>
           </>
         ) : (
-          <div className={`flex-1 p-4 ${
-            isDark ? 'bg-gray-800/50' : 'bg-gradient-to-br from-gray-50/50 via-white to-blue-50/30'
-          }`}>
-            <div className={`text-center ${isDark ? 'text-gray-400' : 'text-gray-500'} mt-8`}>
-              <p className="text-sm">Second tab content will be added here</p>
+          <div className={`flex-1 pr-0 lg:pr-3.5 ${isDark ? 'bg-gray-800/50' : 'bg-gradient-to-br from-gray-50/50 via-white to-blue-50/30'} overflow-y-auto`}>
+            <div className="space-y-4 p-3">
+              {/* Notes */}
+              <div className="group">
+                <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-sm border ${isDark ? 'border-gray-700' : 'border-gray-100'} hover:shadow-md ${isDark ? 'hover:border-purple-500/50' : 'hover:border-purple-100'} transition-all duration-300 overflow-hidden`}>
+                  <div className="relative">
+                    <textarea
+                      name="notes"
+                      value={formData.notes || ''}
+                      onChange={handleChange}
+                      rows={12}
+                      className={`w-full px-4 py-3 text-sm ${
+                        isDark ? 'text-gray-200 bg-gray-800 placeholder-gray-500' : 'text-gray-700 bg-white placeholder-gray-400'
+                      } rounded-lg focus:outline-none transition-all duration-300 resize-none`}
+                      placeholder="Add your notes here..."
+                    />
+                    <div className={`absolute top-3 right-4 pointer-events-none ${
+                      isDark ? 'text-gray-500' : 'text-gray-400'
+                    } transition-colors duration-300`}>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
       </div>
     </form>
+
+    {showMap && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg w-[90%] max-w-3xl">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-lg font-medium text-gray-800 dark:text-white">Select Location</h3>
+              <button
+                onClick={() => setShowMap(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+
+            <LocationPicker
+              onSelect={(coords, name) => {
+                if (coords) {
+                  const locationString = `${coords.lat},${coords.lng}`;
+                  setLocation(locationString);
+                  handleLocationChange(locationString, name);
+                  setShowMap(false);
+                }
+              }}
+              initialLocation={location ? {
+                lat: parseFloat(location.split(',')[0]),
+                lng: parseFloat(location.split(',')[1])
+              } : undefined}
+              initialLocationName={locationName}
+            />
+          </div>
+        </div>
+      )}
+
+    </div>
   );
 };
