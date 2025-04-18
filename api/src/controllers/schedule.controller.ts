@@ -197,22 +197,27 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
             const userTimezone = user.timezone; // assuming 'Asia/Kolkata' for IST
 
             // Create a date object in user's local timezone
-            const [hours, minutes] = task.time.split(':');
+            const [taskHours, taskMinutes] = task.time.split(':');
             const localDate = new Date();
 
             // First, set the time in user's local timezone
             const localDateTime = formatInTimeZone(
                 localDate,
                 userTimezone,
-                `yyyy-MM-dd'T'${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00.000XXX`
+                `yyyy-MM-dd'T'${taskHours.padStart(2, '0')}:${taskMinutes.padStart(2, '0')}:00.000XXX`
             );
 
             // Convert local time to UTC
             const utcTime = new Date(localDateTime);
 
+            // Format time as HH:mm string for validation schema
+            const formattedHours = String(utcTime.getHours()).padStart(2, '0');
+            const formattedMinutes = String(utcTime.getMinutes()).padStart(2, '0');
+            const timeString = `${formattedHours}:${formattedMinutes}`;
+
             return {
                 name: task.name,
-                time: utcTime, // This will now store the correct UTC time
+                time: timeString, // Use string format for validation
                 duration: task.duration,
                 isEmailEnabled: task.isEmailEnabled,
                 isWhatsAppEnabled: task.isWhatsAppEnabled,

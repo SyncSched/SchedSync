@@ -41,6 +41,14 @@ function getTimezoneOffset(timezone: string, date: Date): number {
   return (utcDate.getTime() - localDate.getTime()) / 60000; // Convert ms to minutes
 }
 
+// Helper function to convert HH:mm time string to a Date object
+function convertTimeStringToDate(timeString: string): Date {
+  const [hours, minutes] = timeString.split(':').map(Number);
+  const date = new Date();
+  date.setHours(hours, minutes, 0, 0);
+  return date;
+}
+
 async function createNotificationsForTask(taskId: string, userId: string, taskTime: string) {
   try {
     const user = await prisma.user.findUnique({
@@ -144,7 +152,7 @@ export const createSchedule = async (
             name: task.name,
             description: task.description ?? "",
             notes: task.notes ?? "",
-            time: task.time,
+            time: new Date(convertTimeStringToDate(task.time)),
             duration: task.duration,
             status: TaskStatus.PENDING,
             priority: task.priority ?? Priority.MEDIUM,
@@ -373,15 +381,24 @@ export const getSchedule = async (
     if (previousSchedule) {
       // Create task data based on previous schedule's tasks
       const taskData = previousSchedule.originalData.map(task => {
+        // Convert Date object to HH:mm string format as required by the validation schema
+        const taskDate = new Date(task.time);
+        const hours = String(taskDate.getHours()).padStart(2, '0');
+        const minutes = String(taskDate.getMinutes()).padStart(2, '0');
+        const timeString = `${hours}:${minutes}`;
+
+        // Ensure duration is at least 1 minute
+        const validDuration = Math.max(1, task.duration);
+
         return {
           name: task.name,
-          time: task.time,
-          duration: task.duration,
+          time: timeString, // Use the formatted time string instead of Date object
+          duration: validDuration,
           isEmailEnabled: task.isEmailEnabled,
           isWhatsAppEnabled: task.isWhatsAppEnabled,
           isTelegramEnabled: task.isTelegramEnabled,
           isCallEnabled: task.isCallEnabled
-        } as Task; // Cast to Task to satisfy TypeScript
+        };
       });
 
       // Create the input with the properly typed tasks
@@ -499,7 +516,7 @@ export const updateSchedule = async (
             name: task.name,
             description: task.description,
             notes: task.notes,
-            time: task.time,
+            time: typeof task.time === 'string' ? new Date(convertTimeStringToDate(task.time)) : task.time,
             duration: task.duration,
             status: task.status,
             priority: task.priority,
@@ -517,7 +534,7 @@ export const updateSchedule = async (
             name: task.name,
             description: task.description,
             notes: task.notes,
-            time: task.time,
+            time: typeof task.time === 'string' ? new Date(convertTimeStringToDate(task.time)) : task.time,
             duration: task.duration,
             status: 'PENDING',
             priority: task.priority,
