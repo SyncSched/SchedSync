@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { getTodaySchedule, locationNotify, updateSchedule, updateUserTimezone, type Task } from '../api/lib';
+import { getTodaySchedule, updateSchedule, updateUserTimezone, type Task } from '../api/lib';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import Modal from './components/ui/Modal';
 import { TaskForm } from './components/TaskForm';
 import TaskList from './components/TaskList';
@@ -11,14 +12,12 @@ import { recalculateTaskTimes } from './utils/taskUtils';
 import { isTaskActive, formatToHHMM } from '@/app/utils/dateUtils';
 import Goals from './components/Goals';
 
-import LocationLogger from "./components/LocationLogger";
-
 
 
 export default function Home() {
 
 
-  
+
   const [mainTasks, setMainTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [quickTasks, setQuickTasks] = useState([
@@ -37,13 +36,14 @@ export default function Home() {
   const [showTaskStatusModal, setShowTaskStatusModal] = useState(false);
   const [selectedPastTask, setSelectedPastTask] = useState<Task | null>(null);
   const [goals, setGoals] = useState<{ id: number; title: string; isCompleted: boolean; }[]>([]);
+  const { isDark } = useTheme();
 
   useEffect(() => {
     const updateTimezoneInfo = async () => {
       try {
         // Get timezone information
         const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        
+
         if (isAuthenticated) {
           await updateUserTimezone(timezone);
           console.log('✅ Timezone updated successfully:', timezone);
@@ -59,31 +59,41 @@ export default function Home() {
   useEffect(() => {
     // Find the first active task
     const activeTask = mainTasks.find(task => isTaskActive(task.time, task.duration));
-    
+
     if (activeTask) {
-      // Find the task element
+      // Find the task element and the scrollable container
       const taskElement = document.querySelector(`[data-task-id="${activeTask.id}"]`);
-      if (taskElement) {
-        // Scroll the task into view with smooth behavior
-        taskElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const scrollContainer = document.querySelector('.scrollable');
+
+      if (taskElement && scrollContainer) {
+        // Calculate the scroll position
+        const containerRect = scrollContainer.getBoundingClientRect();
+        const taskRect = taskElement.getBoundingClientRect();
+        const scrollTop = taskRect.top - containerRect.top - (containerRect.height / 2) + scrollContainer.scrollTop;
+
+        // Smooth scroll the container
+        scrollContainer.scrollTo({
+          top: scrollTop,
+          behavior: 'smooth'
+        });
       }
     }
   }, [mainTasks]); // Re-run when tasks change
 
-  
   interface TaskFormData {
     name: string;
-  description: string;
-  time: string;
-  duration: number;
-  endTime: string;
-  priority: 'HIGH' | 'MEDIUM' | 'LOW';
-  status: 'PENDING' | 'COMPLETED';
-  location?: string| null;
-  isEmailEnabled: boolean;
-  isWhatsAppEnabled: boolean;
-  isTelegramEnabled: boolean;
-  isCallEnabled: boolean;
+    description: string;
+    notes?: string;
+    time: string;
+    duration: number;
+    endTime: string;
+    priority: 'HIGH' | 'MEDIUM' | 'LOW';
+    status: 'PENDING' | 'COMPLETED';
+    location?: string| null;
+    isEmailEnabled: boolean;
+    isWhatsAppEnabled: boolean;
+    isTelegramEnabled: boolean;
+    isCallEnabled: boolean;
   }
 
   useEffect(() => {
@@ -130,7 +140,7 @@ export default function Home() {
 
   const handleDrop = async (e: React.DragEvent, targetColumnType: 'main' | 'quick', targetIndex: number) => {
     e.preventDefault();
-    
+
     try {
       const data = JSON.parse(e.dataTransfer.getData('text/plain'));
       const { columnType: sourceColumnType, index: sourceIndex } = data;
@@ -138,13 +148,13 @@ export default function Home() {
       if (sourceColumnType === targetColumnType && sourceColumnType === 'main') {
         // Create a copy of the tasks
         const tasksCopy = [...mainTasks];
-        
+
         // Recalculate times
         const updatedTasks = recalculateTaskTimes(tasksCopy, sourceIndex, targetIndex);
-        
+
         // Update the state first
         setMainTasks(updatedTasks);
-        
+
         try {
           // Then update the backend
           await updateSchedule(updatedTasks[0].scheduleId, updatedTasks);
@@ -188,8 +198,13 @@ export default function Home() {
       const updatedTask: Task = {
         ...selectedTask,
         name: formData.name,
+        description: formData.description,
+        notes: formData.notes,
         time: formData.time,
         duration: formData.duration,
+        status: formData.status,
+        priority: formData.priority,
+        location: formData.location,
         isEmailEnabled: formData.isEmailEnabled,
         isWhatsAppEnabled: formData.isWhatsAppEnabled,
         isTelegramEnabled: formData.isTelegramEnabled,
@@ -209,15 +224,22 @@ export default function Home() {
       if (currentIndex === -1) return;
 
       const updatedTasks = [...mainTasks];
-      
+
       // Check what type of update occurred
       const isTimeChanged = new Date(updatedTask.time).getTime() !== new Date(selectedTask.time).getTime();
       const isDurationChanged = updatedTask.duration !== selectedTask.duration;
-      const isNotificationSettingsChanged = 
+      const isNotificationSettingsChanged =
         updatedTask.isEmailEnabled !== selectedTask.isEmailEnabled ||
         updatedTask.isWhatsAppEnabled !== selectedTask.isWhatsAppEnabled ||
         updatedTask.isTelegramEnabled !== selectedTask.isTelegramEnabled ||
         updatedTask.isCallEnabled !== selectedTask.isCallEnabled;
+      const isOtherFieldsChanged =
+        updatedTask.name !== selectedTask.name ||
+        updatedTask.description !== selectedTask.description ||
+        updatedTask.notes !== selectedTask.notes ||
+        updatedTask.status !== selectedTask.status ||
+        updatedTask.priority !== selectedTask.priority ||
+        updatedTask.location !== selectedTask.location;
 
       // Update the current task
       updatedTasks[currentIndex] = updatedTask;
@@ -226,7 +248,7 @@ export default function Home() {
       if (isTimeChanged || isDurationChanged) {
         let currentTime = new Date(updatedTask.time);
         currentTime = new Date(currentTime.getTime() + (updatedTask.duration * 60000));
-        
+
         // Update all subsequent tasks
         for (let i = currentIndex + 1; i < updatedTasks.length; i++) {
           updatedTasks[i] = {
@@ -236,11 +258,17 @@ export default function Home() {
           currentTime = new Date(currentTime.getTime() + (updatedTasks[i].duration * 60000));
         }
       }
-      // If only notification settings changed, no need to update times
-      else if (isNotificationSettingsChanged) {
-        // Just update the current task's notification settings
+      // If only notification settings or other fields changed, no need to update times
+      else if (isNotificationSettingsChanged || isOtherFieldsChanged) {
+        // Just update the current task with all the new values
         updatedTasks[currentIndex] = {
           ...updatedTasks[currentIndex],
+          name: updatedTask.name,
+          description: updatedTask.description,
+          notes: updatedTask.notes,
+          status: updatedTask.status,
+          priority: updatedTask.priority,
+          location: updatedTask.location,
           isEmailEnabled: updatedTask.isEmailEnabled,
           isWhatsAppEnabled: updatedTask.isWhatsAppEnabled,
           isTelegramEnabled: updatedTask.isTelegramEnabled,
@@ -307,7 +335,7 @@ export default function Home() {
   };
 
   const handleGoalEdit = (id: number, newTitle: string) => {
-    setGoals(prev => prev.map(goal => 
+    setGoals(prev => prev.map(goal =>
       goal.id === id ? { ...goal, title: newTitle } : goal
     ));
   };
@@ -323,24 +351,25 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-full md:-mt-8">
-
+    <div className={`flex flex-col md:flex-row h-full min-h-screen w-full md:-mt-12 ${isDark ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}>
       {/* Main Content */}
-      <div className="flex-1">
+      <div className={`flex-1 h-full min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300 p-4`}>
         {/* Task List and Side Cards */}
-        <div className="space-y-4">
-          <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-            <TaskList 
-              tasks={mainTasks}
-              isLoading={isLoading}
-              onTaskClick={handleTaskClick}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-            />
+        <div className={`h-full space-y-4 ${isDark ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}>
+          <div className={`flex flex-col md:flex-row gap-4 md:gap-6 h-full ${isDark ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}>
+            <div className={`flex-1 ${isDark ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}>
+              <TaskList
+                tasks={mainTasks}
+                isLoading={isLoading}
+                onTaskClick={handleTaskClick}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              />
+            </div>
 
-            <div className="space-y-4">
+            <div className={`w-full md:w-80 space-y-4 ${isDark ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}>
               <Goals
                 goals={goals}
                 onGoalAdd={handleGoalAdd}
@@ -348,8 +377,8 @@ export default function Home() {
                 onGoalEdit={handleGoalEdit}
                 onGoalToggle={handleGoalToggle}
               />
-              
-              <QuickTasks 
+
+              <QuickTasks
                 tasks={quickTasks}
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
@@ -363,46 +392,55 @@ export default function Home() {
       </div>
 
       {/* Modals */}
-      {isEditModalOpen && selectedTask && ( // Add selectedTask check here
+      {isEditModalOpen && selectedTask && (
         <Modal
           title="Edit Task"
           onClose={handleCloseModal}
           size="md"
         >
-          <TaskForm
-            mode="edit"
-            onSubmit={handleEditTaskSubmit}
-            onClose={handleCloseModal}
-            onDelete={() => setShowDeleteWarning(true)}
-            initialTask={{
-              name: selectedTask!.name,
-              time: renderTaskTime(selectedTask!),
-              duration: selectedTask!.duration,
-              isEmailEnabled: selectedTask!.isEmailEnabled,
-              isWhatsAppEnabled: selectedTask!.isWhatsAppEnabled,
-              isTelegramEnabled: selectedTask!.isTelegramEnabled,
-              isCallEnabled: selectedTask!.isCallEnabled
-            }}
-          />
+          <div className={`${isDark ? 'bg-gray-900' : 'bg-white'} transition-colors duration-300`}>
+            <TaskForm
+              mode="edit"
+              onSubmit={handleEditTaskSubmit}
+              onClose={handleCloseModal}
+              onDelete={() => setShowDeleteWarning(true)}
+              initialTask={{
+                name: selectedTask!.name,
+                description: selectedTask!.description || '',
+                notes: selectedTask!.notes || '',
+                time: renderTaskTime(selectedTask!),
+                duration: selectedTask!.duration,
+                priority: selectedTask!.priority || 'MEDIUM',
+                status: (selectedTask!.status === 'PENDING' || selectedTask!.status === 'COMPLETED') ? selectedTask!.status : 'PENDING',
+                location: selectedTask!.location,
+                isEmailEnabled: selectedTask!.isEmailEnabled,
+                isWhatsAppEnabled: selectedTask!.isWhatsAppEnabled,
+                isTelegramEnabled: selectedTask!.isTelegramEnabled,
+                isCallEnabled: selectedTask!.isCallEnabled
+              }}
+            />
+          </div>
         </Modal>
       )}
 
       {showDeleteWarning && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-sm mx-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Delete Task</h3>
-            <p className="text-sm text-gray-500 mb-6">
+          <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-full max-w-sm mx-4 transition-colors duration-300`}>
+            <h3 className={`text-lg font-medium ${isDark ? 'text-gray-100' : 'text-gray-900'} mb-4 transition-colors duration-300`}>Delete Task</h3>
+            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-6 transition-colors duration-300`}>
               Are you sure you want to delete this task? This action cannot be undone.
             </p>
-            
+
             <div className="flex justify-end space-x-4">
               <button
                 onClick={() => setShowDeleteWarning(false)}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                className={`inline-flex items-center px-4 py-2 border ${
+                  isDark ? 'border-gray-600 text-gray-300 bg-gray-700 hover:bg-gray-600' : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
+                } text-sm font-medium rounded-md transition-colors duration-300`}
               >
                 Cancel
               </button>
-              
+
               <button
                 onClick={handleTaskDelete}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
@@ -416,23 +454,25 @@ export default function Home() {
 
       {showTaskStatusModal && selectedPastTask && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-sm mx-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Task Status</h3>
-            <p className="text-sm text-gray-500 mb-6">
+          <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-full max-w-sm mx-4 transition-colors duration-300`}>
+            <h3 className={`text-lg font-medium ${isDark ? 'text-gray-100' : 'text-gray-900'} mb-4 transition-colors duration-300`}>Task Status</h3>
+            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-6 transition-colors duration-300`}>
               Was this task completed?
             </p>
-            
+
             <div className="flex justify-end space-x-4">
               <button
                 onClick={() => {
                   setShowTaskStatusModal(false);
                   showErrorToast('Task marked as incomplete');
                 }}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                className={`inline-flex items-center px-4 py-2 border ${
+                  isDark ? 'border-gray-600 text-gray-300 bg-gray-700 hover:bg-gray-600' : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
+                } text-sm font-medium rounded-md transition-colors duration-300`}
               >
                 Not Done
               </button>
-              
+
               <button
                 onClick={() => {
                   setShowTaskStatusModal(false);
@@ -455,7 +495,6 @@ export default function Home() {
           {toastMessage}
         </div>
       )}
-      <LocationLogger />
     </div>
   );
 }
