@@ -170,6 +170,11 @@ export const generateSchedule = async ( user: any) => {
     const startTime = Date.now();
     console.log(`[TIME] Workflow started at: ${new Date().toISOString()}`);
 
+    // Validate user data
+    if (!user || !user.onboardingData) {
+      throw new Error('Invalid user data: Missing required onboarding information');
+    }
+
     // Check if there are calendar events to include
     const hasCalendarEvents = user.calendarEvents && Array.isArray(user.calendarEvents) && user.calendarEvents.length > 0;
     console.log(`[TIME] Calendar events check completed at: ${new Date().toISOString()} (${Date.now() - startTime}ms)`);
@@ -190,7 +195,7 @@ export const generateSchedule = async ( user: any) => {
     console.log(`[TIME] Starting retriever creation at: ${new Date().toISOString()}`);
     // Customize retriever to get more relevant documents
     const retriever = vectorStore.asRetriever({
-      k: 5,
+      k: 3,
       // filter: {
       //   userId: user.id,
       //   profession: user.onboardingData?.profession,
@@ -206,12 +211,23 @@ export const generateSchedule = async ( user: any) => {
     // Format calendar events for the prompt if they exist
     let calendarEventsSection = '';
     if (hasCalendarEvents) {
-      calendarEventsSection = `
-      ### **Google Calendar Events (MUST INCLUDE):**
-      The following events from the user's Google Calendar MUST be included in the schedule exactly as specified:
-      ${user.calendarEvents.map((event: any, index: number) => `
-      ${index + 1}. "${event.name}" at ${event.time} for ${event.duration} minutes${event.location ? ` at ${event.location}` : ''}`).join('')}
-      `;
+      // Check if there was an error fetching calendar events
+      if (user.calendarEventsError) {
+        console.log('Warning: Calendar events had errors but will try to use available events');
+        calendarEventsSection = `
+        ### **Google Calendar Events (INCLUDE IF POSSIBLE):**
+        The following events from the user's Google Calendar should be included if possible, but there were some errors fetching all events:
+        ${user.calendarEvents.map((event: any, index: number) => `
+        ${index + 1}. "${event.name}" at ${event.time} for ${event.duration} minutes${event.location ? ` at ${event.location}` : ''}`).join('')}
+        `;
+      } else {
+        calendarEventsSection = `
+        ### **Google Calendar Events (MUST INCLUDE):**
+        The following events from the user's Google Calendar MUST be included in the schedule exactly as specified:
+        ${user.calendarEvents.map((event: any, index: number) => `
+        ${index + 1}. "${event.name}" at ${event.time} for ${event.duration} minutes${event.location ? ` at ${event.location}` : ''}`).join('')}
+        `;
+      }
     }
 
     const question = `
@@ -316,7 +332,22 @@ export const generateSchedule = async ( user: any) => {
     return result;
 
   } catch(err) {
-    console.log("Problem in Schedule generation via RAG", err);
+    console.error("Error in schedule generation via RAG:", err);
+
+    // Create a fallback schedule if there's an error
+    if (err instanceof Error) {
+      // Log detailed error information
+      console.error('Schedule generation error details:', {
+        message: err.message,
+        stack: err.stack,
+        name: err.name
+      });
+
+      // Throw the error to be handled by the caller
+      throw new Error(`Schedule generation failed: ${err.message}`);
+    } else {
+      throw new Error('Schedule generation failed with an unknown error');
+    }
   }
 }
 

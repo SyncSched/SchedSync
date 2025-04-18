@@ -1,5 +1,5 @@
 import { checkOnboardingDataHandler, createOnboardingHandler } from '../controllers/onboarding.controller';
-import { createScheduleHandler, generateScheduleHandler, getScheduleHandler, updateScheduleHandler } from '../controllers/schedule.controller';
+import { createScheduleHandler, generateScheduleHandler, getScheduleHandler, updateScheduleHandler, cleanupPendingSchedulesHandler } from '../controllers/schedule.controller';
 import {
     getAllUsersHandler,
     getCurrentUser,
@@ -45,6 +45,7 @@ export const attachPrivateRoutes = (app: any): void => {
     app.post('/getSchedule', getScheduleHandler);
     app.post('/generateSchedule', generateScheduleHandler);
     app.post('/createSchedule', createScheduleHandler);
+    app.post('/cleanupPendingSchedules', cleanupPendingSchedulesHandler);
 
     // Onboarding routes
     app.post('/createOnboarding', createOnboardingHandler);
