@@ -42,11 +42,28 @@ function getTimezoneOffset(timezone: string, date: Date): number {
 }
 
 // Helper function to convert HH:mm time string to a Date object
-function convertTimeStringToDate(timeString: string): Date {
-  const [hours, minutes] = timeString.split(':').map(Number);
-  const date = new Date();
-  date.setHours(hours, minutes, 0, 0);
-  return date;
+function convertTimeStringToDate(timeInput: string | Date): Date {
+  // If it's already a Date object, return it
+  if (timeInput instanceof Date) {
+    return timeInput;
+  }
+
+  // If it's an ISO string with date and time (contains 'T')
+  if (typeof timeInput === 'string' && timeInput.includes('T')) {
+    return new Date(timeInput);
+  }
+
+  // If it's just a time string in HH:mm format
+  if (typeof timeInput === 'string' && /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(timeInput)) {
+    const [hours, minutes] = timeInput.split(':').map(Number);
+    const date = new Date();
+    date.setHours(hours, minutes, 0, 0);
+    return date;
+  }
+
+  // Default case - return current date
+  console.warn(`Invalid time format: ${timeInput}, using current time`);
+  return new Date();
 }
 
 async function createNotificationsForTask(taskId: string, userId: string, taskTime: string) {
@@ -357,86 +374,13 @@ export const getSchedule = async (
       }));
   }
 
-  // If no schedule found and it's the start of a new day, we need to create one
+  // If no schedule found, return a specific error
   if (!schedule) {
-    // Get the user's previous schedule to use as a template
-    const previousSchedule = await prisma.schedule.findFirst({
-      where: {
-        userId: userId,
-      },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      include: {
-        originalData: {
-          select: taskSelect,
-          orderBy: {
-            time: 'asc'  // Sort tasks by time in ascending order
-          }
-        }
-      }
-    });
-
-    // If there's a previous schedule, create a new one based on it
-    if (previousSchedule) {
-      // Create task data based on previous schedule's tasks
-      const taskData = previousSchedule.originalData.map(task => {
-        // Convert Date object to HH:mm string format as required by the validation schema
-        const taskDate = new Date(task.time);
-        const hours = String(taskDate.getHours()).padStart(2, '0');
-        const minutes = String(taskDate.getMinutes()).padStart(2, '0');
-        const timeString = `${hours}:${minutes}`;
-
-        // Ensure duration is at least 1 minute
-        const validDuration = Math.max(1, task.duration);
-
-        return {
-          name: task.name,
-          time: timeString, // Use the formatted time string instead of Date object
-          duration: validDuration,
-          isEmailEnabled: task.isEmailEnabled,
-          isWhatsAppEnabled: task.isWhatsAppEnabled,
-          isTelegramEnabled: task.isTelegramEnabled,
-          isCallEnabled: task.isCallEnabled
-        };
-      });
-
-      // Create the input with the properly typed tasks
-      const createInput: CreateScheduleInput = {
-        userId,
-        originalData: taskData
-      };
-
-      // Create a new schedule using the existing function
-      const newSchedule = await createSchedule(createInput);
-
-      return {
-        ...newSchedule,
-        originalData: newSchedule.originalData.map((task: TaskWithNotifications) => ({
-          id: task.id,
-          name: task.name,
-          description: task.description,
-          notes: task.notes,
-          time: task.time,
-          duration: task.duration,
-          status: task.status,
-          priority: task.priority,
-          location: task.location,
-          scheduleId: task.scheduleId,
-          isEmailEnabled: task.isEmailEnabled,
-          isWhatsAppEnabled: task.isWhatsAppEnabled,
-          isTelegramEnabled: task.isTelegramEnabled,
-          isCallEnabled: task.isCallEnabled,
-          createdAt: task.createdAt,
-          updatedAt: task.updatedAt,
-          completedAt: task.completedAt
-        }))
-      };
-    } else {
-      throw new Error("No previous schedule found to use as template");
-    }
-  } else if (!schedule) {
-    throw new Error("No schedule found for the requested date");
+    // Create a custom error that can be caught by the controller
+    // This will trigger schedule generation on the client side
+    const error = new Error("No schedule found for the requested date. Please generate a new schedule.");
+    (error as any).code = 'SCHEDULE_NOT_FOUND';
+    throw error;
   }
 
   // Return the found schedule

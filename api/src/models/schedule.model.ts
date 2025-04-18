@@ -49,7 +49,7 @@ export interface Task {
         name: string;
         description?: string | null;
         notes?: string | null;
-        time: string; // Changed from Date to string to match validation schema
+        time: string | Date; // Can be either string (HH:mm) or Date object
         duration: number;
         status?: TaskStatus;
         priority?: Priority;

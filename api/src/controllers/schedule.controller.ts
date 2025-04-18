@@ -210,19 +210,16 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
             // Convert local time to UTC
             const utcTime = new Date(localDateTime);
 
-            // Format time as HH:mm string for validation schema
-            const formattedHours = String(utcTime.getHours()).padStart(2, '0');
-            const formattedMinutes = String(utcTime.getMinutes()).padStart(2, '0');
-            const timeString = `${formattedHours}:${formattedMinutes}`;
+            // We now use the Date object directly instead of formatting as a string
 
             return {
                 name: task.name,
-                time: timeString, // Use string format for validation
+                time: utcTime, // Use the actual Date object for Prisma
                 duration: task.duration,
-                isEmailEnabled: task.isEmailEnabled,
-                isWhatsAppEnabled: task.isWhatsAppEnabled,
-                isTelegramEnabled: task.isTelegramEnabled,
-                isCallEnabled: task.isCallEnabled
+                isEmailEnabled: task.isEmailEnabled === true,
+                isWhatsAppEnabled: task.isWhatsAppEnabled === true,
+                isTelegramEnabled: task.isTelegramEnabled === true,
+                isCallEnabled: task.isCallEnabled === true
             };
         });
 

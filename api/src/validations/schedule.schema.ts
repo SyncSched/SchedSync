@@ -3,7 +3,11 @@ import { z } from "zod";
 // Define validation schema for originalData array
 const originalDataSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format. Use HH:mm"), // Changed back to string
+  time: z.union([
+    z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format. Use HH:mm"),
+    z.instanceof(Date),
+    z.string().datetime() // ISO format date string
+  ]), // Accept both string time format and Date objects
   duration: z.number().min(1, "Duration must be at least 1 minute"),
   isEmailEnabled: z.boolean().optional(),
   isWhatsAppEnabled: z.boolean().optional(),
