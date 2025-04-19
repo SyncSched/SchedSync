@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { getTodaySchedule, updateSchedule, updateUserTimezone, type Task } from '../api/lib';
+import { getTodaySchedule, locationNotify, updateSchedule, updateUserTimezone, type Task } from '../api/lib';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import Modal from './components/ui/Modal';
@@ -79,6 +79,63 @@ export default function Home() {
       }
     }
   }, [mainTasks]); // Re-run when tasks change
+  
+  useEffect(() => {
+    
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude: userLat, longitude: userLng } = position.coords;
+          console.log("Current Location:", userLat, userLng);
+  
+          const nearbyTaskIds = mainTasks
+            .filter((task) => {
+              if (!task.location) return false;
+              const [latStr, lngStr] = task.location.split(",");
+              const taskLat = parseFloat(latStr);
+              const taskLng = parseFloat(lngStr);
+              if (isNaN(taskLat) || isNaN(taskLng)) return false;
+  
+              const distance = getDistanceInMeters(userLat, userLng, taskLat, taskLng);
+              return distance <= 2000;
+            })
+            .map((task) => task.id);
+            console.log(nearbyTaskIds)
+          if (nearbyTaskIds.length > 0 ) {
+            locationNotify(nearbyTaskIds);
+            console.log("hello")
+          }
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0,
+        }
+      );
+    
+  
+    
+  }, [mainTasks]);
+  const toRadians = (degree: number) => degree * (Math.PI / 180);
+
+// Haversine formula to calculate distance between two coordinates
+function getDistanceInMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371e3; // radius of Earth in meters
+  const φ1 = toRadians(lat1);
+  const φ2 = toRadians(lat2);
+  const Δφ = toRadians(lat2 - lat1);
+  const Δλ = toRadians(lon2 - lon1);
+
+  const a =
+    Math.sin(Δφ / 2) ** 2 +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c; // in meters
+}
 
   interface TaskFormData {
     name: string;

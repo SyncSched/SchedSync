@@ -93,18 +93,33 @@ export const deleteNotification = async (
 
 export const sendLocationNotifications = async (userId: string, taskIds: string[]) => {
     const user = await prisma.user.findUnique({
-      where: { id: userId },
-    });
-  
-    if (!user || !user.email) {
-      throw new Error('User not found or email is missing');
-    }
-  
-    const toAddress = user.email;
-  
-    // Create a message listing all task IDs
-    const message = `You have tasks nearby: ${taskIds.join(', ')}`;
-  
-    // Send the email
-    return await sendEmail(toAddress, "Nearby Task Notification", message);
+        where: { id: userId },
+      });
+    
+      if (!user || !user.email) {
+        throw new Error("User not found or missing email");
+      }
+    
+      // Fetch task details using the IDs
+      const tasks = await prisma.task.findMany({
+        where: {
+          id: { in: taskIds },
+        },
+        select: {
+          name: true,
+          time: true,
+          duration: true,
+          location: true,
+        },
+      });
+    
+      // Format message
+      const messageLines = tasks.map((task, idx) => {
+        return `${idx + 1}. ${task.name} \n   Time: ${new Date(task.time).toLocaleString()} \n   Duration: ${task.duration} min \n   Location: ${task.location}\n`;
+      });
+    
+      const message = `📌 You have tasks nearby:\n\n${messageLines.join('\n')}`;
+    
+      // Send email
+      return await sendEmail(user.email, "Nearby Task Reminder", message);
   };

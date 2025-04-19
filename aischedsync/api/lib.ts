@@ -85,7 +85,6 @@ export interface Schedule {
     priority?: 'LOW' | 'MEDIUM' | 'HIGH';
     location?: string | null;
     scheduleId: string;
-    location: string;
     isEmailEnabled: boolean;
     isWhatsAppEnabled: boolean;
     isTelegramEnabled: boolean;
