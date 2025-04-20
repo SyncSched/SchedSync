@@ -52,9 +52,9 @@ function MainLayout({ children }: MainLayoutProps) {
           title: "Calendar",
           subtitle: "View your monthly schedule"
         };
-      case '/tools':
+      case '/integrations':
         return {
-          title: "Tools",
+          title: "Integrations",
           subtitle: "Productivity tools and integrations"
         };
       case '/reminders':
