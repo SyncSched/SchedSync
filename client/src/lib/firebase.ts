@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, query, where, getDocs } from "firebase/firestore";
+import { getFirestore, collection, addDoc, query, where, getDocs, getCountFromServer } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBgNQNKqcnUXKQP2M21uApMvrMnCj-q-hk",
@@ -27,9 +27,9 @@ export async function submitContactForm(data: { name: string; email: string; mes
     // Check if email already exists
     const emailExists = await checkEmailExists(data.email, "contactSubmissions");
     if (emailExists) {
-      return { 
-        success: false, 
-        error: "This email has already submitted a contact form. Please wait for our response." 
+      return {
+        success: false,
+        error: "This email has already submitted a contact form. Please wait for our response."
       };
     }
 
@@ -50,9 +50,9 @@ export async function submitWaitlist(email: string) {
     // Check if email already exists in waitlist
     const emailExists = await checkEmailExists(email, "waitlist");
     if (emailExists) {
-      return { 
-        success: false, 
-        error: "This email is already on our waitlist!" 
+      return {
+        success: false,
+        error: "This email is already on our waitlist!"
       };
     }
 
@@ -65,4 +65,16 @@ export async function submitWaitlist(email: string) {
     console.error("Error submitting to waitlist: ", error);
     return { success: false, error };
   }
-} 
+}
+
+// Function to get waitlist count
+export async function getWaitlistCount() {
+  try {
+    const coll = collection(db, "waitlist");
+    const snapshot = await getCountFromServer(coll);
+    return snapshot.data().count;
+  } catch (error) {
+    console.error("Error getting waitlist count: ", error);
+    return 0;
+  }
+}

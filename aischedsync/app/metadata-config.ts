@@ -41,8 +41,8 @@ export const pageMetadata = {
   },
   reminders: {
     title: "Reminders - SchedSync",
-    description: "Never miss an important task with customizable reminders. Get notifications via email, WhatsApp, Telegram, or phone calls.",
-    keywords: "task reminders, notification system, WhatsApp reminders, email notifications",
+    description: "Never miss an important task with customizable reminders. Get notifications via email and Telegram",
+    keywords: "task reminders, notification system reminders email notifications",
     ogTitle: "SchedSync Reminders - Stay on Top of Your Tasks",
     ogDescription: "Get timely notifications for your important tasks through multiple channels.",
   },

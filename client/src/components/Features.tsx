@@ -20,9 +20,7 @@ const Features = () => {
       icon: "📱",
       highlights: [
         "Email integration",
-        "WhatsApp support",
         "Telegram alerts",
-        "Phone call reminders"
       ]
     },
     {

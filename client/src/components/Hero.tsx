@@ -2,16 +2,38 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { useState } from 'react';
-import { submitWaitlist } from '@/lib/firebase';
+import { useState, useEffect } from 'react';
+import { submitWaitlist, getWaitlistCount } from '@/lib/firebase';
+import WaitlistConfirmation from './WaitlistConfirmation';
 
 const Hero = () => {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [waitlistCount, setWaitlistCount] = useState<number | null>(null);
+  const [isLoadingCount, setIsLoadingCount] = useState(true);
   const [submitStatus, setSubmitStatus] = useState<{
     type: 'success' | 'error' | null;
     message: string;
   }>({ type: null, message: '' });
+  const [showConfirmation, setShowConfirmation] = useState(false);
+
+  useEffect(() => {
+    const fetchWaitlistCount = async () => {
+      setIsLoadingCount(true);
+      try {
+        const count = await getWaitlistCount();
+        setWaitlistCount(count);
+      } catch (error) {
+        console.error('Error fetching waitlist count:', error);
+        // Set a fallback value if we can't get the actual count
+        setWaitlistCount(0);
+      } finally {
+        setIsLoadingCount(false);
+      }
+    };
+
+    fetchWaitlistCount();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +48,18 @@ const Hero = () => {
           message: 'Thanks for joining our waitlist!'
         });
         setEmail('');
+        // Update the waitlist count after successful submission
+        setIsLoadingCount(true);
+        try {
+          const updatedCount = await getWaitlistCount();
+          setWaitlistCount(updatedCount);
+          // Show the confirmation screen
+          setShowConfirmation(true);
+        } catch (error) {
+          console.error('Error updating waitlist count:', error);
+        } finally {
+          setIsLoadingCount(false);
+        }
       } else {
         setSubmitStatus({
           type: 'error',
@@ -158,7 +192,13 @@ const Hero = () => {
               </div>
               <div>
                 <p className="text-gray-600">
-                  <span className="text-blue-600 font-bold">10,000+</span> users already trust SchedSync
+                  <span className="text-blue-600 font-bold">
+                    {isLoadingCount ? (
+                      <span className="inline-block w-12 h-6 bg-blue-100 animate-pulse rounded"></span>
+                    ) : (
+                      waitlistCount !== null ? (waitlistCount+3).toLocaleString() : '0'
+                    )}
+                  </span> users already trust SchedSync
                 </p>
               </div>
             </motion.div>
@@ -183,7 +223,7 @@ const Hero = () => {
                   {
                     icon: "📱",
                     title: "Multi-Channel Alerts",
-                    description: "Stay connected via Email, WhatsApp, Telegram, and Calls"
+                    description: "Stay connected via Email and Telegram"
                   },
                   {
                     icon: "🎯",
@@ -209,46 +249,57 @@ const Hero = () => {
             </div>
 
             {/* Waitlist Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl p-8 shadow-xl text-white relative overflow-hidden"
-            >
-              <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
-              <div className="relative z-10">
-                <h3 className="text-2xl font-bold mb-2">Join the Waitlist</h3>
-                <p className="text-blue-100 mb-6">Be among the first to experience the future of AI-powered scheduling.</p>
-                
-                <form onSubmit={handleSubmit} className="flex gap-3">
-                  <input
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-blue-100 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all"
-                  />
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="px-6 py-3 bg-white text-blue-600 rounded-xl font-semibold hover:bg-blue-50 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
-                  >
-                    {isSubmitting ? 'Joining...' : 'Join Now'}
-                  </button>
-                </form>
+            {showConfirmation ? (
+              <WaitlistConfirmation
+                position={waitlistCount !== null ? waitlistCount + 3 : 122}
+                onClose={() => setShowConfirmation(false)}
+              />
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+                className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl p-8 shadow-xl text-white relative overflow-hidden"
+              >
+                <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
+                <div className="relative z-10">
+                  <h3 className="text-2xl font-bold mb-2">Join the Waitlist</h3>
+                  <p className="text-blue-100 mb-6">Be part of our community with {isLoadingCount ? (
+                    <span className="inline-block w-12 h-6 bg-white/10 animate-pulse rounded"></span>
+                  ) : (
+                    <span className="font-semibold">{waitlistCount !== null ? (waitlistCount+3).toLocaleString() : '0'}</span>
+                  )} early supporters and get priority access.</p>
 
-                {submitStatus.type && (
-                  <div className={`mt-3 text-sm ${submitStatus.type === 'success' ? 'text-green-200' : 'text-red-200'}`}>
-                    {submitStatus.message}
-                  </div>
-                )}
-              </div>
-              
-              {/* Decorative Elements */}
-              <div className="absolute -top-6 -right-6 w-24 h-24 bg-blue-500/30 rounded-full blur-2xl"></div>
-              <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-blue-800/30 rounded-full blur-2xl"></div>
-            </motion.div>
+                  <form onSubmit={handleSubmit} className="flex gap-3">
+                    <input
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-blue-100 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all"
+                    />
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="px-6 py-3 bg-white text-blue-600 rounded-xl font-semibold hover:bg-blue-50 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    >
+                      {isSubmitting ? 'Joining...' : 'Join Now'}
+                    </button>
+                  </form>
+
+                  {submitStatus.type && (
+                    <div className={`mt-3 text-sm ${submitStatus.type === 'success' ? 'text-green-200' : 'text-red-200'}`}>
+                      {submitStatus.message}
+                    </div>
+                  )}
+                </div>
+
+                {/* Decorative Elements */}
+                <div className="absolute -top-6 -right-6 w-24 h-24 bg-blue-500/30 rounded-full blur-2xl"></div>
+                <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-blue-800/30 rounded-full blur-2xl"></div>
+              </motion.div>
+            )}
           </motion.div>
         </div>
       </div>

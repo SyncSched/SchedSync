@@ -41,7 +41,7 @@ export default function PrivacyPolicy() {
               <ul className="list-disc pl-6 text-gray-700">
                 <li>Personalized Scheduling: To create AI-powered schedules tailored to your preferences, work patterns, and lifestyle</li>
                 <li>Calendar Integration: To synchronize your schedule with your Google Calendar events</li>
-                <li>Multi-channel Notifications: To send reminders and alerts through your preferred channels (Email, WhatsApp, Telegram, or phone calls)</li>
+                <li>Multi-channel Notifications: To send reminders and alerts through your preferred channels (Email, Telegram)</li>
                 <li>Service Improvement: To analyze usage patterns and improve our application</li>
                 <li>Technical Support: To respond to your inquiries and resolve issues</li>
                 <li>Account Management: To manage your account and provide you with important notifications</li>
