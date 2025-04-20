@@ -25,18 +25,24 @@ const Navbar = () => {
   }, [scrollY]);
 
   const handleScroll = (elementId: string) => {
-    setIsMenuOpen(false); // Close mobile menu when clicking
-    const element = document.getElementById(elementId);
-    if (element) {
-      const offset = 80; // Account for navbar height
-      const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - offset;
+    // Explicitly close the mobile menu first
+    setIsMenuOpen(false);
 
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      });
-    }
+    // Use setTimeout to ensure the menu closing animation completes
+    // before scrolling, which helps with mobile interaction
+    setTimeout(() => {
+      const element = document.getElementById(elementId);
+      if (element) {
+        const offset = 80; // Account for navbar height
+        const elementPosition = element.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
+      }
+    }, 10); // Small delay to ensure state update happens first
   };
 
   const navItems = [
@@ -46,9 +52,34 @@ const Navbar = () => {
     { name: 'Contact', id: 'contact' }
   ];
 
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isMenuOpen) {
+        // Check if the click is outside the navbar
+        const navbar = document.getElementById('mobile-navbar');
+        if (navbar && !navbar.contains(event.target as Node)) {
+          setIsMenuOpen(false);
+        }
+      }
+    };
+
+    // Add event listener when menu is open
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside as EventListener);
+    }
+
+    // Cleanup
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside as EventListener);
+    };
+  }, [isMenuOpen]);
+
   return (
     <div className="fixed top-0 left-0 right-0 w-full z-50 overflow-hidden">
-      <div className="max-w-[1405px] mx-auto px-4 sm:px-8 lg:px-16 w-full">
+      <div id="mobile-navbar" className="max-w-[1405px] mx-auto px-4 sm:px-8 lg:px-16 w-full">
         <motion.nav
           className="pt-6"
           initial={{ opacity: 0, y: -50 }}
@@ -113,8 +144,11 @@ const Navbar = () => {
                   whileTap={{ scale: 0.9 }}
                 >
                   <button
-                    onClick={() => setIsMenuOpen(!isMenuOpen)}
-                    className="text-gray-600 hover:text-gray-900 focus:outline-none"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsMenuOpen(!isMenuOpen);
+                    }}
+                    className="text-gray-600 hover:text-gray-900 focus:outline-none relative z-20"
                   >
                     <motion.svg
                       className="h-6 w-6"
@@ -141,7 +175,7 @@ const Navbar = () => {
               <AnimatePresence>
                 {isMenuOpen && (
                   <motion.div
-                    className="md:hidden mt-4 space-y-4"
+                    className="md:hidden mt-4 space-y-4 relative z-20"
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
@@ -156,8 +190,11 @@ const Navbar = () => {
                         transition={{ duration: 0.2 }}
                       >
                         <button
-                          onClick={() => handleScroll(item.id)}
-                          className="block text-gray-600 hover:text-gray-900 transition-colors w-full text-left"
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent event bubbling
+                            handleScroll(item.id);
+                          }}
+                          className="block text-gray-600 hover:text-gray-900 transition-colors w-full text-left py-3 px-2 rounded-lg"
                         >
                           {item.name}
                         </button>
