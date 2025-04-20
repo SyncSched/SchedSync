@@ -136,7 +136,7 @@ export default function PrivacyPolicy() {
                 <li>Objection: You can object to processing of your data</li>
               </ul>
               <p className="text-gray-700 mt-4">
-                To exercise these rights, please contact us at prudvirajkaukuntla3@gmail.com.
+                To exercise these rights, please contact us at syncsched1@gmail.com.
               </p>
             </section>
 
@@ -161,7 +161,7 @@ export default function PrivacyPolicy() {
               <p className="text-gray-700">
                 If you have any questions about this Privacy Policy, please contact us at:
               </p>
-              <p className="text-blue-600">prudvirajkaukuntla3@gmail.com</p>
+              <p className="text-blue-600">syncsched1@gmail.com</p>
             </section>
           </div>
         </motion.div>

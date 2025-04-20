@@ -168,7 +168,7 @@ export default function TermsOfService() {
               <p className="text-gray-700">
                 If you have any questions about these Terms, please contact us at:
               </p>
-              <p className="text-blue-600">prudvirajkaukuntla3@gmail.com</p>
+              <p className="text-blue-600">syncsched1@gmail.com</p>
             </section>
           </div>
         </motion.div>

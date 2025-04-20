@@ -58,7 +58,7 @@ const Footer = () => {
           <div className="space-y-4">
             <h3 className="text-base sm:text-lg font-semibold text-gray-900">Contact</h3>
             <p className="text-gray-600 text-sm sm:text-base">
-              Email: prudvirajkaukuntla3@gmail.com
+              Email: syncsched1@gmail.com
             </p>
           </div>
         </div>
