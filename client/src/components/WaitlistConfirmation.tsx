@@ -8,7 +8,7 @@ interface WaitlistConfirmationProps {
   onClose?: () => void; // Made optional since we're not using it currently
 }
 
-const WaitlistConfirmation: React.FC<WaitlistConfirmationProps> = ({ position, onClose }) => {
+const WaitlistConfirmation: React.FC<WaitlistConfirmationProps> = ({ position }) => {
   const [copied, setCopied] = useState(false);
 
   const shareUrl = "https://schedsync.com";
@@ -52,7 +52,7 @@ const WaitlistConfirmation: React.FC<WaitlistConfirmationProps> = ({ position, o
       </div>
 
       <div className="relative z-10 text-center">
-        <h3 className="text-2xl font-bold mb-3">You're scheduled for success!</h3>
+        <h3 className="text-2xl font-bold mb-3">You&apos;re scheduled for success!</h3>
         <p className="text-blue-100 mb-4">
           Your position in queue: <span className="font-semibold text-white">{position.toLocaleString()}</span>
         </p>
