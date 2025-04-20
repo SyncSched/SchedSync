@@ -4,25 +4,25 @@ import { motion } from 'framer-motion';
 
 export default function PrivacyPolicy() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-blue-50 pt-32 pb-16">
-      <div className="max-w-[1000px] mx-auto px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-b from-white to-blue-50 pt-24 sm:pt-32 pb-12 sm:pb-16 overflow-hidden w-full">
+      <div className="max-w-[1000px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="prose prose-lg max-w-none"
         >
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Privacy Policy</h1>
-          <p className="text-gray-600 mb-8">Last updated: April 18, 2025</p>
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">Privacy Policy</h1>
+          <p className="text-gray-600 mb-6 sm:mb-8">Last updated: April 18, 2025</p>
 
-          <div className="space-y-8">
+          <div className="space-y-6 sm:space-y-8">
             <p className="text-gray-700">
-              SchedSync (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) is committed to protecting your privacy. 
+              SchedSync (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) is committed to protecting your privacy.
               This Privacy Policy explains how we collect, use, and safeguard your personal information when you use our application.
             </p>
 
-            <section className="space-y-4">
-              <h2 className="text-2xl font-bold text-gray-900">Information We Collect</h2>
+            <section className="space-y-3 sm:space-y-4">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Information We Collect</h2>
               <p className="text-gray-700">We collect the following types of information:</p>
               <ul className="list-disc pl-6 text-gray-700">
                 <li>Account Information: Email address, name, and profile picture (via Google login)</li>
@@ -36,7 +36,7 @@ export default function PrivacyPolicy() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-2xl font-bold text-gray-900">How We Use Your Information</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">How We Use Your Information</h2>
               <p className="text-gray-700">We use your information for the following purposes:</p>
               <ul className="list-disc pl-6 text-gray-700">
                 <li>Personalized Scheduling: To create AI-powered schedules tailored to your preferences, work patterns, and lifestyle</li>
@@ -49,16 +49,16 @@ export default function PrivacyPolicy() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-2xl font-bold text-gray-900">Cookies and Tracking</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Cookies and Tracking</h2>
               <p className="text-gray-700">
-                We use cookies and similar tracking technologies to track activity on our application and hold certain information. 
-                Cookies are files with a small amount of data which may include an anonymous unique identifier. 
+                We use cookies and similar tracking technologies to track activity on our application and hold certain information.
+                Cookies are files with a small amount of data which may include an anonymous unique identifier.
                 You can instruct your browser to refuse all cookies or to indicate when a cookie is being sent.
               </p>
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-2xl font-bold text-gray-900">Data Storage and Protection</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Data Storage and Protection</h2>
               <p className="text-gray-700">We implement robust security measures to protect your personal information:</p>
               <ul className="list-disc pl-6 text-gray-700">
                 <li>All data is stored in secure cloud environments with industry-standard encryption</li>
@@ -70,7 +70,7 @@ export default function PrivacyPolicy() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-2xl font-bold text-gray-900">Data Retention</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Data Retention</h2>
               <p className="text-gray-700">
                 We retain your personal information for as long as your account is active or as needed to provide you services. Specifically:
               </p>
@@ -83,7 +83,7 @@ export default function PrivacyPolicy() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-2xl font-bold text-gray-900">Third-Party Services</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Third-Party Services</h2>
               <p className="text-gray-700">We use the following third-party services to operate our application:</p>
               <ul className="list-disc pl-6 text-gray-700">
                 <li>Google Calendar API: For calendar integration and event synchronization</li>
@@ -95,7 +95,7 @@ export default function PrivacyPolicy() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-2xl font-bold text-gray-900">Google Calendar Permissions</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Google Calendar Permissions</h2>
               <p className="text-gray-700">
                 We request read-only access to your Google Calendar (calendar.readonly scope) to:
               </p>
@@ -113,7 +113,7 @@ export default function PrivacyPolicy() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-2xl font-bold text-gray-900">Data Sharing</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Data Sharing</h2>
               <p className="text-gray-700">
                 We do not sell your personal information to third parties. We may share your information in the following circumstances:
               </p>
@@ -125,7 +125,7 @@ export default function PrivacyPolicy() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-2xl font-bold text-gray-900">Your Rights</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Your Rights</h2>
               <p className="text-gray-700">Depending on your location, you may have certain rights regarding your personal information:</p>
               <ul className="list-disc pl-6 text-gray-700">
                 <li>Access: You can request access to your personal information</li>
@@ -141,23 +141,23 @@ export default function PrivacyPolicy() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-2xl font-bold text-gray-900">Children&apos;s Privacy</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Children&apos;s Privacy</h2>
               <p className="text-gray-700">
-                Our application is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. 
+                Our application is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13.
                 If you are a parent or guardian and believe your child has provided us with personal information, please contact us.
               </p>
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-2xl font-bold text-gray-900">Changes to This Privacy Policy</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Changes to This Privacy Policy</h2>
               <p className="text-gray-700">
-                We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page 
+                We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page
                 and updating the &quot;Last updated&quot; date.
               </p>
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-2xl font-bold text-gray-900">Contact Us</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Contact Us</h2>
               <p className="text-gray-700">
                 If you have any questions about this Privacy Policy, please contact us at:
               </p>
@@ -168,4 +168,4 @@ export default function PrivacyPolicy() {
       </div>
     </div>
   );
-} 
+}

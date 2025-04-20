@@ -42,25 +42,25 @@ const Navbar = () => {
   const navItems = [
     { name: 'Features', id: 'features' },
     { name: 'How it Works', id: 'how-it-works' },
-    
+
     { name: 'Contact', id: 'contact' }
   ];
 
   return (
-    <div className="fixed top-0 left-0 right-0 w-full z-50">
-      <div className="max-w-[1405px] mx-auto px-8 sm:px-12 lg:px-16">
-        <motion.nav 
+    <div className="fixed top-0 left-0 right-0 w-full z-50 overflow-hidden">
+      <div className="max-w-[1405px] mx-auto px-4 sm:px-8 lg:px-16 w-full">
+        <motion.nav
           className="pt-6"
           initial={{ opacity: 0, y: -50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
-          <motion.div 
+          <motion.div
             className={`
               relative overflow-hidden
-              rounded-[50px] px-8 py-4
-              ${scrolled 
-                ? 'bg-white/[0.03] shadow-[0_2px_20px_rgb(0,0,0,0.025)] backdrop-blur-[8px]' 
+              rounded-[50px] px-4 sm:px-8 py-4
+              ${scrolled
+                ? 'bg-white/[0.03] shadow-[0_2px_20px_rgb(0,0,0,0.025)] backdrop-blur-[8px]'
                 : 'bg-transparent backdrop-blur-[6px]'
               }
               border-2 border-black/[0.7]
@@ -73,12 +73,12 @@ const Navbar = () => {
             <div className="absolute inset-0">
               <div className="absolute inset-0 bg-gradient-to-r from-white/[0.01] via-transparent to-white/[0.01]" />
             </div>
-            
+
             {/* Main content with higher z-index */}
             <div className="relative z-10">
               <div className="flex items-center justify-between">
                 {/* Logo/Brand */}
-                <motion.div 
+                <motion.div
                   className="flex items-center"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -108,7 +108,7 @@ const Navbar = () => {
                 </div>
 
                 {/* Mobile Menu Button */}
-                <motion.div 
+                <motion.div
                   className="md:hidden"
                   whileTap={{ scale: 0.9 }}
                 >

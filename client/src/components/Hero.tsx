@@ -102,9 +102,9 @@ const Hero = () => {
   ];
 
   return (
-    <div className="min-h-screen pt-32 pb-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-blue-50">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+    <div className="min-h-screen pt-24 sm:pt-32 pb-12 sm:pb-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-blue-50 overflow-hidden w-full">
+      <div className="max-w-7xl mx-auto w-full">
+        <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
           {/* Left Column - Text Content */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -127,7 +127,7 @@ const Hero = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.5 }}
-              className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight"
+              className="text-3xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight"
             >
               Your Life, <br />
               <span className="text-blue-600">Intelligently Scheduled</span>
@@ -137,7 +137,7 @@ const Hero = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.5 }}
-              className="text-lg text-gray-600 max-w-2xl"
+              className="text-base sm:text-lg text-gray-600 max-w-2xl"
             >
               Experience the future of time management with SchedSync. Our AI-powered platform adapts to your lifestyle, intelligently managing your tasks, schedules, and routines while keeping you connected through multiple channels.
             </motion.p>
@@ -153,32 +153,32 @@ const Hero = () => {
                 whileHover="hover"
                 whileTap="tap"
                 type="button"
-                className="px-8 py-4 bg-blue-600 text-white rounded-full font-semibold hover:bg-blue-700 transition-colors duration-300 shadow-lg hover:shadow-xl"
+                className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-blue-600 text-white rounded-full font-semibold hover:bg-blue-700 transition-colors duration-300 shadow-lg hover:shadow-xl text-sm sm:text-base"
               >
-                Get Started Free
+                Launching in May 2025
               </motion.button>
-              <motion.button
+              {/* <motion.button
                 variants={buttonVariants}
                 whileHover="hover"
                 whileTap="tap"
                 type="button"
-                className="px-8 py-4 bg-white text-blue-600 rounded-full font-semibold border-2 border-blue-600 hover:bg-blue-50 transition-colors duration-300"
+                className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-white text-blue-600 rounded-full font-semibold border-2 border-blue-600 hover:bg-blue-50 transition-colors duration-300 text-sm sm:text-base"
               >
                 Watch Demo
-              </motion.button>
+              </motion.button> */}
             </motion.div>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6, duration: 0.5 }}
-              className="flex items-center gap-8 pt-4"
+              className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 pt-4"
             >
               <div className="flex -space-x-4">
                 {userAvatars.map((avatar, index) => (
                   <div
                     key={index}
-                    className="w-12 h-12 rounded-full border-2 border-white relative overflow-hidden ring-2 ring-white"
+                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-white relative overflow-hidden ring-2 ring-white"
                   >
                     <Image
                       src={avatar.src}
@@ -198,7 +198,7 @@ const Hero = () => {
                     ) : (
                       waitlistCount !== null ? (waitlistCount+3).toLocaleString() : '0'
                     )}
-                  </span> users already trust SchedSync
+                  </span>  people on the waitlist
                 </p>
               </div>
             </motion.div>
@@ -263,26 +263,26 @@ const Hero = () => {
               >
                 <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
                 <div className="relative z-10">
-                  <h3 className="text-2xl font-bold mb-2">Join the Waitlist</h3>
-                  <p className="text-blue-100 mb-6">Be part of our community with {isLoadingCount ? (
+                  <h3 className="text-xl sm:text-2xl font-bold mb-2">Join the Waitlist</h3>
+                  <p className="text-blue-100 mb-4 sm:mb-6 text-sm sm:text-base">Be part of our community with {isLoadingCount ? (
                     <span className="inline-block w-12 h-6 bg-white/10 animate-pulse rounded"></span>
                   ) : (
                     <span className="font-semibold">{waitlistCount !== null ? (waitlistCount+3).toLocaleString() : '0'}</span>
                   )} early supporters and get priority access.</p>
 
-                  <form onSubmit={handleSubmit} className="flex gap-3">
+                  <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
                     <input
                       type="email"
                       placeholder="Enter your email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-blue-100 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all"
+                      className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-blue-100 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all text-sm sm:text-base"
                     />
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="px-6 py-3 bg-white text-blue-600 rounded-xl font-semibold hover:bg-blue-50 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
+                      className="px-6 py-3 bg-white text-blue-600 rounded-xl font-semibold hover:bg-blue-50 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100 text-sm sm:text-base mt-2 sm:mt-0"
                     >
                       {isSubmitting ? 'Joining...' : 'Join Now'}
                     </button>

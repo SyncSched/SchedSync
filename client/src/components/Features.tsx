@@ -47,18 +47,18 @@ const Features = () => {
   };
 
   return (
-    <section id="features" className="w-full py-24 bg-gradient-to-b from-blue-50 to-white">
-      <div className="max-w-[1400px] mx-auto px-8 sm:px-12 lg:px-16">
+    <section id="features" className="w-full py-16 sm:py-24 bg-gradient-to-b from-blue-50 to-white overflow-hidden">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-16 w-full">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
             Intelligent Features for Modern Life
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-base sm:text-xl text-gray-600 max-w-3xl mx-auto">
             Experience the power of AI-driven scheduling that adapts to your lifestyle and keeps you connected across all channels.
           </p>
         </motion.div>
@@ -75,16 +75,16 @@ const Features = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100 hover:shadow-2xl transition-shadow duration-300"
+              className="bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-gray-100 hover:shadow-2xl transition-shadow duration-300"
             >
               <div className="flex items-center gap-4 mb-6">
                 <span className="text-4xl">{feature.icon}</span>
-                <h3 className="text-2xl font-semibold text-gray-900">{feature.title}</h3>
+                <h3 className="text-xl sm:text-2xl font-semibold text-gray-900">{feature.title}</h3>
               </div>
-              <p className="text-gray-600 mb-6">{feature.description}</p>
+              <p className="text-gray-600 mb-6 text-sm sm:text-base">{feature.description}</p>
               <ul className="space-y-3">
                 {feature.highlights.map((highlight, i) => (
-                  <li key={i} className="flex items-center gap-2 text-gray-700">
+                  <li key={i} className="flex items-center gap-2 text-gray-700 text-sm sm:text-base">
                     <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                     </svg>

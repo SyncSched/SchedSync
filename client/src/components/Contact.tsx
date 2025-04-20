@@ -59,8 +59,8 @@ const Contact = () => {
   };
 
   return (
-    <section id="contact" className="w-full py-24 bg-gradient-to-b from-white to-blue-50">
-      <div className="max-w-[1400px] mx-auto px-8 sm:px-12 lg:px-16">
+    <section id="contact" className="w-full py-16 sm:py-24 bg-gradient-to-b from-white to-blue-50 overflow-hidden">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-16 w-full">
         <div className="grid lg:grid-cols-2 gap-12 items-start">
           {/* Left Column - Text Content */}
           <motion.div
@@ -84,7 +84,7 @@ const Contact = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.5 }}
-              className="text-4xl sm:text-5xl font-bold text-gray-900 leading-tight"
+              className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight"
             >
               Let&apos;s Make Your <br />
               <span className="text-blue-600">Schedule Perfect</span>
@@ -94,7 +94,7 @@ const Contact = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.5 }}
-              className="text-lg text-gray-600 max-w-2xl"
+              className="text-base sm:text-lg text-gray-600 max-w-2xl"
             >
               Have questions about SchedSync? We&apos;re here to help you streamline your scheduling and boost your productivity.
             </motion.p>
@@ -107,7 +107,7 @@ const Contact = () => {
             transition={{ duration: 0.8, ease: "easeOut" }}
             className="relative"
           >
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl p-8 shadow-xl text-white relative overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl p-6 sm:p-8 shadow-xl text-white relative overflow-hidden">
               {/* Decorative Background */}
               <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
               <div className="absolute -top-6 -right-6 w-24 h-24 bg-blue-500/30 rounded-full blur-2xl"></div>
@@ -116,8 +116,8 @@ const Contact = () => {
               {/* Form Content */}
               <div className="relative z-10 space-y-6">
                 <div>
-                  <h3 className="text-2xl font-bold mb-2">Send us a Message</h3>
-                  <p className="text-blue-100">Fill out the form below and we&apos;ll get back to you shortly.</p>
+                  <h3 className="text-xl sm:text-2xl font-bold mb-2">Send us a Message</h3>
+                  <p className="text-blue-100 text-sm sm:text-base">Fill out the form below and we&apos;ll get back to you shortly.</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -128,7 +128,7 @@ const Contact = () => {
                     onChange={handleChange}
                     placeholder="Your Name"
                     required
-                    className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-blue-100 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all"
+                    className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-blue-100 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all text-sm sm:text-base"
                   />
                   <input
                     type="email"
@@ -137,7 +137,7 @@ const Contact = () => {
                     onChange={handleChange}
                     placeholder="Your Email"
                     required
-                    className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-blue-100 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all"
+                    className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-blue-100 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all text-sm sm:text-base"
                   />
                   <textarea
                     name="message"
@@ -146,9 +146,9 @@ const Contact = () => {
                     placeholder="Your Message"
                     required
                     rows={4}
-                    className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-blue-100 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all resize-none"
+                    className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-blue-100 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all resize-none text-sm sm:text-base"
                   ></textarea>
-                  
+
                   {submitStatus.type && (
                     <div className={`text-sm ${submitStatus.type === 'success' ? 'text-green-200' : 'text-red-200'}`}>
                       {submitStatus.message}
@@ -161,7 +161,7 @@ const Contact = () => {
                     whileTap="tap"
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full px-8 py-4 bg-white text-blue-600 rounded-xl font-semibold hover:bg-blue-50 transition-all duration-300 shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="w-full px-6 sm:px-8 py-3 sm:py-4 bg-white text-blue-600 rounded-xl font-semibold hover:bg-blue-50 transition-all duration-300 shadow-lg disabled:opacity-70 disabled:cursor-not-allowed text-sm sm:text-base"
                   >
                     {isSubmitting ? 'Sending...' : 'Send Message'}
                   </motion.button>
@@ -175,4 +175,4 @@ const Contact = () => {
   );
 };
 
-export default Contact; 
+export default Contact;
