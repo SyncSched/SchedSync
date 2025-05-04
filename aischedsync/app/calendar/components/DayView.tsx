@@ -83,8 +83,8 @@ const DayView: React.FC<DayViewProps> = ({
   return (
     <div className={`relative ${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg overflow-hidden transition-colors duration-300 border ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
       {/* Day header */}
-      <div className="flex">
-        <div className="w-16 shrink-0" /> {/* Spacer for time column */}
+      <div className="flex overflow-x-auto">
+        <div className="w-16 shrink-0 sticky left-0 z-10" /> {/* Spacer for time column */}
         <div className={`flex-1 p-2 text-center border-b ${
           isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
         } transition-colors duration-300`}>
@@ -98,11 +98,13 @@ const DayView: React.FC<DayViewProps> = ({
       </div>
 
       {/* Calendar grid */}
-      <div className="flex h-[calc(100vh-12rem)] overflow-y-auto">
-        <TimeColumn startHour={startHour} endHour={endHour} />
+      <div className="flex h-[calc(100vh-12rem)] overflow-y-auto overflow-x-auto">
+        <div className="sticky left-0 z-10 bg-inherit">
+          <TimeColumn startHour={startHour} endHour={endHour} />
+        </div>
 
         {/* Day column */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative min-w-[calc(100%-4rem)]">
           {/* Hour grid lines */}
           {hours.map(hour => (
             <div

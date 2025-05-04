@@ -158,7 +158,7 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="flex flex-col h-full p-6 pt-4 space-y-4">
+    <div className="flex flex-col h-full p-2 sm:p-6 pt-2 sm:pt-4 space-y-2 sm:space-y-4">
       <CalendarHeader
         currentDate={currentDate}
         view={view}

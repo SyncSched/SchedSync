@@ -89,10 +89,10 @@ const CalendarEvent: React.FC<CalendarEventProps> = ({
         <div className="font-medium truncate">
           {isTask ? (event as Task).name : (event as CalendarEventType).summary}
         </div>
-        <div className="text-xs opacity-75">{getEventTime()}</div>
-        
-        {/* Icons overlay */}
-        <div className="absolute top-1 right-1 flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="text-xs opacity-75 truncate">{getEventTime()}</div>
+
+        {/* Icons overlay - visible on hover for desktop, always visible for touch devices */}
+        <div className="absolute top-1 right-1 flex items-center space-x-1 opacity-0 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
           {isAiSuggested && (
             <Sparkles className="w-3 h-3" />
           )}

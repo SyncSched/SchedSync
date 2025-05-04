@@ -65,7 +65,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className={`p-4 md:p-8 h-full overflow-y-auto ${isDark ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}>
+    <div className={`p-4 md:-mt-14 md:p-8 h-full overflow-y-auto ${isDark ? 'bg-gray-900' : 'bg-gray-50'}  transition-colors duration-300`}>
       {/* Timeframe selector */}
       <div className="mb-6 flex justify-end">
         <div className={`inline-flex rounded-md shadow-sm ${isDark ? 'bg-gray-800' : 'bg-white'}`}>

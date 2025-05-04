@@ -149,12 +149,12 @@ const WeekView: React.FC<WeekViewProps> = ({
   return (
     <div className={`relative ${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg overflow-hidden transition-colors duration-300 border ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
       {/* Week header */}
-      <div className="flex">
-        <div className="w-16 shrink-0" /> {/* Spacer for time column */}
+      <div className="flex overflow-x-auto">
+        <div className="w-16 shrink-0 sticky left-0 z-10" /> {/* Spacer for time column */}
         {days.map((day, index) => (
           <div
             key={index}
-            className={`flex-1 p-2 text-center border-b border-r ${
+            className={`min-w-[100px] sm:min-w-0 sm:flex-1 p-2 text-center border-b border-r ${
               isDark
                 ? `bg-gray-800 ${isToday(day) ? 'border-blue-500' : 'border-gray-700'}`
                 : `bg-white ${isToday(day) ? 'border-blue-500' : 'border-gray-200'}`
@@ -177,14 +177,16 @@ const WeekView: React.FC<WeekViewProps> = ({
       </div>
 
       {/* Calendar grid */}
-      <div className="flex h-[calc(100vh-12rem)] overflow-y-auto">
-        {/* Time column - now inside the scrollable container */}
-        <TimeColumn startHour={startHour} endHour={endHour} />
+      <div className="flex h-[calc(100vh-12rem)] overflow-y-auto overflow-x-auto">
+        {/* Time column - now inside the scrollable container but sticky */}
+        <div className="sticky left-0 z-10 bg-inherit">
+          <TimeColumn startHour={startHour} endHour={endHour} />
+        </div>
 
         {/* Day columns */}
-        <div className="flex flex-1">
+        <div className="flex min-w-max sm:min-w-0 sm:flex-1">
           {days.map((day, dayIndex) => (
-            <div key={dayIndex} className="flex-1 relative">
+            <div key={dayIndex} className="min-w-[100px] sm:min-w-0 sm:flex-1 relative">
               {/* Hour grid lines */}
               {hours.map(hour => (
                 <div
