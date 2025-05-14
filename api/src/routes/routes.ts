@@ -7,7 +7,7 @@ import {
     updateUserSettingsHandler,
     getUserSettingsHandler
 } from '../controllers/user.controller';
-import { updateTaskNotificationSettings } from '../controllers/task.controller';
+import { updateTaskNotificationSettings, rescheduleTaskHandler } from '../controllers/task.controller';
 import { getUpcomingNotificationsHandler , updateNotificationTimeHandler, deleteNotificationHandler } from '../controllers/notification.controller';
 import { getTelegramAuthLink } from '../controllers/notification.controller';
 import { telegramWebhookHandler, setTelegramWebhook , disconnectTelegramHandler } from '../controllers/telegram.controller';
@@ -54,6 +54,7 @@ export const attachPrivateRoutes = (app: any): void => {
 
     app.put('/schedule/:id/update', updateScheduleHandler);
     app.patch('/task/:taskId/notifications', updateTaskNotificationSettings);
+    app.post('/task/:taskId/reschedule', rescheduleTaskHandler);
 
     // User settings routes
     app.get('/user/settings', getUserSettingsHandler);

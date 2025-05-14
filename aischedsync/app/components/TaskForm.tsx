@@ -13,6 +13,7 @@ interface TaskFormProps {
   onSubmit: (task: TaskFormData) => void;
   onClose: () => void;
   onDelete?: () => void;
+  onReschedule?: () => void;
   mode?: 'edit' | 'add';
   initialTask?: {
     name?: string;
@@ -50,6 +51,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   onSubmit,
   onClose,
   onDelete,
+  onReschedule,
   mode = 'add',
   initialTask
 }) => {
@@ -590,6 +592,20 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 >
                   Set location
                 </button>
+
+                {mode === 'edit' && onReschedule && (
+                  <button
+                    type="button"
+                    onClick={onReschedule}
+                    className={`w-full px-3 py-1.5 text-xs font-medium ${
+                      isDark ? 'text-orange-400 bg-orange-900/30 hover:bg-orange-900/50' : 'text-orange-600 bg-orange-50 hover:bg-orange-100'
+                    } rounded-lg focus:outline-none focus:ring-1 focus:ring-offset-1 ${
+                      isDark ? 'focus:ring-orange-500/30' : 'focus:ring-orange-200'
+                    } transition-all duration-200`}
+                  >
+                    Reschedule
+                  </button>
+                )}
 
                 {mode === 'edit' && onDelete && (
                   <button

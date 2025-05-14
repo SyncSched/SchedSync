@@ -1,16 +1,17 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { getTodaySchedule, updateSchedule, updateUserTimezone, type Task } from '../api/lib';
+import { getTodaySchedule, updateSchedule, updateUserTimezone, rescheduleTask, type Task } from '../api/lib';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import Modal from './components/ui/Modal';
 import { TaskForm } from './components/TaskForm';
 import TaskList from './components/TaskList';
-import QuickTasks from './components/QuickTasks';
+import RescheduledTasks from './components/RescheduledTasks';
 import { recalculateTaskTimes } from './utils/taskUtils';
 import { isTaskActive, formatToHHMM } from '@/app/utils/dateUtils';
 import Goals from './components/Goals';
+import RescheduleTaskForm from './components/RescheduleTaskForm';
 
 
 
@@ -20,10 +21,8 @@ export default function Home() {
 
   const [mainTasks, setMainTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [quickTasks, setQuickTasks] = useState([
-    { id: 1, title: "Team Meeting", time: "2:00 PM" },
-    { id: 2, title: "Review PRs", time: "4:30 PM" }
-  ]);
+  // State for rescheduled tasks
+  const [rescheduledTasks, setRescheduledTasks] = useState<Task[]>([]);
 
   // const [user, setUser] = useState<UserInfo | null>(null);
   const { isAuthenticated } = useAuth();
@@ -36,6 +35,7 @@ export default function Home() {
   const [showTaskStatusModal, setShowTaskStatusModal] = useState(false);
   const [selectedPastTask, setSelectedPastTask] = useState<Task | null>(null);
   const [goals, setGoals] = useState<{ id: number; title: string; isCompleted: boolean; }[]>([]);
+  const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false);
   const { isDark } = useTheme();
 
   useEffect(() => {
@@ -102,9 +102,14 @@ export default function Home() {
       try {
         const schedule = await getTodaySchedule();
         if (schedule && schedule.originalData) {
+          // Filter out tasks that have been rescheduled from another task
+          const rescheduled = schedule.originalData.filter(task => task.rescheduledFromTaskId);
+          setRescheduledTasks(rescheduled);
+
+          // Set main tasks (all tasks including rescheduled ones)
           setMainTasks(schedule.originalData);
         }
-      } catch (err) { // Change 'error' to 'err' and use it
+      } catch (err) {
         console.error('Error fetching schedule:', err);
         showErrorToast('Failed to fetch schedule');
       } finally {
@@ -113,7 +118,6 @@ export default function Home() {
     };
 
     fetchData();
-    // fetchUser();
   }, [isAuthenticated]);
 
   const handleDragStart = (e: React.DragEvent, columnType: 'main' | 'quick', index: number) => {
@@ -165,11 +169,6 @@ export default function Home() {
           showErrorToast('Failed to save changes. Please try again.');
           console.log(err)
         }
-      } else if (sourceColumnType === targetColumnType && sourceColumnType === 'quick') {
-        const newTasks = [...quickTasks];
-        const [movedTask] = newTasks.splice(sourceIndex, 1);
-        newTasks.splice(targetIndex, 0, movedTask);
-        setQuickTasks(newTasks);
       }
     } catch {
       console.error('Error in handleDrop');
@@ -280,7 +279,17 @@ export default function Home() {
 
       // Update the schedule with all changes
       await updateSchedule(updatedTask.scheduleId, updatedTasks);
+
+      // Update the main tasks state
       setMainTasks(updatedTasks);
+
+      // Also update the rescheduled tasks list if needed
+      if (updatedTasks.some(task => task.rescheduledFromTaskId || task.rescheduledToTaskId)) {
+        // Filter out tasks that have been rescheduled from another task
+        const rescheduled = updatedTasks.filter(task => task.rescheduledFromTaskId);
+        setRescheduledTasks(rescheduled);
+      }
+
       showSuccessToast('Schedule updated successfully');
     } catch (error) {
       console.error('Error updating task:', error);
@@ -323,8 +332,17 @@ export default function Home() {
       // Update the backend
       await updateSchedule(selectedTask.scheduleId, updatedTasks);
 
-      // Update the state
+      // Update the main tasks state
       setMainTasks(updatedTasks);
+
+      // Also update the rescheduled tasks list
+      // If the deleted task was a rescheduled task or has rescheduled tasks linked to it
+      if (selectedTask.rescheduledFromTaskId || selectedTask.rescheduledToTaskId) {
+        // Filter out tasks that have been rescheduled from another task
+        const rescheduled = updatedTasks.filter(task => task.rescheduledFromTaskId);
+        setRescheduledTasks(rescheduled);
+      }
+
       setIsEditModalOpen(false);
       setShowDeleteWarning(false);
       showSuccessToast('Task deleted successfully!');
@@ -353,6 +371,38 @@ export default function Home() {
   const handleCloseModal = () => {
     setIsEditModalOpen(false);
     setSelectedTask(null);
+  };
+
+  const handleOpenRescheduleModal = () => {
+    setIsEditModalOpen(false);
+    setIsRescheduleModalOpen(true);
+  };
+
+  const handleCloseRescheduleModal = () => {
+    setIsRescheduleModalOpen(false);
+  };
+
+  const handleRescheduleSuccess = async (rescheduledTask: Task) => {
+    try {
+      // Log the rescheduled task for debugging
+      console.log('Task rescheduled:', rescheduledTask);
+
+      // Fetch the updated schedule to get all tasks with the new rescheduled task
+      const schedule = await getTodaySchedule();
+      if (schedule && schedule.originalData) {
+        // Filter out tasks that have been rescheduled from another task
+        const rescheduled = schedule.originalData.filter(task => task.rescheduledFromTaskId);
+        setRescheduledTasks(rescheduled);
+
+        // Set main tasks (all tasks including rescheduled ones)
+        setMainTasks(schedule.originalData);
+
+        showSuccessToast('Task rescheduled successfully');
+      }
+    } catch (error) {
+      console.error('Error fetching updated schedule:', error);
+      showErrorToast('Task was rescheduled but failed to refresh schedule');
+    }
   };
 
   const handleGoalAdd = (title: string) => {
@@ -411,13 +461,9 @@ export default function Home() {
                 onGoalToggle={handleGoalToggle}
               />
 
-              <QuickTasks
-                tasks={quickTasks}
-                onDragStart={handleDragStart}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onAddTask={() => {}}
+              <RescheduledTasks
+                tasks={rescheduledTasks}
+                onTaskClick={handleTaskClick}
               />
             </div>
           </div>
@@ -437,6 +483,7 @@ export default function Home() {
               onSubmit={handleEditTaskSubmit}
               onClose={handleCloseModal}
               onDelete={() => setShowDeleteWarning(true)}
+              onReschedule={handleOpenRescheduleModal}
               initialTask={{
                 name: selectedTask!.name,
                 description: selectedTask!.description || '',
@@ -483,6 +530,20 @@ export default function Home() {
             </div>
           </div>
         </div>
+      )}
+
+      {isRescheduleModalOpen && selectedTask && (
+        <Modal
+          title="Reschedule Task"
+          onClose={handleCloseRescheduleModal}
+          size="md"
+        >
+          <RescheduleTaskForm
+            task={selectedTask}
+            onClose={handleCloseRescheduleModal}
+            onSuccess={handleRescheduleSuccess}
+          />
+        </Modal>
       )}
 
       {showTaskStatusModal && selectedPastTask && (

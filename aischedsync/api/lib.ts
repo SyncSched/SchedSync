@@ -89,6 +89,10 @@ export interface Schedule {
     isWhatsAppEnabled: boolean;
     isTelegramEnabled: boolean;
     isCallEnabled: boolean;
+    rescheduledFromTaskId?: string;
+    rescheduledToTaskId?: string;
+    rescheduledReason?: string;
+    rescheduledAt?: string;
   }
 
   export interface TaskFormData {
@@ -990,5 +994,51 @@ export const removeTelegramIntegration = async (): Promise<boolean> => {
   } catch (error) {
     console.error('Error removing Telegram integration:', error);
     return false;
+  }
+};
+
+/**
+ * Reschedule a task to a new time
+ * @param taskId - ID of the task to reschedule
+ * @param newTime - New time for the task (ISO string)
+ * @param reason - Optional reason for rescheduling
+ * @param keepOriginal - Whether to keep the original task (default: true)
+ * @returns The rescheduled task
+ */
+export const rescheduleTask = async (
+  taskId: string,
+  newTime: string,
+  reason?: string,
+  keepOriginal: boolean = true
+): Promise<Task> => {
+  try {
+    const token = getStoredAuthToken();
+
+    if (token && !isTokenValid(token)) {
+      throw new Error('Token expired');
+    }
+
+    const response = await fetch(`${API_URL}/task/${taskId}/reschedule`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        newTime,
+        reason,
+        keepOriginal
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to reschedule task');
+    }
+
+    const data = await response.json();
+    return data.task;
+  } catch (error) {
+    console.error('Error rescheduling task:', error);
+    throw error;
   }
 };

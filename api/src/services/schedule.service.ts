@@ -19,6 +19,10 @@ const taskSelect = {
   isWhatsAppEnabled: true,
   isTelegramEnabled: true,
   isCallEnabled: true,
+  rescheduledFromTaskId: true,
+  rescheduledToTaskId: true,
+  rescheduledReason: true,
+  rescheduledAt: true,
   createdAt: true,
   updatedAt: true,
   completedAt: true
@@ -297,6 +301,10 @@ export const getSchedule = async (
         isWhatsAppEnabled: task.isWhatsAppEnabled,
         isTelegramEnabled: task.isTelegramEnabled,
         isCallEnabled: task.isCallEnabled,
+        rescheduledFromTaskId: task.rescheduledFromTaskId,
+        rescheduledToTaskId: task.rescheduledToTaskId,
+        rescheduledReason: task.rescheduledReason,
+        rescheduledAt: task.rescheduledAt,
         createdAt: task.createdAt,
         updatedAt: task.updatedAt,
         completedAt: task.completedAt
@@ -330,6 +338,10 @@ export const getSchedule = async (
       isWhatsAppEnabled: task.isWhatsAppEnabled,
       isTelegramEnabled: task.isTelegramEnabled,
       isCallEnabled: task.isCallEnabled,
+      rescheduledFromTaskId: task.rescheduledFromTaskId,
+      rescheduledToTaskId: task.rescheduledToTaskId,
+      rescheduledReason: task.rescheduledReason,
+      rescheduledAt: task.rescheduledAt,
       createdAt: task.createdAt,
       updatedAt: task.updatedAt,
       completedAt: task.completedAt
@@ -430,6 +442,10 @@ export const getWeekSchedule = async (
         isWhatsAppEnabled: task.isWhatsAppEnabled,
         isTelegramEnabled: task.isTelegramEnabled,
         isCallEnabled: task.isCallEnabled,
+        rescheduledFromTaskId: task.rescheduledFromTaskId,
+        rescheduledToTaskId: task.rescheduledToTaskId,
+        rescheduledReason: task.rescheduledReason,
+        rescheduledAt: task.rescheduledAt,
         createdAt: task.createdAt,
         updatedAt: task.updatedAt,
         completedAt: task.completedAt
