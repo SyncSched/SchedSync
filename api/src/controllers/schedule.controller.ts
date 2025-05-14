@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { createSchedule, getSchedule, updateSchedule } from '../services/schedule.service';
+import { createSchedule, getSchedule, updateSchedule, getWeekSchedule } from '../services/schedule.service';
 import { BadUserInputError, EntityNotFoundError } from '../errors';
 import { CreateScheduleInput } from '../models/schedule.model';
 import { generateSchedule } from '../workflow';
@@ -433,6 +433,30 @@ export const cleanupPendingSchedulesHandler = async (req: AuthenticatedRequest, 
         res.status(200).json({ success: true, deletedCount });
     } catch (error) {
         console.error("Error cleaning up pending schedules:", error);
+        next(error);
+    }
+};
+
+/**
+ * Get the schedule for an entire week
+ */
+export const getWeekScheduleHandler = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const userId = req.user?.id;
+        const { startDate, endDate, timezoneOffset } = req.body;
+
+        if (!userId || !startDate || !endDate || timezoneOffset === undefined) {
+            return next(new BadUserInputError({ message: "User ID, start date, end date, or timezone offset is not defined" }));
+        }
+
+        const weekSchedule = await getWeekSchedule(startDate, endDate, userId, timezoneOffset);
+
+        if (!weekSchedule || weekSchedule.length === 0) {
+            return next(new EntityNotFoundError("No schedules found for the specified week"));
+        }
+
+        res.status(200).json(weekSchedule);
+    } catch (error) {
         next(error);
     }
 };

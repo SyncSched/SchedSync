@@ -168,6 +168,39 @@ export interface Schedule {
     }
   };
 
+  export const getWeekSchedule = async (startDate: Date, endDate: Date): Promise<Schedule[]> => {
+    try {
+      const timezoneOffset = new Date().getTimezoneOffset();
+
+      const res = await fetch(`${API_URL}/getWeekSchedule`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getStoredAuthToken()}`
+        },
+        body: JSON.stringify({
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          timezoneOffset: timezoneOffset
+        })
+      });
+
+      if (res.ok) {
+        return res.json();
+      }
+
+      // If no schedules found, return empty array
+      if (res.status === 404) {
+        return [];
+      }
+
+      throw new Error(`Failed to fetch week schedule: ${res.status} ${res.statusText}`);
+    } catch (error) {
+      console.error('Error fetching week schedule:', error);
+      throw error;
+    }
+  };
+
   export const getTodaySchedule = async (): Promise<Schedule> => {
     try {
       const now = new Date();

@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { CalendarEvent as CalendarEventType, Task, getTodaySchedule, updateSchedule } from '@/api/lib';
+import { CalendarEvent as CalendarEventType, Task, getTodaySchedule, getWeekSchedule, updateSchedule } from '@/api/lib';
 import CalendarHeader from './components/CalendarHeader';
 import DayView from './components/DayView';
 import WeekView from './components/WeekView';
@@ -39,9 +39,43 @@ export default function CalendarPage() {
 
   const fetchEvents = async () => {
     try {
-      const schedule = await getTodaySchedule();
-      if (schedule?.originalData) {
-        setEvents(schedule.originalData);
+      if (view === 'day') {
+        // For day view, fetch today's schedule
+        const schedule = await getTodaySchedule();
+        if (schedule?.originalData) {
+          setEvents(schedule.originalData);
+        }
+      } else {
+        // For week view, fetch the entire week's schedule
+        // Calculate start and end dates for the week
+        const weekStart = startOfWeek(currentDate);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6); // 7 days total (0-6)
+
+        console.log(`Fetching week schedule from ${weekStart.toISOString()} to ${weekEnd.toISOString()}`);
+
+        try {
+          const weekSchedules = await getWeekSchedule(weekStart, weekEnd);
+
+          // Combine all tasks from all schedules
+          const allTasks: Task[] = [];
+          weekSchedules.forEach(schedule => {
+            if (schedule?.originalData && schedule.originalData.length > 0) {
+              console.log(`Adding ${schedule.originalData.length} tasks from schedule ${schedule.id}`);
+              allTasks.push(...schedule.originalData);
+            }
+          });
+
+          console.log(`Total tasks for week view: ${allTasks.length}`);
+          setEvents(allTasks);
+        } catch (weekError) {
+          console.error('Error fetching week schedule:', weekError);
+          // If week schedule fails, try to at least show today's schedule
+          const schedule = await getTodaySchedule();
+          if (schedule?.originalData) {
+            setEvents(schedule.originalData);
+          }
+        }
       }
     } catch (error) {
       console.error('Error fetching events:', error);
@@ -75,12 +109,24 @@ export default function CalendarPage() {
       newDate.setHours(hour);
       newEvent.time = newDate.toISOString();
 
-      const updatedEvents = events.map(ev =>
-        'scheduleId' in ev && ev.id === eventId ? newEvent : ev
+      // Get all tasks from the same schedule as the dragged event
+      const tasksFromSameSchedule = events.filter(ev =>
+        'scheduleId' in ev && ev.scheduleId === event.scheduleId
+      ) as Task[];
+
+      // Update the dragged event in the list of tasks from the same schedule
+      const updatedScheduleTasks = tasksFromSameSchedule.map(task =>
+        task.id === eventId ? newEvent : task
       );
 
       try {
-        await updateSchedule(event.scheduleId, updatedEvents as Task[]);
+        // Update only the tasks from the same schedule
+        await updateSchedule(event.scheduleId, updatedScheduleTasks);
+
+        // Update the events in the state by replacing the dragged event
+        const updatedEvents = events.map(ev =>
+          'scheduleId' in ev && ev.id === eventId ? newEvent : ev
+        );
         setEvents(updatedEvents);
       } catch (error) {
         console.error('Error updating event:', error);
@@ -106,10 +152,17 @@ export default function CalendarPage() {
   const handleModalDelete = async (task: Task) => {
     try {
       if ('scheduleId' in task) {
-        const updatedEvents = events.filter(e =>
-          !('scheduleId' in e) || e.id !== task.id
+        // Get all tasks from the same schedule as the task to be deleted
+        const tasksFromSameSchedule = events.filter(e =>
+          'scheduleId' in e && e.scheduleId === task.scheduleId
         ) as Task[];
-        await updateSchedule(task.scheduleId, updatedEvents);
+
+        // Remove the task from its schedule's tasks
+        const updatedScheduleTasks = tasksFromSameSchedule.filter(t =>
+          t.id !== task.id
+        );
+
+        await updateSchedule(task.scheduleId, updatedScheduleTasks);
         await fetchEvents();
       }
       handleModalClose();
@@ -130,14 +183,58 @@ export default function CalendarPage() {
           time: newDate.toISOString()
         };
 
-        const scheduleData = await getTodaySchedule();
-        if (scheduleData) {
-          const updatedTasks = [...scheduleData.originalData, newTask as Task];
-          await updateSchedule(scheduleData.originalData[0].scheduleId, updatedTasks);
+        // Determine which schedule to update based on the selected date
+        let scheduleToUpdate;
+
+        if (view === 'day') {
+          // For day view, use today's schedule
+          scheduleToUpdate = await getTodaySchedule();
+        } else {
+          // For week view, we need to find the correct schedule for the selected date
+          const selectedDay = new Date(newDate);
+
+          // Get the week's schedules
+          const weekStart = startOfWeek(currentDate);
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekEnd.getDate() + 6);
+
+          console.log(`Finding schedule for task on ${selectedDay.toISOString()}`);
+
+          const weekSchedules = await getWeekSchedule(weekStart, weekEnd);
+
+          // First, try to find a schedule that has tasks on the same day
+          const selectedDayString = selectedDay.toDateString();
+          scheduleToUpdate = weekSchedules.find(schedule => {
+            return schedule.originalData.some(task => {
+              const taskDate = new Date(task.time);
+              return taskDate.toDateString() === selectedDayString;
+            });
+          });
+
+          console.log(`Found schedule with tasks on the same day: ${scheduleToUpdate ? 'Yes' : 'No'}`);
+
+          // If no schedule found with tasks on the same day, try to find any schedule with tasks
+          if (!scheduleToUpdate && weekSchedules.length > 0) {
+            // Use the first schedule that has tasks
+            scheduleToUpdate = weekSchedules.find(schedule => schedule.originalData.length > 0);
+            console.log(`Using first schedule with tasks: ${scheduleToUpdate ? scheduleToUpdate.id : 'None found'}`);
+          }
+
+          // If still no schedule found, fall back to today's schedule
+          if (!scheduleToUpdate) {
+            console.log('No suitable schedule found in week view, falling back to today\'s schedule');
+            scheduleToUpdate = await getTodaySchedule();
+          }
+        }
+
+        if (scheduleToUpdate) {
+          const updatedTasks = [...scheduleToUpdate.originalData, newTask as Task];
+          await updateSchedule(scheduleToUpdate.originalData[0].scheduleId, updatedTasks);
           await fetchEvents();
         }
       } else if (modalMode === 'edit' && selectedEvent && 'scheduleId' in selectedEvent) {
-        // Update existing task
+        // Update existing task - this works the same for both day and week views
+        // since we already have the scheduleId from the selected event
         const updatedTasks = events.map(e => {
           if ('scheduleId' in e && e.id === selectedEvent.id) {
             return {
@@ -148,6 +245,7 @@ export default function CalendarPage() {
           }
           return e;
         }) as Task[];
+
         await updateSchedule(selectedEvent.scheduleId, updatedTasks);
         await fetchEvents();
       }
@@ -177,10 +275,17 @@ export default function CalendarPage() {
           }}
           onEventDelete={async event => {
             if ('scheduleId' in event) {
-              const updatedEvents = events.filter(e =>
-                !('scheduleId' in e) || e.id !== event.id
+              // Get all tasks from the same schedule as the event to be deleted
+              const tasksFromSameSchedule = events.filter(e =>
+                'scheduleId' in e && e.scheduleId === event.scheduleId
               ) as Task[];
-              await updateSchedule(event.scheduleId, updatedEvents);
+
+              // Remove the event from its schedule's tasks
+              const updatedScheduleTasks = tasksFromSameSchedule.filter(task =>
+                task.id !== event.id
+              );
+
+              await updateSchedule(event.scheduleId, updatedScheduleTasks);
               await fetchEvents();
             }
           }}
@@ -202,10 +307,17 @@ export default function CalendarPage() {
           }}
           onEventDelete={async event => {
             if ('scheduleId' in event) {
-              const updatedEvents = events.filter(e =>
-                !('scheduleId' in e) || e.id !== event.id
+              // Get all tasks from the same schedule as the event to be deleted
+              const tasksFromSameSchedule = events.filter(e =>
+                'scheduleId' in e && e.scheduleId === event.scheduleId
               ) as Task[];
-              await updateSchedule(event.scheduleId, updatedEvents);
+
+              // Remove the event from its schedule's tasks
+              const updatedScheduleTasks = tasksFromSameSchedule.filter(task =>
+                task.id !== event.id
+              );
+
+              await updateSchedule(event.scheduleId, updatedScheduleTasks);
               await fetchEvents();
             }
           }}

@@ -338,6 +338,105 @@ export const getSchedule = async (
 };
 
 
+/**
+ * Get schedules for an entire week
+ */
+export const getWeekSchedule = async (
+  startDate: string, // Start date of the week (UTC date string)
+  endDate: string,   // End date of the week (UTC date string)
+  userId: string,
+  timezoneOffset: number // Offset in minutes
+): Promise<Partial<Schedule>[]> => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { timezone: true }
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  if (!startDate || !endDate || isNaN(Date.parse(startDate)) || isNaN(Date.parse(endDate))) {
+    throw new Error("Invalid date format received");
+  }
+
+  // Convert to Date objects
+  const startDateObj = new Date(startDate);
+  const endDateObj = new Date(endDate);
+
+  // Determine user timezone and offset
+  const userTimezone = user.timezone || 'UTC';
+
+  console.log('Week Schedule Query Range:', {
+    userTimezone,
+    startDate: startDateObj.toISOString(),
+    endDate: endDateObj.toISOString(),
+  });
+
+  // First, find all schedules for this user
+  const allUserSchedules = await prisma.schedule.findMany({
+    where: {
+      userId: userId,
+      status: 'completed', // Only get completed schedules
+    },
+    include: {
+      user: true,
+      originalData: {
+        select: taskSelect,
+      },
+    },
+  });
+
+  // Filter schedules that have tasks within the date range
+  const schedulesWithTasksInRange = allUserSchedules.filter(schedule => {
+    // Check if any task in this schedule falls within our date range
+    return schedule.originalData.some(task => {
+      const taskDate = new Date(task.time);
+      return taskDate >= startDateObj && taskDate <= endDateObj;
+    });
+  });
+
+  console.log(`Found ${schedulesWithTasksInRange.length} schedules with tasks in the date range`);
+
+  // If no schedules found, return empty array
+  if (!schedulesWithTasksInRange || schedulesWithTasksInRange.length === 0) {
+    return [];
+  }
+
+  // Process and return the schedules
+  return schedulesWithTasksInRange.map(schedule => ({
+    ...schedule,
+    originalData: schedule.originalData
+      // Filter tasks to only include those within the date range
+      .filter(task => {
+        const taskDate = new Date(task.time);
+        return taskDate >= startDateObj && taskDate <= endDateObj;
+      })
+      // Sort tasks by time
+      .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
+      // Map to the expected format
+      .map((task: TaskWithNotifications) => ({
+        id: task.id,
+        name: task.name,
+        description: task.description,
+        notes: task.notes,
+        time: task.time,
+        duration: task.duration,
+        status: task.status,
+        priority: task.priority,
+        location: task.location,
+        scheduleId: task.scheduleId,
+        isEmailEnabled: task.isEmailEnabled,
+        isWhatsAppEnabled: task.isWhatsAppEnabled,
+        isTelegramEnabled: task.isTelegramEnabled,
+        isCallEnabled: task.isCallEnabled,
+        createdAt: task.createdAt,
+        updatedAt: task.updatedAt,
+        completedAt: task.completedAt
+      }))
+  }));
+};
+
 export const updateSchedule = async (
   scheduleId: string,
   data: { originalData: Task[] }
