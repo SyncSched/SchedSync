@@ -21,7 +21,7 @@ export default function Dashboard() {
   const {  isAuthenticated } = useAuth();
   const { isDark } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
-  const [timeframe, setTimeframe] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
+  const [timeframe, setTimeframe] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('weekly');
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +51,7 @@ export default function Dashboard() {
     }
   }, [isAuthenticated, timeframe]);
 
-  const handleTimeframeChange = (newTimeframe: 'daily' | 'weekly' | 'monthly') => {
+  const handleTimeframeChange = (newTimeframe: 'daily' | 'weekly' | 'monthly' | 'yearly') => {
     setTimeframe(newTimeframe);
     // The useEffect will automatically fetch new data based on the timeframe
   };
@@ -69,7 +69,7 @@ export default function Dashboard() {
       {/* Timeframe selector */}
       <div className="mb-6 flex justify-end">
         <div className={`inline-flex rounded-md shadow-sm ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-          {(['daily', 'weekly', 'monthly'] as const).map((option) => (
+          {(['daily', 'weekly', 'monthly', 'yearly'] as const).map((option) => (
             <button
               key={option}
               onClick={() => handleTimeframeChange(option)}
@@ -82,7 +82,7 @@ export default function Dashboard() {
                   ? 'text-gray-300 hover:bg-gray-700'
                   : 'text-gray-700 hover:bg-gray-100'
               } ${option === 'daily' ? 'rounded-l-md' : ''} ${
-                option === 'monthly' ? 'rounded-r-md' : ''
+                option === 'yearly' ? 'rounded-r-md' : ''
               } transition-colors duration-200`}
             >
               {option.charAt(0).toUpperCase() + option.slice(1)}

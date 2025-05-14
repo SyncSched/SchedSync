@@ -80,7 +80,7 @@ const categorizeTask = (taskName: string): 'work' | 'personal' | 'health' | 'lea
 };
 
 // Get task statistics
-export const getTaskStats = async (userId: string, timeframe: 'daily' | 'weekly' | 'monthly' = 'weekly'): Promise<TaskStats> => {
+export const getTaskStats = async (userId: string, timeframe: 'daily' | 'weekly' | 'monthly' | 'yearly' = 'weekly'): Promise<TaskStats> => {
   let startDate: Date, endDate: Date;
   const now = new Date();
 
@@ -96,6 +96,12 @@ export const getTaskStats = async (userId: string, timeframe: 'daily' | 'weekly'
     case 'monthly':
       startDate = startOfMonth(now);
       endDate = endOfMonth(now);
+      break;
+    case 'yearly':
+      // Start from January 1st of the current year
+      startDate = new Date(now.getFullYear(), 0, 1);
+      // End on December 31st of the current year
+      endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
       break;
     default:
       startDate = startOfWeek(now, { weekStartsOn: 1 });
@@ -136,7 +142,7 @@ export const getTaskStats = async (userId: string, timeframe: 'daily' | 'weekly'
 };
 
 // Get category breakdown
-export const getCategoryBreakdown = async (userId: string, timeframe: 'daily' | 'weekly' | 'monthly' = 'weekly'): Promise<CategoryBreakdown> => {
+export const getCategoryBreakdown = async (userId: string, timeframe: 'daily' | 'weekly' | 'monthly' | 'yearly' = 'weekly'): Promise<CategoryBreakdown> => {
   let startDate: Date, endDate: Date;
   const now = new Date();
 
@@ -152,6 +158,12 @@ export const getCategoryBreakdown = async (userId: string, timeframe: 'daily' | 
     case 'monthly':
       startDate = startOfMonth(now);
       endDate = endOfMonth(now);
+      break;
+    case 'yearly':
+      // Start from January 1st of the current year
+      startDate = new Date(now.getFullYear(), 0, 1);
+      // End on December 31st of the current year
+      endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
       break;
     default:
       startDate = startOfWeek(now, { weekStartsOn: 1 });
@@ -194,7 +206,7 @@ export const getCategoryBreakdown = async (userId: string, timeframe: 'daily' | 
 };
 
 // Get task completion data
-export const getTaskCompletionData = async (userId: string, timeframe: 'daily' | 'weekly' | 'monthly' = 'weekly'): Promise<TaskCompletionData> => {
+export const getTaskCompletionData = async (userId: string, timeframe: 'daily' | 'weekly' | 'monthly' | 'yearly' = 'weekly'): Promise<TaskCompletionData> => {
   let startDate: Date, endDate: Date;
   const now = new Date();
   let labels: string[] = [];
@@ -215,6 +227,13 @@ export const getTaskCompletionData = async (userId: string, timeframe: 'daily' |
       startDate = startOfMonth(now);
       endDate = endOfMonth(now);
       labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+      break;
+    case 'yearly':
+      // Start from January 1st of the current year
+      startDate = new Date(now.getFullYear(), 0, 1);
+      // End on December 31st of the current year
+      endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
+      labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       break;
     default:
       startDate = startOfWeek(now, { weekStartsOn: 1 });
@@ -275,7 +294,7 @@ export const getTaskCompletionData = async (userId: string, timeframe: 'daily' |
   }
 
   // For monthly timeframe
-  else {
+  else if (timeframe === 'monthly') {
     schedules.forEach(schedule => {
       schedule.originalData.forEach(task => {
         const date = new Date(task.time);
@@ -295,6 +314,21 @@ export const getTaskCompletionData = async (userId: string, timeframe: 'daily' |
     });
   }
 
+  // For yearly timeframe
+  else if (timeframe === 'yearly') {
+    schedules.forEach(schedule => {
+      schedule.originalData.forEach(task => {
+        const date = new Date(task.time);
+        const month = date.getMonth(); // 0-11 for Jan-Dec
+
+        total[month]++;
+        if (task.status === TaskStatus.COMPLETED) {
+          completed[month]++;
+        }
+      });
+    });
+  }
+
   return {
     labels,
     completed,
@@ -303,7 +337,7 @@ export const getTaskCompletionData = async (userId: string, timeframe: 'daily' |
 };
 
 // Get productivity trend data
-export const getProductivityTrend = async (userId: string, timeframe: 'daily' | 'weekly' | 'monthly' = 'weekly'): Promise<ProductivityTrend> => {
+export const getProductivityTrend = async (userId: string, timeframe: 'daily' | 'weekly' | 'monthly' | 'yearly' = 'weekly'): Promise<ProductivityTrend> => {
   let startDate: Date, endDate: Date;
   const now = new Date();
   let labels: string[] = [];
@@ -324,6 +358,13 @@ export const getProductivityTrend = async (userId: string, timeframe: 'daily' | 
       startDate = startOfMonth(now);
       endDate = endOfMonth(now);
       labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+      break;
+    case 'yearly':
+      // Start from January 1st of the current year
+      startDate = new Date(now.getFullYear(), 0, 1);
+      // End on December 31st of the current year
+      endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
+      labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       break;
     default:
       startDate = startOfWeek(now, { weekStartsOn: 1 });
@@ -435,7 +476,7 @@ export const getProductivityTrend = async (userId: string, timeframe: 'daily' | 
         }
       });
     });
-  } else { // Monthly
+  } else if (timeframe === 'monthly') {
     schedules.forEach(schedule => {
       schedule.originalData.forEach(task => {
         const date = new Date(task.time);
@@ -478,6 +519,46 @@ export const getProductivityTrend = async (userId: string, timeframe: 'daily' | 
             break;
           default:
             priorityWeights[weekIndex] += 1;
+        }
+      });
+    });
+  } else if (timeframe === 'yearly') {
+    schedules.forEach(schedule => {
+      schedule.originalData.forEach(task => {
+        const date = new Date(task.time);
+        const month = date.getMonth(); // 0-11 for Jan-Dec
+
+        // Count the task
+        taskCounts[month]++;
+
+        // Count completed tasks
+        if (task.status === TaskStatus.COMPLETED) {
+          completedCounts[month]++;
+
+          // Check if task was completed on time
+          if (task.completedAt) {
+            const completedTime = new Date(task.completedAt);
+            const scheduledEndTime = new Date(date.getTime() + task.duration * 60000);
+
+            if (completedTime <= scheduledEndTime) {
+              onTimeCounts[month]++;
+            }
+          }
+        }
+
+        // Add priority weight
+        switch (task.priority) {
+          case Priority.HIGH:
+            priorityWeights[month] += 3;
+            break;
+          case Priority.MEDIUM:
+            priorityWeights[month] += 2;
+            break;
+          case Priority.LOW:
+            priorityWeights[month] += 1;
+            break;
+          default:
+            priorityWeights[month] += 1;
         }
       });
     });
@@ -691,7 +772,7 @@ export const getMostActiveHour = async (userId: string): Promise<string> => {
 };
 
 // Get all dashboard data
-export const getDashboardData = async (userId: string, timeframe: 'daily' | 'weekly' | 'monthly' = 'weekly'): Promise<DashboardData> => {
+export const getDashboardData = async (userId: string, timeframe: 'daily' | 'weekly' | 'monthly' | 'yearly' = 'weekly'): Promise<DashboardData> => {
   const [
     taskStats,
     categoryBreakdown,

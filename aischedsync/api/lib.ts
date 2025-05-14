@@ -641,7 +641,7 @@ export const getUpcomingNotifications = async (): Promise<Notification[]> => {
 /**
  * Gets all dashboard data for the user
  */
-export const getDashboardData = async (timeframe: 'daily' | 'weekly' | 'monthly' = 'weekly'): Promise<DashboardData> => {
+export const getDashboardData = async (timeframe: 'daily' | 'weekly' | 'monthly' | 'yearly' = 'weekly'): Promise<DashboardData> => {
   const token = getStoredAuthToken();
 
   if (token && !isTokenValid(token)) {
@@ -665,7 +665,7 @@ export const getDashboardData = async (timeframe: 'daily' | 'weekly' | 'monthly'
 /**
  * Gets task statistics for the user
  */
-export const getTaskStats = async (timeframe: 'daily' | 'weekly' | 'monthly' = 'weekly'): Promise<TaskStats> => {
+export const getTaskStats = async (timeframe: 'daily' | 'weekly' | 'monthly' | 'yearly' = 'weekly'): Promise<TaskStats> => {
   const token = getStoredAuthToken();
 
   if (token && !isTokenValid(token)) {
@@ -689,7 +689,7 @@ export const getTaskStats = async (timeframe: 'daily' | 'weekly' | 'monthly' = '
 /**
  * Gets category breakdown for the user
  */
-export const getCategoryBreakdown = async (timeframe: 'daily' | 'weekly' | 'monthly' = 'weekly'): Promise<CategoryBreakdown> => {
+export const getCategoryBreakdown = async (timeframe: 'daily' | 'weekly' | 'monthly' | 'yearly' = 'weekly'): Promise<CategoryBreakdown> => {
   const token = getStoredAuthToken();
 
   if (token && !isTokenValid(token)) {
@@ -713,7 +713,7 @@ export const getCategoryBreakdown = async (timeframe: 'daily' | 'weekly' | 'mont
 /**
  * Gets task completion data for the user
  */
-export const getTaskCompletionData = async (timeframe: 'daily' | 'weekly' | 'monthly' = 'weekly'): Promise<TaskCompletionData> => {
+export const getTaskCompletionData = async (timeframe: 'daily' | 'weekly' | 'monthly' | 'yearly' = 'weekly'): Promise<TaskCompletionData> => {
   const token = getStoredAuthToken();
 
   if (token && !isTokenValid(token)) {
@@ -737,7 +737,7 @@ export const getTaskCompletionData = async (timeframe: 'daily' | 'weekly' | 'mon
 /**
  * Gets productivity trend data for the user
  */
-export const getProductivityTrend = async (timeframe: 'daily' | 'weekly' | 'monthly' = 'weekly'): Promise<ProductivityTrend> => {
+export const getProductivityTrend = async (timeframe: 'daily' | 'weekly' | 'monthly' | 'yearly' = 'weekly'): Promise<ProductivityTrend> => {
   const token = getStoredAuthToken();
 
   if (token && !isTokenValid(token)) {

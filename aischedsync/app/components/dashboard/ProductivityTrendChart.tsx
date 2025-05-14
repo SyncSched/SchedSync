@@ -26,7 +26,7 @@ ChartJS.register(
 
 interface ProductivityTrendChartProps {
   isDark: boolean;
-  timeframe: 'daily' | 'weekly' | 'monthly';
+  timeframe: 'daily' | 'weekly' | 'monthly' | 'yearly';
   trendData?: ProductivityTrend;
 }
 
@@ -40,6 +40,8 @@ export default function ProductivityTrendChart({ isDark, timeframe, trendData }:
         return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
       case 'monthly':
         return ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+      case 'yearly':
+        return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       default:
         return [];
     }
@@ -48,17 +50,31 @@ export default function ProductivityTrendChart({ isDark, timeframe, trendData }:
   // Generate default data based on timeframe if no data is provided
   const getDefaultData = (type: 'productivityScore' | 'completionRate') => {
     if (type === 'productivityScore') {
-      return timeframe === 'daily'
-        ? [0, 45, 65, 78, 80, 74, 68, 50]
-        : timeframe === 'weekly'
-        ? [72, 68, 75, 82, 78, 65, 70]
-        : [74, 78, 72, 76];
+      switch (timeframe) {
+        case 'daily':
+          return [0, 45, 65, 78, 80, 74, 68, 50];
+        case 'weekly':
+          return [72, 68, 75, 82, 78, 65, 70];
+        case 'monthly':
+          return [74, 78, 72, 76];
+        case 'yearly':
+          return [70, 72, 75, 78, 82, 80, 78, 75, 72, 74, 76, 78];
+        default:
+          return [];
+      }
     } else {
-      return timeframe === 'daily'
-        ? [0, 50, 70, 82, 75, 68, 72, 60]
-        : timeframe === 'weekly'
-        ? [68, 75, 80, 76, 82, 70, 75]
-        : [72, 80, 76, 78];
+      switch (timeframe) {
+        case 'daily':
+          return [0, 50, 70, 82, 75, 68, 72, 60];
+        case 'weekly':
+          return [68, 75, 80, 76, 82, 70, 75];
+        case 'monthly':
+          return [72, 80, 76, 78];
+        case 'yearly':
+          return [65, 68, 72, 75, 80, 78, 75, 72, 70, 72, 75, 78];
+        default:
+          return [];
+      }
     }
   };
 

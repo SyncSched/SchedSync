@@ -22,7 +22,7 @@ ChartJS.register(
 
 interface TaskCompletionChartProps {
   isDark: boolean;
-  timeframe: 'daily' | 'weekly' | 'monthly';
+  timeframe: 'daily' | 'weekly' | 'monthly' | 'yearly';
   completionData?: TaskCompletionData;
 }
 
@@ -36,6 +36,8 @@ export default function TaskCompletionChart({ isDark, timeframe, completionData 
         return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
       case 'monthly':
         return ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+      case 'yearly':
+        return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       default:
         return [];
     }
@@ -44,17 +46,31 @@ export default function TaskCompletionChart({ isDark, timeframe, completionData 
   // Generate default data based on timeframe if no data is provided
   const getDefaultData = (type: 'completed' | 'total') => {
     if (type === 'completed') {
-      return timeframe === 'daily'
-        ? [1, 2, 4, 5, 6, 3, 2, 1]
-        : timeframe === 'weekly'
-        ? [5, 7, 4, 6, 8, 3, 5]
-        : [18, 22, 19, 24];
+      switch (timeframe) {
+        case 'daily':
+          return [1, 2, 4, 5, 6, 3, 2, 1];
+        case 'weekly':
+          return [5, 7, 4, 6, 8, 3, 5];
+        case 'monthly':
+          return [18, 22, 19, 24];
+        case 'yearly':
+          return [22, 25, 30, 28, 32, 35, 30, 28, 25, 30, 32, 35];
+        default:
+          return [];
+      }
     } else {
-      return timeframe === 'daily'
-        ? [2, 3, 5, 7, 8, 4, 3, 2]
-        : timeframe === 'weekly'
-        ? [8, 9, 6, 8, 10, 5, 7]
-        : [25, 28, 24, 30];
+      switch (timeframe) {
+        case 'daily':
+          return [2, 3, 5, 7, 8, 4, 3, 2];
+        case 'weekly':
+          return [8, 9, 6, 8, 10, 5, 7];
+        case 'monthly':
+          return [25, 28, 24, 30];
+        case 'yearly':
+          return [30, 32, 38, 35, 40, 42, 38, 35, 32, 38, 40, 45];
+        default:
+          return [];
+      }
     }
   };
 
