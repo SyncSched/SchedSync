@@ -2,6 +2,9 @@ import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { bot } from '../utils/telegram';
 import { validateAuthToken } from '../utils/authToken';
+import { disconnectTelegramForUser } from '../services/user.service';
+import { AuthenticatedRequest } from '../types/request';
+
 
 const prisma = new PrismaClient();
 
@@ -121,5 +124,23 @@ export const setTelegramWebhook = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error setting Telegram webhook:', error);
     return res.status(500).json({ error: 'Error setting webhook' });
+  }
+};
+
+/**
+ * Disconnect Telegram integration for the authenticated user
+ */
+export const disconnectTelegramHandler = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    // Assuming userId is available from auth middleware (req.user.id)
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    await disconnectTelegramForUser(userId);
+    return res.json({ success: true, message: 'Telegram integration disconnected.' });
+  } catch (error) {
+    console.error('Error disconnecting Telegram integration:', error);
+    return res.status(500).json({ error: 'Failed to disconnect Telegram integration.' });
   }
 };

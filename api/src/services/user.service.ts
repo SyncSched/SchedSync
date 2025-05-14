@@ -114,6 +114,19 @@ export const updateUserSettings = async (
   });
 };
 
+export const disconnectTelegramForUser = async (userId: string): Promise<void> => {
+  if (!userId) {
+    throw new BadUserInputError({ message: 'User ID is required' });
+  }
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      telegramChatId: null,
+      isTelegramEnabled: false
+    }
+  });
+};
+
 export const getUserSettings = async (userId: string): Promise<UserSettings | null> => {
   if (!userId) {
     throw new BadUserInputError({ message: 'User ID is required' });

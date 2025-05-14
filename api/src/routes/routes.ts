@@ -10,7 +10,7 @@ import {
 import { updateTaskNotificationSettings } from '../controllers/task.controller';
 import { getUpcomingNotificationsHandler , updateNotificationTimeHandler, deleteNotificationHandler } from '../controllers/notification.controller';
 import { getTelegramAuthLink } from '../controllers/notification.controller';
-import { telegramWebhookHandler, setTelegramWebhook } from '../controllers/telegram.controller';
+import { telegramWebhookHandler, setTelegramWebhook , disconnectTelegramHandler } from '../controllers/telegram.controller';
 import {
     getCalendarEventsHandler,
     checkCalendarIntegrationHandler,
@@ -67,6 +67,7 @@ export const attachPrivateRoutes = (app: any): void => {
     // Telegram routes
     app.get('/users/:userId/telegram-auth', getTelegramAuthLink);
     app.post('/telegram/set-webhook', setTelegramWebhook);
+    app.delete('/users/telegram-integration', disconnectTelegramHandler);
 
     // Calendar routes
     app.get('/calendar/events', getCalendarEventsHandler);

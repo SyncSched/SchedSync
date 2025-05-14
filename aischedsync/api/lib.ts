@@ -922,3 +922,40 @@ export const deleteNotification = async (notificationId: string): Promise<void> 
     throw new Error('Failed to delete notification');
   }
 };
+
+/**
+ * Remove Telegram integration
+ */
+export const removeTelegramIntegration = async (): Promise<boolean> => {
+  try {
+    const token = getStoredAuthToken();
+
+    if (token && !isTokenValid(token)) {
+      throw new Error('Token expired');
+    }
+
+    // Make a direct API call to update the user settings
+    const response = await fetch(`${API_URL}/user/settings`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        notificationPreferences: {
+          isTelegramEnabled: false,
+          telegramChatId: null
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to remove Telegram integration');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error removing Telegram integration:', error);
+    return false;
+  }
+};

@@ -67,6 +67,13 @@ export const pageMetadata = {
     ogTitle: "Get Started with SchedSync",
     ogDescription: "Complete your profile setup to get the most out of your AI task scheduler.",
   },
+  integrations: {
+    title: "Integrations - SchedSync",
+    description: "Connect your Google Calendar for a seamless scheduling experience. Integrate with Telegram for instant notifications.",
+    keywords: "integrations, Google Calendar, Telegram, task notifications, event management",
+    ogTitle: "SchedSync Integrations - Seamless Scheduling",
+    ogDescription: "Connect your Google Calendar and Telegram for a seamless scheduling experience.", 
+  }
 };
 
 // Structured data for rich results

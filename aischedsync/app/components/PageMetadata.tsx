@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { pageMetadata, siteConfig } from '../metadata-config';
 
-type PageType = 'home' | 'calendar' | 'reminders' | 'settings' | 'login' | 'onboarding';
+type PageType = 'home' | 'calendar' | 'reminders' | 'settings' | 'login' | 'onboarding' | 'integrations';
 
 const PageMetadata = () => {
   const pathname = usePathname();
@@ -25,7 +25,10 @@ const PageMetadata = () => {
       pageType = 'login';
     } else if (pathname === '/onboarding') {
       pageType = 'onboarding';
+    } else if (pathname === '/integrations') {
+      pageType = 'integrations'; 
     }
+
     
     // Get the metadata for this page
     const metadata = pageMetadata[pageType];
