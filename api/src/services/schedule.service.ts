@@ -351,7 +351,7 @@ export const getSchedule = async (
 
 
 /**
- * Get schedules for an entire week
+ * Get all schedules for an entire week regardless of status
  */
 export const getWeekSchedule = async (
   startDate: string, // Start date of the week (UTC date string)
@@ -372,24 +372,67 @@ export const getWeekSchedule = async (
     throw new Error("Invalid date format received");
   }
 
-  // Convert to Date objects
+  // Convert to Date objects - these are in UTC
   const startDateObj = new Date(startDate);
   const endDateObj = new Date(endDate);
 
   // Determine user timezone and offset
   const userTimezone = user.timezone || 'UTC';
 
+  // Calculate the timezone offset for the user
+  const calculatedOffset = getTimezoneOffset(userTimezone, startDateObj);
+
+  // Adjust start date for timezone
+  // Create a formatter to get the date in user's timezone
+  const startFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: userTimezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+
+  // Get the date parts for start date in the user's timezone
+  const startDateParts = startFormatter.formatToParts(startDateObj);
+  const startYear = parseInt(startDateParts.find(part => part.type === 'year')?.value || '2025');
+  const startMonth = parseInt(startDateParts.find(part => part.type === 'month')?.value || '01') - 1; // Month is 0-indexed
+  const startDay = parseInt(startDateParts.find(part => part.type === 'day')?.value || '01');
+
+  // Create the adjusted start time in UTC
+  const adjustedStartDate = new Date(Date.UTC(startYear, startMonth, startDay, 0, 0, 0, 0));
+  adjustedStartDate.setUTCMinutes(adjustedStartDate.getUTCMinutes() + calculatedOffset);
+
+  // Adjust end date for timezone
+  const endFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: userTimezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+
+  // Get the date parts for end date in the user's timezone
+  const endDateParts = endFormatter.formatToParts(endDateObj);
+  const endYear = parseInt(endDateParts.find(part => part.type === 'year')?.value || '2025');
+  const endMonth = parseInt(endDateParts.find(part => part.type === 'month')?.value || '01') - 1; // Month is 0-indexed
+  const endDay = parseInt(endDateParts.find(part => part.type === 'day')?.value || '01');
+
+  // Create the adjusted end time in UTC
+  const adjustedEndDate = new Date(Date.UTC(endYear, endMonth, endDay, 23, 59, 59, 999));
+  adjustedEndDate.setUTCMinutes(adjustedEndDate.getUTCMinutes() + calculatedOffset);
+
   console.log('Week Schedule Query Range:', {
     userTimezone,
-    startDate: startDateObj.toISOString(),
-    endDate: endDateObj.toISOString(),
+    calculatedOffset,
+    originalStartDate: startDateObj.toISOString(),
+    originalEndDate: endDateObj.toISOString(),
+    adjustedStartDate: adjustedStartDate.toISOString(),
+    adjustedEndDate: adjustedEndDate.toISOString(),
   });
 
   // First, find all schedules for this user
   const allUserSchedules = await prisma.schedule.findMany({
     where: {
       userId: userId,
-      status: 'completed', // Only get completed schedules
+      // Removed status filter to get all schedules regardless of status
     },
     include: {
       user: true,
@@ -404,11 +447,11 @@ export const getWeekSchedule = async (
     // Check if any task in this schedule falls within our date range
     return schedule.originalData.some(task => {
       const taskDate = new Date(task.time);
-      return taskDate >= startDateObj && taskDate <= endDateObj;
+      return taskDate >= adjustedStartDate && taskDate <= adjustedEndDate;
     });
   });
 
-  console.log(`Found ${schedulesWithTasksInRange.length} schedules with tasks in the date range`);
+  console.log(`Found ${schedulesWithTasksInRange.length} schedules with tasks in the date range (all statuses)`);
 
   // If no schedules found, return empty array
   if (!schedulesWithTasksInRange || schedulesWithTasksInRange.length === 0) {
@@ -422,7 +465,7 @@ export const getWeekSchedule = async (
       // Filter tasks to only include those within the date range
       .filter(task => {
         const taskDate = new Date(task.time);
-        return taskDate >= startDateObj && taskDate <= endDateObj;
+        return taskDate >= adjustedStartDate && taskDate <= adjustedEndDate;
       })
       // Sort tasks by time
       .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
