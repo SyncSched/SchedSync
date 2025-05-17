@@ -12,6 +12,12 @@ import { getUpcomingNotificationsHandler , updateNotificationTimeHandler, delete
 import { getTelegramAuthLink } from '../controllers/notification.controller';
 import { telegramWebhookHandler, setTelegramWebhook , disconnectTelegramHandler } from '../controllers/telegram.controller';
 import {
+    getUserGoalsHandler,
+    createGoalHandler,
+    updateGoalHandler,
+    deleteGoalHandler
+} from '../controllers/goal.controller';
+import {
     getCalendarEventsHandler,
     checkCalendarIntegrationHandler,
     removeCalendarIntegrationHandler,
@@ -87,4 +93,10 @@ export const attachPrivateRoutes = (app: any): void => {
     app.get('/dashboard/streak-data', getStreakDataHandler);
     app.get('/dashboard/upcoming-tasks', getUpcomingTasksHandler);
     app.get('/dashboard/most-active-hour', getMostActiveHourHandler);
+
+    // Goal routes
+    app.get('/goals', getUserGoalsHandler);
+    app.post('/goals', createGoalHandler);
+    app.put('/goals/:goalId', updateGoalHandler);
+    app.delete('/goals/:goalId', deleteGoalHandler);
 }

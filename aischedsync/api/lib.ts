@@ -47,6 +47,15 @@ export interface UserSettings {
   } | null;
 }
 
+export interface Goal {
+    id: string;
+    title: string;
+    isCompleted: boolean;
+    userId: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
 export interface User {
     id?: string;
     email: string;
@@ -55,6 +64,7 @@ export interface User {
     googleId: string;
     schedules?: Schedule[];
     createdAt: Date;
+    goals?: Goal[];
 }
 
 export interface UserInfo{
@@ -493,8 +503,103 @@ export const updateUserSettings = async (settings: NotificationSettings): Promis
 };
 
 /**
- * Gets the user's settings
+ * Gets all goals for the current user
  */
+export const getUserGoals = async (): Promise<Goal[]> => {
+  const token = getStoredAuthToken();
+
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/goals`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch goals');
+  }
+
+  return await response.json();
+};
+
+/**
+ * Creates a new goal
+ */
+export const createGoal = async (title: string): Promise<Goal> => {
+  const token = getStoredAuthToken();
+
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/goals`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ title })
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to create goal');
+  }
+
+  return await response.json();
+};
+
+/**
+ * Updates a goal
+ */
+export const updateGoal = async (goalId: string, data: { title?: string; isCompleted?: boolean }): Promise<Goal> => {
+  const token = getStoredAuthToken();
+
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/goals/${goalId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to update goal');
+  }
+
+  return await response.json();
+};
+
+/**
+ * Deletes a goal
+ */
+export const deleteGoal = async (goalId: string): Promise<void> => {
+  const token = getStoredAuthToken();
+
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/goals/${goalId}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to delete goal');
+  }
+};
+
 export const getUserSettings = async (): Promise<UserSettings> => {
   const token = getStoredAuthToken();
 

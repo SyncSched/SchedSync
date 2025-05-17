@@ -34,7 +34,7 @@ export default function Home() {
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [showTaskStatusModal, setShowTaskStatusModal] = useState(false);
   const [selectedPastTask, setSelectedPastTask] = useState<Task | null>(null);
-  const [goals, setGoals] = useState<{ id: number; title: string; isCompleted: boolean; }[]>([]);
+  // Goals are now managed by the Goals component
   const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false);
   const { isDark } = useTheme();
 
@@ -405,29 +405,7 @@ export default function Home() {
     }
   };
 
-  const handleGoalAdd = (title: string) => {
-    setGoals(prev => [...prev, {
-      id: Date.now(),
-      title,
-      isCompleted: false
-    }]);
-  };
-
-  const handleGoalDelete = (id: number) => {
-    setGoals(prev => prev.filter(goal => goal.id !== id));
-  };
-
-  const handleGoalEdit = (id: number, newTitle: string) => {
-    setGoals(prev => prev.map(goal =>
-      goal.id === id ? { ...goal, title: newTitle } : goal
-    ));
-  };
-
-  const handleGoalToggle = (id: number) => {
-    setGoals(prev => prev.map(goal =>
-      goal.id === id ? { ...goal, isCompleted: !goal.isCompleted } : goal
-    ));
-  };
+  // Goal handlers are now managed by the Goals component
 
   const renderTaskTime = (task: Task) => {
     return formatToHHMM(task.time);
@@ -453,13 +431,7 @@ export default function Home() {
             </div>
 
             <div className={`w-full md:w-80 space-y-4 ${isDark ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}>
-              <Goals
-                goals={goals}
-                onGoalAdd={handleGoalAdd}
-                onGoalDelete={handleGoalDelete}
-                onGoalEdit={handleGoalEdit}
-                onGoalToggle={handleGoalToggle}
-              />
+              <Goals />
 
               <RescheduledTasks
                 tasks={rescheduledTasks}
