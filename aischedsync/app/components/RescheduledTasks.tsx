@@ -41,7 +41,7 @@ export default function RescheduledTasks({
           No rescheduled tasks
         </div>
       ) : (
-        <div className="space-y-3 mb-4 max-h-[300px] overflow-y-auto">
+        <div className="space-y-3 mb-4 max-h-[200px] overflow-y-auto">
           {tasks.map((task) => (
             <div
               key={task.id}

@@ -55,7 +55,7 @@ export default function Goals({
         <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'} transition-colors duration-300`}>{goals.length}/3</span>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2 max-h-[200px] overflow-y-auto">
         {goals.map((goal) => (
           <div
             key={goal.id}
