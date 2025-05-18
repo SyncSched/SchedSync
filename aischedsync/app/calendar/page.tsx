@@ -149,6 +149,28 @@ export default function CalendarPage() {
     setSelectedHour(null);
   };
 
+  const handleViewRelatedTask = async (taskId: string) => {
+    try {
+      // Find the task in the current events list
+      const relatedTask = events.find(event =>
+        'scheduleId' in event && event.id === taskId
+      ) as Task | undefined;
+
+      if (relatedTask) {
+        // If the task is in the current list, just select it
+        setSelectedEvent(relatedTask);
+        setModalMode('edit');
+      } else {
+        // If not found, we could fetch it from the server
+        // For now, just show an alert
+        alert('Task not found in current view. Try looking for it in the main schedule.');
+      }
+    } catch (error) {
+      console.error('Error viewing related task:', error);
+      alert('Failed to view related task');
+    }
+  };
+
   const handleModalDelete = async (task: Task) => {
     try {
       if ('scheduleId' in task) {
@@ -338,6 +360,7 @@ export default function CalendarPage() {
         >
           <TaskForm
             mode={modalMode}
+            onViewRelatedTask={handleViewRelatedTask}
             initialTask={{
               name: selectedEvent && 'scheduleId' in selectedEvent ? selectedEvent.name :
                     selectedEvent && 'summary' in selectedEvent ? selectedEvent.summary : '',
@@ -357,7 +380,12 @@ export default function CalendarPage() {
               isEmailEnabled: selectedEvent && 'scheduleId' in selectedEvent ? selectedEvent.isEmailEnabled : false,
               isWhatsAppEnabled: selectedEvent && 'scheduleId' in selectedEvent ? selectedEvent.isWhatsAppEnabled : false,
               isTelegramEnabled: selectedEvent && 'scheduleId' in selectedEvent ? selectedEvent.isTelegramEnabled : false,
-              isCallEnabled: selectedEvent && 'scheduleId' in selectedEvent ? selectedEvent.isCallEnabled : false
+              isCallEnabled: selectedEvent && 'scheduleId' in selectedEvent ? selectedEvent.isCallEnabled : false,
+              // Rescheduled task properties
+              rescheduledFromTaskId: selectedEvent && 'scheduleId' in selectedEvent ? selectedEvent.rescheduledFromTaskId : undefined,
+              rescheduledToTaskId: selectedEvent && 'scheduleId' in selectedEvent ? selectedEvent.rescheduledToTaskId : undefined,
+              rescheduledReason: selectedEvent && 'scheduleId' in selectedEvent ? selectedEvent.rescheduledReason : undefined,
+              rescheduledAt: selectedEvent && 'scheduleId' in selectedEvent ? selectedEvent.rescheduledAt : undefined
             }}
             onSubmit={(formData) => {
               // Convert ScheduleTaskFormData to TaskFormData

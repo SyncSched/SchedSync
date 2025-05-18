@@ -19,13 +19,10 @@ const taskSelect = {
   isWhatsAppEnabled: true,
   isTelegramEnabled: true,
   isCallEnabled: true,
-  rescheduledFromTaskId: true,
-  rescheduledToTaskId: true,
-  rescheduledReason: true,
-  rescheduledAt: true,
   createdAt: true,
   updatedAt: true,
-  completedAt: true
+  completedAt: true,
+  rescheduledTasks: true // Include the rescheduled tasks relation
 } as const;
 
 type TaskWithNotifications = Prisma.TaskGetPayload<{
@@ -301,13 +298,10 @@ export const getSchedule = async (
         isWhatsAppEnabled: task.isWhatsAppEnabled,
         isTelegramEnabled: task.isTelegramEnabled,
         isCallEnabled: task.isCallEnabled,
-        rescheduledFromTaskId: task.rescheduledFromTaskId,
-        rescheduledToTaskId: task.rescheduledToTaskId,
-        rescheduledReason: task.rescheduledReason,
-        rescheduledAt: task.rescheduledAt,
         createdAt: task.createdAt,
         updatedAt: task.updatedAt,
-        completedAt: task.completedAt
+        completedAt: task.completedAt,
+        rescheduledTasks: task.rescheduledTasks
       }));
   }
 
@@ -338,13 +332,10 @@ export const getSchedule = async (
       isWhatsAppEnabled: task.isWhatsAppEnabled,
       isTelegramEnabled: task.isTelegramEnabled,
       isCallEnabled: task.isCallEnabled,
-      rescheduledFromTaskId: task.rescheduledFromTaskId,
-      rescheduledToTaskId: task.rescheduledToTaskId,
-      rescheduledReason: task.rescheduledReason,
-      rescheduledAt: task.rescheduledAt,
       createdAt: task.createdAt,
       updatedAt: task.updatedAt,
-      completedAt: task.completedAt
+      completedAt: task.completedAt,
+      rescheduledTasks: task.rescheduledTasks
     }))
   };
 };
@@ -485,13 +476,10 @@ export const getWeekSchedule = async (
         isWhatsAppEnabled: task.isWhatsAppEnabled,
         isTelegramEnabled: task.isTelegramEnabled,
         isCallEnabled: task.isCallEnabled,
-        rescheduledFromTaskId: task.rescheduledFromTaskId,
-        rescheduledToTaskId: task.rescheduledToTaskId,
-        rescheduledReason: task.rescheduledReason,
-        rescheduledAt: task.rescheduledAt,
         createdAt: task.createdAt,
         updatedAt: task.updatedAt,
-        completedAt: task.completedAt
+        completedAt: task.completedAt,
+        rescheduledTasks: task.rescheduledTasks
       }))
   }));
 };

@@ -7,33 +7,33 @@ import { AuthenticatedRequest } from "../types/request";
 const prisma = new PrismaClient();
 
 /**
- * Reschedule a task to a new time
+ * Reschedule a task to a new date and time
  */
 export const rescheduleTaskHandler = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
         const userId = req.user?.id;
         const { taskId } = req.params;
-        const { newTime, reason, keepOriginal } = req.body;
+        const { newDate, newTime, reason } = req.body;
 
         if (!userId) {
             return next(new BadUserInputError({ message: "User ID is missing from request" }));
         }
 
-        if (!taskId || !newTime) {
-            return next(new BadUserInputError({ message: "Task ID and new time are required" }));
+        if (!taskId || !newDate || !newTime) {
+            return next(new BadUserInputError({ message: "Task ID, new date, and new time are required" }));
         }
 
         const rescheduledTask = await rescheduleTask(
             taskId,
             userId,
-            new Date(newTime),
-            reason,
-            keepOriginal !== false // Default to true if not explicitly set to false
+            new Date(newDate),
+            newTime,
+            reason
         );
 
         return res.json({
             message: "Task rescheduled successfully",
-            task: rescheduledTask
+            rescheduledTask
         });
     } catch (error) {
         next(error);

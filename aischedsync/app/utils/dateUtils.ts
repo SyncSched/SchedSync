@@ -133,3 +133,37 @@ export const formatDateForDatetimeLocal = (dateString: string): string => {
 
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
+
+/**
+ * Format a date according to the specified format
+ * @param dateString - Date string or Date object
+ * @param format - Format string (e.g., 'yyyy-MM-dd')
+ * @returns Formatted date string
+ */
+export const formatDate = (dateString: string | Date, format: string = 'MMM d, yyyy'): string => {
+  const date = dateString instanceof Date ? dateString : new Date(dateString);
+
+  if (isNaN(date.getTime())) {
+    console.error('Invalid date input:', dateString);
+    return '';
+  }
+
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const day = date.getDate();
+
+  // Month names
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const fullMonthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+  // Replace format tokens
+  return format
+    .replace(/yyyy/g, year.toString())
+    .replace(/yy/g, year.toString().slice(-2))
+    .replace(/MMMM/g, fullMonthNames[month])
+    .replace(/MMM/g, monthNames[month])
+    .replace(/MM/g, String(month + 1).padStart(2, '0'))
+    .replace(/M/g, String(month + 1))
+    .replace(/dd/g, String(day).padStart(2, '0'))
+    .replace(/d/g, String(day));
+};

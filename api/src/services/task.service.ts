@@ -1,5 +1,7 @@
 import { PrismaClient, TaskStatus } from "@prisma/client";
 import { BadUserInputError, EntityNotFoundError } from "../errors";
+import { createRescheduledTask } from "./rescheduled-task.service";
+import { format } from "date-fns";
 
 const prisma = new PrismaClient();
 
@@ -7,17 +9,17 @@ const prisma = new PrismaClient();
  * Function to reschedule a task
  * @param taskId - ID of the task to reschedule
  * @param userId - ID of the user making the request
- * @param newTime - New time for the task
+ * @param newDate - New date for the task
+ * @param newTime - New time for the task (format: "HH:MM")
  * @param reason - Reason for rescheduling
- * @param keepOriginal - Whether to keep the original task (mark as rescheduled) or update it directly
- * @returns The rescheduled task
+ * @returns The created RescheduledTask record
  */
 export const rescheduleTask = async (
     taskId: string,
     userId: string,
-    newTime: Date,
-    reason?: string,
-    keepOriginal: boolean = true
+    newDate: Date,
+    newTime: string,
+    reason?: string
 ) => {
     return await prisma.$transaction(async (tx) => {
         // Find the task and verify it belongs to the user
@@ -41,165 +43,25 @@ export const rescheduleTask = async (
             throw new EntityNotFoundError("Task not found or unauthorized");
         }
 
-        if (keepOriginal) {
-            // Create a new task as a copy of the original with the new time
-            const newTask = await tx.task.create({
-                data: {
-                    name: task.name,
-                    description: task.description,
-                    notes: task.notes,
-                    time: newTime,
-                    duration: task.duration,
-                    status: TaskStatus.PENDING,
-                    priority: task.priority,
-                    location: task.location,
-                    scheduleId: task.scheduleId,
-                    isEmailEnabled: task.isEmailEnabled,
-                    isWhatsAppEnabled: task.isWhatsAppEnabled,
-                    isTelegramEnabled: task.isTelegramEnabled,
-                    isCallEnabled: task.isCallEnabled,
-                    rescheduledFromTaskId: task.id,
-                    rescheduledReason: reason,
-                    rescheduledAt: new Date()
-                },
-                include: {
-                    schedule: {
-                        include: {
-                            user: true
-                        }
-                    }
-                }
-            });
-
-            // Update the original task to reference the new task
-            await tx.task.update({
-                where: { id: task.id },
-                data: {
-                    rescheduledToTaskId: newTask.id,
-                    rescheduledReason: reason,
-                    rescheduledAt: new Date()
-                }
-            });
-
-            // Create notifications for the new task
-            const notifyAt = calculateNotificationTime(newTime.toISOString(), task.schedule.user.notifyBeforeMinutes);
-            const notifications = [];
-
-            // Only create notifications if explicitly enabled in task settings
-            if (newTask.isEmailEnabled && task.schedule.user.email) {
-                notifications.push({
-                    taskId: newTask.id,
-                    userId: task.schedule.user.id,
-                    channel: 'email',
-                    notifyAt
-                });
+        // Create a RescheduledTask record
+        const rescheduledTask = await tx.rescheduledTask.create({
+            data: {
+                taskId: task.id,
+                originalTaskTime: task.time,
+                rescheduledDate: newDate,
+                rescheduledTime: newTime,
+                reason: reason || null
+            },
+            include: {
+                task: true
             }
+        });
 
-            if (newTask.isWhatsAppEnabled && task.schedule.user.phoneNumber) {
-                notifications.push({
-                    taskId: newTask.id,
-                    userId: task.schedule.user.id,
-                    channel: 'whatsapp',
-                    notifyAt
-                });
-            }
+        // Update notifications if needed
+        // We can create notifications for the rescheduled time if required
+        // This would depend on your application's requirements
 
-            if (newTask.isTelegramEnabled && task.schedule.user.telegramChatId) {
-                notifications.push({
-                    taskId: newTask.id,
-                    userId: task.schedule.user.id,
-                    channel: 'telegram',
-                    notifyAt
-                });
-            }
-
-            if (newTask.isCallEnabled && task.schedule.user.phoneNumber) {
-                notifications.push({
-                    taskId: newTask.id,
-                    userId: task.schedule.user.id,
-                    channel: 'call',
-                    notifyAt
-                });
-            }
-
-            if (notifications.length > 0) {
-                await tx.taskNotification.createMany({
-                    data: notifications
-                });
-            }
-
-            return newTask;
-        } else {
-            // Update the existing task with the new time
-            const updatedTask = await tx.task.update({
-                where: { id: task.id },
-                data: {
-                    time: newTime,
-                    rescheduledReason: reason,
-                    rescheduledAt: new Date()
-                },
-                include: {
-                    schedule: {
-                        include: {
-                            user: true
-                        }
-                    }
-                }
-            });
-
-            // Update notifications for the task
-            await tx.taskNotification.deleteMany({
-                where: { taskId: task.id }
-            });
-
-            // Create new notifications
-            const notifyAt = calculateNotificationTime(newTime.toISOString(), task.schedule.user.notifyBeforeMinutes);
-            const notifications = [];
-
-            if (updatedTask.isEmailEnabled && task.schedule.user.email) {
-                notifications.push({
-                    taskId: updatedTask.id,
-                    userId: task.schedule.user.id,
-                    channel: 'email',
-                    notifyAt
-                });
-            }
-
-            if (updatedTask.isWhatsAppEnabled && task.schedule.user.phoneNumber) {
-                notifications.push({
-                    taskId: updatedTask.id,
-                    userId: task.schedule.user.id,
-                    channel: 'whatsapp',
-                    notifyAt
-                });
-            }
-
-            if (updatedTask.isTelegramEnabled && task.schedule.user.telegramChatId) {
-                notifications.push({
-                    taskId: updatedTask.id,
-                    userId: task.schedule.user.id,
-                    channel: 'telegram',
-                    notifyAt
-                });
-            }
-
-            if (updatedTask.isCallEnabled && task.schedule.user.phoneNumber) {
-                notifications.push({
-                    taskId: updatedTask.id,
-                    userId: task.schedule.user.id,
-                    channel: 'call',
-                    notifyAt
-                });
-            }
-
-            if (notifications.length > 0) {
-                await tx.taskNotification.createMany({
-                    data: notifications
-                });
-            }
-
-            return updatedTask;
-        }
+        return rescheduledTask;
     });
 };
 

@@ -24,16 +24,29 @@ export interface Task {
     isTelegramEnabled: boolean;
     isCallEnabled: boolean;
 
-    // Reschedule fields
-    rescheduledFromTaskId?: string | null;
-    rescheduledToTaskId?: string | null;
-    rescheduledReason?: string | null;
-    rescheduledAt?: Date | null;
-
     // Metadata
     createdAt: Date;
     updatedAt: Date;
     completedAt: Date | null;
+
+    // Relations
+    rescheduledTasks?: RescheduledTask[];
+}
+
+// Rescheduled task structure
+export interface RescheduledTask {
+    id: string;
+    taskId: string;
+    originalTaskTime: Date;
+    rescheduledDate: Date;
+    rescheduledTime: string;
+    reason: string | null;
+    rescheduledToTaskId: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+
+    // Relations
+    task?: Task;
 }
 
 
@@ -64,10 +77,6 @@ export interface Task {
         isWhatsAppEnabled?: boolean;
         isTelegramEnabled?: boolean;
         isCallEnabled?: boolean;
-        rescheduledFromTaskId?: string | null;
-        rescheduledToTaskId?: string | null;
-        rescheduledReason?: string | null;
-        rescheduledAt?: Date | null;
     }[];
   }
 

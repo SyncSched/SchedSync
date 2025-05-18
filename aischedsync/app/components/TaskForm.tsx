@@ -14,6 +14,7 @@ interface TaskFormProps {
   onClose: () => void;
   onDelete?: () => void;
   onReschedule?: () => void;
+  onViewRelatedTask?: (taskId: string) => void; // New prop to view related task
   mode?: 'edit' | 'add';
   initialTask?: {
     name?: string;
@@ -28,6 +29,11 @@ interface TaskFormProps {
     isWhatsAppEnabled?: boolean;
     isTelegramEnabled?: boolean;
     isCallEnabled?: boolean;
+    // Rescheduled task properties
+    rescheduledFromTaskId?: string;
+    rescheduledToTaskId?: string;
+    rescheduledReason?: string;
+    rescheduledAt?: string;
   };
 }
 
@@ -52,11 +58,12 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   onClose,
   onDelete,
   onReschedule,
+  onViewRelatedTask,
   mode = 'add',
   initialTask
 }) => {
   const { isDark } = useTheme();
-  const [activeTab, setActiveTab] = useState<'details' | 'notes'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'notes' | 'rescheduled'>('details');
   const [showMap, setShowMap] = useState(false);
   const [location, setLocation] = useState<string | null>(null);
   const [locationName, setLocationName] = useState<string>('');
@@ -138,6 +145,13 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     }
   }, [initialTask?.location, locationName, getLocationNameFromCoords]);
 
+  // Set active tab to 'rescheduled' if the task is a rescheduled task or has been rescheduled
+  useEffect(() => {
+    if (initialTask?.rescheduledFromTaskId || initialTask?.rescheduledToTaskId) {
+      setActiveTab('rescheduled');
+    }
+  }, [initialTask?.rescheduledFromTaskId, initialTask?.rescheduledToTaskId]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, type } = e.target;
     const value = type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
@@ -208,11 +222,175 @@ export const TaskForm: React.FC<TaskFormProps> = ({
               <div className={`absolute inset-x-0 -bottom-[1px] h-[1px] ${isDark ? 'bg-gray-800' : 'bg-white'}`}></div>
             )}
           </button>
+          {(initialTask?.rescheduledFromTaskId || initialTask?.rescheduledToTaskId) && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('rescheduled')}
+              className={`relative flex-1 sm:flex-none px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-t-lg transition-all duration-200 ${
+                activeTab === 'rescheduled'
+                ? isDark
+                  ? 'text-orange-400 bg-orange-900/50 border border-gray-700 border-b-gray-800'
+                  : 'text-orange-700 bg-orange-50 border border-gray-200 border-b-white'
+                : isDark
+                  ? 'text-gray-400 hover:bg-gray-700/50'
+                  : 'text-gray-600 hover:bg-gray-50/80'
+              }`}
+            >
+              <span className="relative z-10 flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                </svg>
+                Rescheduled Details
+                {!activeTab.includes('rescheduled') && (
+                  <span className={`inline-flex h-1.5 w-1.5 rounded-full ${isDark ? 'bg-orange-500' : 'bg-orange-500'} animate-pulse`}></span>
+                )}
+              </span>
+              {activeTab === 'rescheduled' && (
+                <div className={`absolute inset-x-0 -bottom-[1px] h-[1px] ${isDark ? 'bg-gray-800' : 'bg-white'}`}></div>
+              )}
+            </button>
+          )}
         </div>
       </div>
 
       <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
-        {activeTab === 'details' ? (
+        {activeTab === 'rescheduled' ? (
+          <div className={`flex-1 pr-0 lg:pr-3.5 ${isDark ? 'bg-gray-800/50' : 'bg-gradient-to-br from-gray-50/50 via-white to-orange-50/30'} overflow-y-auto`}>
+            <div className="space-y-4 p-3">
+              <div className="group">
+                <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-sm border ${isDark ? 'border-gray-700' : 'border-gray-100'} hover:shadow-md ${isDark ? 'hover:border-orange-500/50' : 'hover:border-orange-100'} transition-all duration-300 p-4`}>
+                  <h3 className={`text-base font-medium mb-4 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                    Rescheduled Details
+                  </h3>
+
+                  {initialTask?.rescheduledFromTaskId && (
+                    <div className="mb-6">
+                      <div className={`flex items-center gap-2 mb-2 ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                        </svg>
+                        <span className="font-medium">This is a rescheduled task</span>
+                      </div>
+                      <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700/70' : 'bg-green-50'} border ${isDark ? 'border-gray-600' : 'border-green-100'}`}>
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className={`p-2 rounded-full ${isDark ? 'bg-gray-600' : 'bg-white'} mt-0.5`}>
+                            <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 ${isDark ? 'text-green-400' : 'text-green-500'}`} viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M5 12a1 1 0 102 0V6.414l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L5 6.414V12z" />
+                              <path d="M15 8a1 1 0 10-2 0v5.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 13.586V8z" />
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                              This task was created when the original task was rescheduled. The original task still exists in your schedule.
+                            </p>
+                            <div className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-2`}>
+                              <span className="font-medium">Original Task ID:</span> {initialTask.rescheduledFromTaskId}
+                            </div>
+                            {initialTask.rescheduledAt && (
+                              <div className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-2`}>
+                                <span className="font-medium">Rescheduled At:</span> {new Date(initialTask.rescheduledAt).toLocaleString()}
+                              </div>
+                            )}
+                            {onViewRelatedTask && initialTask.rescheduledFromTaskId && (
+                              <button
+                                type="button"
+                                onClick={() => onViewRelatedTask(initialTask.rescheduledFromTaskId!)}
+                                className={`mt-2 text-xs px-3 py-1.5 rounded-md ${
+                                  isDark
+                                    ? 'bg-gray-600 hover:bg-gray-500 text-gray-200'
+                                    : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-200'
+                                } transition-colors duration-200 flex items-center gap-1.5`}
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                  <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                                </svg>
+                                View Original Task
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {initialTask?.rescheduledToTaskId && (
+                    <div className="mb-6">
+                      <div className={`flex items-center gap-2 mb-2 ${isDark ? 'text-orange-400' : 'text-orange-600'}`}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                        </svg>
+                        <span className="font-medium">This is the original task</span>
+                      </div>
+                      <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700/70' : 'bg-orange-50'} border ${isDark ? 'border-gray-600' : 'border-orange-100'}`}>
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className={`p-2 rounded-full ${isDark ? 'bg-gray-600' : 'bg-white'} mt-0.5`}>
+                            <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 ${isDark ? 'text-orange-400' : 'text-orange-500'}`} viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M15 8a1 1 0 10-2 0v5.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 13.586V8z" />
+                              <path d="M5 12a1 1 0 102 0V6.414l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L5 6.414V12z" />
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                              This is the original task that has been rescheduled. A new task with the updated time has been created.
+                            </p>
+                            <div className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-2`}>
+                              <span className="font-medium">Rescheduled Task ID:</span> {initialTask.rescheduledToTaskId}
+                            </div>
+                            {initialTask.rescheduledAt && (
+                              <div className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-2`}>
+                                <span className="font-medium">Rescheduled At:</span> {new Date(initialTask.rescheduledAt).toLocaleString()}
+                              </div>
+                            )}
+                            {onViewRelatedTask && initialTask.rescheduledToTaskId && (
+                              <button
+                                type="button"
+                                onClick={() => onViewRelatedTask(initialTask.rescheduledToTaskId!)}
+                                className={`mt-2 text-xs px-3 py-1.5 rounded-md ${
+                                  isDark
+                                    ? 'bg-gray-600 hover:bg-gray-500 text-gray-200'
+                                    : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-200'
+                                } transition-colors duration-200 flex items-center gap-1.5`}
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                  <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                                </svg>
+                                View Rescheduled Task
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {initialTask?.rescheduledReason && (
+                    <div>
+                      <h4 className={`text-sm font-medium mb-2 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                        Reason for Rescheduling
+                      </h4>
+                      <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700/70' : 'bg-gray-50'} border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
+                        <div className="flex items-start gap-3">
+                          <div className={`p-2 rounded-full ${isDark ? 'bg-gray-600' : 'bg-white'} mt-0.5`}>
+                            <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 ${isDark ? 'text-blue-400' : 'text-blue-500'}`} viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                              {initialTask.rescheduledReason}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : activeTab === 'details' ? (
           <>
             {/* Main Form Content - Left Side */}
             <div className={`flex-1 pr-0 lg:pr-3.5 ${isDark ? 'bg-gray-800/50' : 'bg-gradient-to-br from-gray-50/50 via-white to-blue-50/30'} overflow-y-auto`}>

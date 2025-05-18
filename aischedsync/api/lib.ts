@@ -99,10 +99,20 @@ export interface Schedule {
     isWhatsAppEnabled: boolean;
     isTelegramEnabled: boolean;
     isCallEnabled: boolean;
-    rescheduledFromTaskId?: string;
+    rescheduledTasks?: RescheduledTask[];
+  }
+
+  export interface RescheduledTask {
+    id: string;
+    taskId: string;
+    originalTaskTime: string;  // ISO format string
+    rescheduledDate: string;   // ISO format string
+    rescheduledTime: string;   // Format "HH:MM"
+    reason?: string;
     rescheduledToTaskId?: string;
-    rescheduledReason?: string;
-    rescheduledAt?: string;
+    createdAt: string;
+    updatedAt: string;
+    task?: Task;               // The associated task
   }
 
   export interface TaskFormData {
@@ -1105,17 +1115,17 @@ export const removeTelegramIntegration = async (): Promise<boolean> => {
 /**
  * Reschedule a task to a new time
  * @param taskId - ID of the task to reschedule
- * @param newTime - New time for the task (ISO string)
+ * @param newDate - New date for the task (ISO string)
+ * @param newTime - New time for the task (format: "HH:MM")
  * @param reason - Optional reason for rescheduling
- * @param keepOriginal - Whether to keep the original task (default: true)
- * @returns The rescheduled task
+ * @returns The created RescheduledTask record
  */
 export const rescheduleTask = async (
   taskId: string,
+  newDate: string,
   newTime: string,
-  reason?: string,
-  keepOriginal: boolean = true
-): Promise<Task> => {
+  reason?: string
+): Promise<RescheduledTask> => {
   try {
     const token = getStoredAuthToken();
 
@@ -1130,9 +1140,9 @@ export const rescheduleTask = async (
         'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
+        newDate,
         newTime,
-        reason,
-        keepOriginal
+        reason
       })
     });
 
@@ -1141,9 +1151,120 @@ export const rescheduleTask = async (
     }
 
     const data = await response.json();
-    return data.task;
+    return data.rescheduledTask;
   } catch (error) {
     console.error('Error rescheduling task:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get all rescheduled tasks for the current user
+ * @returns Array of rescheduled tasks
+ */
+export const getRescheduledTasks = async (): Promise<RescheduledTask[]> => {
+  try {
+    const token = getStoredAuthToken();
+
+    if (token && !isTokenValid(token)) {
+      throw new Error('Token expired');
+    }
+
+    const response = await fetch(`${API_URL}/rescheduled-tasks`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch rescheduled tasks');
+    }
+
+    const data = await response.json();
+    return data.rescheduledTasks || [];
+  } catch (error) {
+    console.error('Error fetching rescheduled tasks:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update a rescheduled task
+ * @param id - ID of the rescheduled task to update
+ * @param newDate - New date for the task (ISO string)
+ * @param newTime - New time for the task (format: "HH:MM")
+ * @param reason - Optional reason for rescheduling
+ * @returns The updated rescheduled task
+ */
+export const updateRescheduledTask = async (
+  id: string,
+  newDate: string,
+  newTime: string,
+  reason?: string
+): Promise<RescheduledTask> => {
+  try {
+    const token = getStoredAuthToken();
+
+    if (token && !isTokenValid(token)) {
+      throw new Error('Token expired');
+    }
+
+    const response = await fetch(`${API_URL}/rescheduled-tasks/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        newDate,
+        newTime,
+        reason
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update rescheduled task');
+    }
+
+    const data = await response.json();
+    return data.rescheduledTask;
+  } catch (error) {
+    console.error('Error updating rescheduled task:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete a rescheduled task
+ * @param id - ID of the rescheduled task to delete
+ * @returns Success message
+ */
+export const deleteRescheduledTask = async (id: string): Promise<{ message: string }> => {
+  try {
+    const token = getStoredAuthToken();
+
+    if (token && !isTokenValid(token)) {
+      throw new Error('Token expired');
+    }
+
+    const response = await fetch(`${API_URL}/rescheduled-tasks/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to delete rescheduled task');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error deleting rescheduled task:', error);
     throw error;
   }
 };

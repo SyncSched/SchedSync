@@ -9,6 +9,13 @@ import {
 } from '../controllers/user.controller';
 import { updateTaskNotificationSettings, rescheduleTaskHandler } from '../controllers/task.controller';
 import { getUpcomingNotificationsHandler , updateNotificationTimeHandler, deleteNotificationHandler } from '../controllers/notification.controller';
+import {
+    getUserRescheduledTasksHandler,
+    getTaskRescheduledTasksHandler,
+    getRescheduledTaskHandler,
+    deleteRescheduledTaskHandler,
+    updateRescheduledTaskHandler
+} from '../controllers/rescheduled-task.controller';
 import { getTelegramAuthLink } from '../controllers/notification.controller';
 import { telegramWebhookHandler, setTelegramWebhook , disconnectTelegramHandler } from '../controllers/telegram.controller';
 import {
@@ -61,6 +68,13 @@ export const attachPrivateRoutes = (app: any): void => {
     app.put('/schedule/:id/update', updateScheduleHandler);
     app.patch('/task/:taskId/notifications', updateTaskNotificationSettings);
     app.post('/task/:taskId/reschedule', rescheduleTaskHandler);
+
+    // Rescheduled Task routes
+    app.get('/rescheduled-tasks', getUserRescheduledTasksHandler);
+    app.get('/task/:taskId/rescheduled-tasks', getTaskRescheduledTasksHandler);
+    app.get('/rescheduled-tasks/:id', getRescheduledTaskHandler);
+    app.put('/rescheduled-tasks/:id', updateRescheduledTaskHandler);
+    app.delete('/rescheduled-tasks/:id', deleteRescheduledTaskHandler);
 
     // User settings routes
     app.get('/user/settings', getUserSettingsHandler);

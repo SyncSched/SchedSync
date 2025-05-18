@@ -100,12 +100,6 @@ model Task {
   isTelegramEnabled Boolean           @default(false)
   isCallEnabled     Boolean           @default(false)
 
-  // Reschedule fields
-  rescheduledFromTaskId String?       // ID of the original task (if this is a rescheduled task)
-  rescheduledToTaskId   String?       // ID of the new task (if this task was rescheduled)
-  rescheduledReason     String?       // Reason for rescheduling
-  rescheduledAt         DateTime?     // When the task was rescheduled
-
   // Metadata
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
@@ -115,6 +109,7 @@ model Task {
   schedule          Schedule          @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
   notifications     TaskNotification[]
   attachments       Attachment[]      // One-to-many relation with attachments
+  rescheduledTasks  RescheduledTask[] // One-to-many relation with rescheduled tasks
 
   @@map("tasks")
 }
@@ -177,4 +172,19 @@ model Goal {
 
   // Relations
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RescheduledTask {
+  id                String    @id @default(uuid())
+  taskId            String    // ID of the original task
+  originalTaskTime  DateTime  // Original scheduled time
+  rescheduledDate   DateTime  // New date
+  rescheduledTime   String    // New time as string in format "HH:MM"
+  reason            String?   // Optional reason for rescheduling
+  rescheduledToTaskId String? // ID of the new task (if applicable)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  task              Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
 }

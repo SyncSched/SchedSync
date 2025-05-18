@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
-import { formatToHHMM } from '../utils/dateUtils';
-import { Task, rescheduleTask } from '@/api/lib';
+import { formatToHHMM, formatDate } from '../utils/dateUtils';
+import { Task, RescheduledTask, rescheduleTask } from '@/api/lib';
 
 interface RescheduleTaskFormProps {
   task: Task;
   onClose: () => void;
-  onSuccess: (updatedTask: Task) => void;
+  onSuccess: (rescheduledTask: RescheduledTask) => void;
 }
 
 export const RescheduleTaskForm: React.FC<RescheduleTaskFormProps> = ({
@@ -17,11 +17,16 @@ export const RescheduleTaskForm: React.FC<RescheduleTaskFormProps> = ({
   const { isDark } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Initialize with current task date and time
+  const taskDate = new Date(task.time);
+  const initialDate = formatDate(task.time, 'yyyy-MM-dd');
+  const initialTime = formatToHHMM(task.time);
+
   const [formData, setFormData] = useState({
-    newDate: '',
-    newTime: '',
-    reason: '',
-    keepOriginal: true
+    newDate: initialDate,
+    newTime: initialTime,
+    reason: ''
   });
 
   // Get current date and time for the pickers
@@ -51,17 +56,17 @@ export const RescheduleTaskForm: React.FC<RescheduleTaskFormProps> = ({
     setError(null);
 
     try {
-      // Convert date and time to ISO string
-      const [year, month, day] = formData.newDate.split('-').map(Number);
-      const [hours, minutes] = formData.newTime.split(':').map(Number);
+      // Get the new date and time values
+      const newDate = formData.newDate;
+      const newTime = formData.newTime;
+      const reason = formData.reason || undefined;
 
-      const newDateTime = new Date(year, month - 1, day, hours, minutes, 0, 0);
-
+      // Call the rescheduleTask API
       const rescheduledTask = await rescheduleTask(
         task.id,
-        newDateTime.toISOString(),
-        formData.reason || undefined,
-        formData.keepOriginal
+        newDate,
+        newTime,
+        reason
       );
 
       onSuccess(rescheduledTask);
@@ -152,22 +157,8 @@ export const RescheduleTaskForm: React.FC<RescheduleTaskFormProps> = ({
         </div>
 
         <div className="mb-6">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              name="keepOriginal"
-              checked={formData.keepOriginal}
-              onChange={handleChange}
-              className={`mr-2 h-4 w-4 rounded border-gray-300 ${
-                isDark ? 'text-blue-600 bg-gray-700' : 'text-blue-600 bg-white'
-              } focus:ring-blue-500`}
-            />
-            <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-              Keep original task in schedule (recommended)
-            </span>
-          </label>
-          <p className={`mt-1 text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-            If checked, the original task will be marked as rescheduled and a new task will be created.
+          <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+            The original task will remain in your schedule, and this rescheduled information will be stored for reference.
           </p>
         </div>
 

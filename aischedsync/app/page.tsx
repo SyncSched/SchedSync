@@ -1,7 +1,17 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { getTodaySchedule, updateSchedule, updateUserTimezone, rescheduleTask, type Task } from '../api/lib';
+import {
+  getTodaySchedule,
+  updateSchedule,
+  updateUserTimezone,
+  rescheduleTask,
+  getRescheduledTasks,
+  updateRescheduledTask,
+  deleteRescheduledTask,
+  type Task,
+  type RescheduledTask
+} from '../api/lib';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import Modal from './components/ui/Modal';
@@ -12,6 +22,8 @@ import { recalculateTaskTimes } from './utils/taskUtils';
 import { isTaskActive, formatToHHMM } from '@/app/utils/dateUtils';
 import Goals from './components/Goals';
 import RescheduleTaskForm from './components/RescheduleTaskForm';
+import TaskModal from './components/TaskModal';
+import EditRescheduledTaskForm from './components/EditRescheduledTaskForm';
 
 
 
@@ -22,7 +34,10 @@ export default function Home() {
   const [mainTasks, setMainTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   // State for rescheduled tasks
-  const [rescheduledTasks, setRescheduledTasks] = useState<Task[]>([]);
+  const [rescheduledTasks, setRescheduledTasks] = useState<RescheduledTask[]>([]);
+  const [selectedRescheduledTask, setSelectedRescheduledTask] = useState<RescheduledTask | null>(null);
+  const [isEditRescheduledTaskModalOpen, setIsEditRescheduledTaskModalOpen] = useState(false);
+  const [showDeleteRescheduledTaskWarning, setShowDeleteRescheduledTaskWarning] = useState(false);
 
   // const [user, setUser] = useState<UserInfo | null>(null);
   const { isAuthenticated } = useAuth();
@@ -100,15 +115,15 @@ export default function Home() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
+        // Fetch the schedule for today's tasks
         const schedule = await getTodaySchedule();
         if (schedule && schedule.originalData) {
-          // Filter out tasks that have been rescheduled from another task
-          const rescheduled = schedule.originalData.filter(task => task.rescheduledFromTaskId);
-          setRescheduledTasks(rescheduled);
-
-          // Set main tasks (all tasks including rescheduled ones)
           setMainTasks(schedule.originalData);
         }
+
+        // Fetch rescheduled tasks separately
+        const rescheduledTasksData = await getRescheduledTasks();
+        setRescheduledTasks(rescheduledTasksData);
       } catch (err) {
         console.error('Error fetching schedule:', err);
         showErrorToast('Failed to fetch schedule');
@@ -283,12 +298,9 @@ export default function Home() {
       // Update the main tasks state
       setMainTasks(updatedTasks);
 
-      // Also update the rescheduled tasks list if needed
-      if (updatedTasks.some(task => task.rescheduledFromTaskId || task.rescheduledToTaskId)) {
-        // Filter out tasks that have been rescheduled from another task
-        const rescheduled = updatedTasks.filter(task => task.rescheduledFromTaskId);
-        setRescheduledTasks(rescheduled);
-      }
+      // Fetch the updated rescheduled tasks
+      const rescheduledTasksData = await getRescheduledTasks();
+      setRescheduledTasks(rescheduledTasksData);
 
       showSuccessToast('Schedule updated successfully');
     } catch (error) {
@@ -335,13 +347,9 @@ export default function Home() {
       // Update the main tasks state
       setMainTasks(updatedTasks);
 
-      // Also update the rescheduled tasks list
-      // If the deleted task was a rescheduled task or has rescheduled tasks linked to it
-      if (selectedTask.rescheduledFromTaskId || selectedTask.rescheduledToTaskId) {
-        // Filter out tasks that have been rescheduled from another task
-        const rescheduled = updatedTasks.filter(task => task.rescheduledFromTaskId);
-        setRescheduledTasks(rescheduled);
-      }
+      // Fetch the updated rescheduled tasks
+      const rescheduledTasksData = await getRescheduledTasks();
+      setRescheduledTasks(rescheduledTasksData);
 
       setIsEditModalOpen(false);
       setShowDeleteWarning(false);
@@ -364,6 +372,7 @@ export default function Home() {
       setShowTaskStatusModal(true);
     } else {
       setSelectedTask(task);
+      setSelectedRescheduledTask(null); // Clear any previously selected rescheduled task
       setIsEditModalOpen(true);
     }
   };
@@ -371,6 +380,7 @@ export default function Home() {
   const handleCloseModal = () => {
     setIsEditModalOpen(false);
     setSelectedTask(null);
+    setSelectedRescheduledTask(null);
   };
 
   const handleOpenRescheduleModal = () => {
@@ -382,27 +392,118 @@ export default function Home() {
     setIsRescheduleModalOpen(false);
   };
 
-  const handleRescheduleSuccess = async (rescheduledTask: Task) => {
+  const handleViewRelatedTask = async (taskId: string) => {
+    try {
+      // Find the task in the current tasks list
+      const relatedTask = mainTasks.find(task => task.id === taskId);
+
+      if (relatedTask) {
+        // If the task is in the current list, just select it
+        setSelectedTask(relatedTask);
+        setIsEditModalOpen(true);
+      } else {
+        // If not found, we might need to fetch it from the server
+        // For now, just show a toast message
+        showErrorToast('Task not found in current view');
+      }
+    } catch (error) {
+      console.error('Error viewing related task:', error);
+      showErrorToast('Failed to view related task');
+    }
+  };
+
+  const handleRescheduleSuccess = async (rescheduledTask: RescheduledTask) => {
     try {
       // Log the rescheduled task for debugging
       console.log('Task rescheduled:', rescheduledTask);
 
-      // Fetch the updated schedule to get all tasks with the new rescheduled task
+      // Fetch the updated schedule to get all tasks
       const schedule = await getTodaySchedule();
       if (schedule && schedule.originalData) {
-        // Filter out tasks that have been rescheduled from another task
-        const rescheduled = schedule.originalData.filter(task => task.rescheduledFromTaskId);
-        setRescheduledTasks(rescheduled);
-
-        // Set main tasks (all tasks including rescheduled ones)
         setMainTasks(schedule.originalData);
-
-        showSuccessToast('Task rescheduled successfully');
       }
+
+      // Fetch the updated rescheduled tasks
+      const rescheduledTasksData = await getRescheduledTasks();
+      setRescheduledTasks(rescheduledTasksData);
+
+      showSuccessToast('Task rescheduled successfully');
     } catch (error) {
       console.error('Error fetching updated schedule:', error);
       showErrorToast('Task was rescheduled but failed to refresh schedule');
     }
+  };
+
+  // Handle editing a rescheduled task
+  const handleEditRescheduledTask = (rescheduledTask: RescheduledTask) => {
+    setSelectedRescheduledTask(rescheduledTask);
+    setIsEditRescheduledTaskModalOpen(true);
+    setIsEditModalOpen(false);
+  };
+
+  // Handle closing the edit rescheduled task modal
+  const handleCloseEditRescheduledTaskModal = () => {
+    setIsEditRescheduledTaskModalOpen(false);
+    setSelectedRescheduledTask(null);
+  };
+
+  // Handle saving edited rescheduled task
+  const handleSaveEditedRescheduledTask = async (data: { newDate: string; newTime: string; reason?: string }) => {
+    try {
+      if (!selectedRescheduledTask) return;
+
+      // Call the API to update the rescheduled task
+      await updateRescheduledTask(
+        selectedRescheduledTask.id,
+        data.newDate,
+        data.newTime,
+        data.reason
+      );
+
+      // Fetch the updated rescheduled tasks
+      const rescheduledTasksData = await getRescheduledTasks();
+      setRescheduledTasks(rescheduledTasksData);
+
+      setIsEditRescheduledTaskModalOpen(false);
+      showSuccessToast('Rescheduled task updated successfully');
+    } catch (error) {
+      console.error('Error updating rescheduled task:', error);
+      showErrorToast('Failed to update rescheduled task');
+    }
+  };
+
+  // Handle deleting a rescheduled task
+  const handleDeleteRescheduledTask = (rescheduledTask: RescheduledTask) => {
+    setSelectedRescheduledTask(rescheduledTask);
+    setShowDeleteRescheduledTaskWarning(true);
+    setIsEditModalOpen(false);
+  };
+
+  // Handle confirming delete of rescheduled task
+  const handleConfirmDeleteRescheduledTask = async () => {
+    try {
+      if (!selectedRescheduledTask) return;
+
+      // Call the API to delete the rescheduled task
+      await deleteRescheduledTask(selectedRescheduledTask.id);
+
+      // Fetch the updated rescheduled tasks
+      const rescheduledTasksData = await getRescheduledTasks();
+      setRescheduledTasks(rescheduledTasksData);
+
+      setShowDeleteRescheduledTaskWarning(false);
+      setSelectedRescheduledTask(null);
+      showSuccessToast('Rescheduled task deleted successfully');
+    } catch (error) {
+      console.error('Error deleting rescheduled task:', error);
+      showErrorToast('Failed to delete rescheduled task');
+    }
+  };
+
+  // Handle canceling delete of rescheduled task
+  const handleCancelDeleteRescheduledTask = () => {
+    setShowDeleteRescheduledTaskWarning(false);
+    setSelectedRescheduledTask(null);
   };
 
   // Goal handlers are now managed by the Goals component
@@ -434,8 +535,12 @@ export default function Home() {
               <Goals />
 
               <RescheduledTasks
-                tasks={rescheduledTasks}
-                onTaskClick={handleTaskClick}
+                rescheduledTasks={rescheduledTasks}
+                onTaskClick={(task, rescheduledTask) => {
+                  setSelectedTask(task);
+                  setSelectedRescheduledTask(rescheduledTask);
+                  setIsEditModalOpen(true);
+                }}
               />
             </div>
           </div>
@@ -444,35 +549,49 @@ export default function Home() {
 
       {/* Modals */}
       {isEditModalOpen && selectedTask && (
-        <Modal
-          title="Edit Task"
-          onClose={handleCloseModal}
-          size="md"
-        >
-          <div className={`${isDark ? 'bg-gray-900' : 'bg-white'} transition-colors duration-300`}>
-            <TaskForm
-              mode="edit"
-              onSubmit={handleEditTaskSubmit}
-              onClose={handleCloseModal}
-              onDelete={() => setShowDeleteWarning(true)}
-              onReschedule={handleOpenRescheduleModal}
-              initialTask={{
-                name: selectedTask!.name,
-                description: selectedTask!.description || '',
-                notes: selectedTask!.notes || '',
-                time: renderTaskTime(selectedTask!),
-                duration: selectedTask!.duration,
-                priority: selectedTask!.priority || 'MEDIUM',
-                status: (selectedTask!.status === 'PENDING' || selectedTask!.status === 'COMPLETED') ? selectedTask!.status : 'PENDING',
-                location: selectedTask!.location,
-                isEmailEnabled: selectedTask!.isEmailEnabled,
-                isWhatsAppEnabled: selectedTask!.isWhatsAppEnabled,
-                isTelegramEnabled: selectedTask!.isTelegramEnabled,
-                isCallEnabled: selectedTask!.isCallEnabled
-              }}
-            />
-          </div>
-        </Modal>
+        selectedRescheduledTask ? (
+          // Use TaskModal for tasks with rescheduled details
+          <TaskModal
+            task={selectedTask}
+            onClose={handleCloseModal}
+            rescheduledTask={selectedRescheduledTask}
+            initialTab="rescheduled"
+            onEdit={handleEditRescheduledTask}
+            onDelete={handleDeleteRescheduledTask}
+          />
+        ) : (
+          // Use the regular edit form for normal tasks
+          <Modal
+            title="Edit Task"
+            onClose={handleCloseModal}
+            size="md"
+          >
+            <div className={`${isDark ? 'bg-gray-900' : 'bg-white'} transition-colors duration-300`}>
+              <TaskForm
+                mode="edit"
+                onSubmit={handleEditTaskSubmit}
+                onClose={handleCloseModal}
+                onDelete={() => setShowDeleteWarning(true)}
+                onReschedule={handleOpenRescheduleModal}
+                onViewRelatedTask={handleViewRelatedTask}
+                initialTask={{
+                  name: selectedTask!.name,
+                  description: selectedTask!.description || '',
+                  notes: selectedTask!.notes || '',
+                  time: renderTaskTime(selectedTask!),
+                  duration: selectedTask!.duration,
+                  priority: selectedTask!.priority || 'MEDIUM',
+                  status: (selectedTask!.status === 'PENDING' || selectedTask!.status === 'COMPLETED') ? selectedTask!.status : 'PENDING',
+                  location: selectedTask!.location,
+                  isEmailEnabled: selectedTask!.isEmailEnabled,
+                  isWhatsAppEnabled: selectedTask!.isWhatsAppEnabled,
+                  isTelegramEnabled: selectedTask!.isTelegramEnabled,
+                  isCallEnabled: selectedTask!.isCallEnabled
+                }}
+              />
+            </div>
+          </Modal>
+        )
       )}
 
       {showDeleteWarning && (
@@ -516,6 +635,51 @@ export default function Home() {
             onSuccess={handleRescheduleSuccess}
           />
         </Modal>
+      )}
+
+      {/* Edit Rescheduled Task Modal */}
+      {isEditRescheduledTaskModalOpen && selectedRescheduledTask && (
+        <Modal
+          title="Edit Rescheduled Task"
+          onClose={handleCloseEditRescheduledTaskModal}
+          size="md"
+        >
+          <EditRescheduledTaskForm
+            rescheduledTask={selectedRescheduledTask}
+            onClose={handleCloseEditRescheduledTaskModal}
+            onSave={handleSaveEditedRescheduledTask}
+          />
+        </Modal>
+      )}
+
+      {/* Delete Rescheduled Task Warning */}
+      {showDeleteRescheduledTaskWarning && selectedRescheduledTask && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-full max-w-sm mx-4 transition-colors duration-300`}>
+            <h3 className={`text-lg font-medium ${isDark ? 'text-gray-100' : 'text-gray-900'} mb-4 transition-colors duration-300`}>Delete Rescheduled Task</h3>
+            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-6 transition-colors duration-300`}>
+              Are you sure you want to delete this rescheduled task? This action cannot be undone.
+            </p>
+
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={handleCancelDeleteRescheduledTask}
+                className={`inline-flex items-center px-4 py-2 border ${
+                  isDark ? 'border-gray-600 text-gray-300 bg-gray-700 hover:bg-gray-600' : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
+                } text-sm font-medium rounded-md transition-colors duration-300`}
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleConfirmDeleteRescheduledTask}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {showTaskStatusModal && selectedPastTask && (
