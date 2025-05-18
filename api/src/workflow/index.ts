@@ -180,6 +180,10 @@ export const generateSchedule = async ( user: any) => {
     console.log(`[TIME] Calendar events check completed at: ${new Date().toISOString()} (${Date.now() - startTime}ms)`);
     console.log(`Found ${hasCalendarEvents ? user.calendarEvents.length : 0} calendar events`);
 
+    // Check if there are rescheduled tasks to include
+    const hasRescheduledTasks = user.rescheduledTasks && Array.isArray(user.rescheduledTasks) && user.rescheduledTasks.length > 0;
+    console.log(`Found ${hasRescheduledTasks ? user.rescheduledTasks.length : 0} rescheduled tasks for today`);
+
     // Initialize Pinecone
     const pineconeStartTime = Date.now();
     console.log(`[TIME] Starting Pinecone initialization at: ${new Date().toISOString()}`);
@@ -230,6 +234,17 @@ export const generateSchedule = async ( user: any) => {
       }
     }
 
+    // Format rescheduled tasks for the prompt if they exist
+    let rescheduledTasksSection = '';
+    if (hasRescheduledTasks) {
+      rescheduledTasksSection = `
+      ### **Rescheduled Tasks (MUST INCLUDE):**
+      The following tasks have been rescheduled by the user for today and MUST be included in the schedule exactly at the specified times:
+      ${user.rescheduledTasks.map((task: any, index: number) => `
+      ${index + 1}. "${task.name}" at ${task.time} for ${task.duration} minutes${task.location ? ` at ${task.location}` : ''}${task.reason ? ` (Reason: ${task.reason})` : ''}`).join('')}
+      `;
+    }
+
     const question = `
       Generate a complete daily schedule for a ${user.onboardingData?.profession} on ${new Date().toLocaleDateString('en-US', { weekday: 'long' })}.
 
@@ -254,6 +269,7 @@ export const generateSchedule = async ( user: any) => {
 
       ---
       ${calendarEventsSection}
+      ${rescheduledTasksSection}
 
       ### **Schedule Requirements:**
       1. The schedule must **cover all available hours except sleep time**, strictly following the user's sleeping hours from ${user.onboardingData?.sleepingStart} to ${user.onboardingData?.sleepingEnd}.
@@ -269,12 +285,13 @@ export const generateSchedule = async ( user: any) => {
       7. **STRICT: Calculate end time (start time + duration) before assigning the next task**
       8. The schedule should be balanced between work, breaks, and personal time
       9. **All durations must be between 1 and 180 minutes**
-      10. Ensure proper meal times: breakfast (6-9 AM), lunch (12-2 PM), dinner (6-8 PM), give atleast 45 min for a meal slot. 
+      10. Ensure proper meal times: breakfast (6-9 AM), lunch (12-2 PM), dinner (6-8 PM), give atleast 45 min for a meal slot.
       11. Activities like meal, breaks, focussing on hobbies, can be placed in those slots which the productivity is low.
       12. No more than **4 continuous hours of work**. Insert breaks after that.
       13. Make use of the weights to optimize placement of tasks and adapt based on the retrieved context.
       14. Ensure balance between productivity, breaks, and leisure.
-      ${hasCalendarEvents ? '11. **CRITICAL: ALL Google Calendar events MUST be included exactly as specified**' : ''}
+      ${hasCalendarEvents ? '15. **CRITICAL: ALL Google Calendar events MUST be included exactly as specified**' : ''}
+      ${hasRescheduledTasks ? `${hasCalendarEvents ? '16' : '15'}. **CRITICAL: ALL rescheduled tasks MUST be included exactly at the specified times**` : ''}
 
       ### **Output Format:**
       Return a JSON array where each object MUST contain:
@@ -290,6 +307,7 @@ export const generateSchedule = async ( user: any) => {
       5. All times must be chronologically ordered
       6. Duration must be a positive integer
       ${hasCalendarEvents ? '7. All Google Calendar events must be included with exact name, time, and duration' : ''}
+      ${hasRescheduledTasks ? `${hasCalendarEvents ? '8' : '7'}. All rescheduled tasks must be included with exact name, time, and duration` : ''}
 
       **Return ONLY the JSON array with no additional text or explanation.**
     `;

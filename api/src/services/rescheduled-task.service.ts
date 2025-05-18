@@ -77,6 +77,41 @@ export const getRescheduledTasksByUserId = async (userId: string) => {
 };
 
 /**
+ * Get all rescheduled tasks for a specific date
+ * @param userId - The ID of the user
+ * @param date - The date to check for rescheduled tasks
+ * @returns Array of rescheduled task records for the specified date
+ */
+export const getRescheduledTasksForDate = async (userId: string, date: Date) => {
+  // Create date range for the specified date (start of day to end of day)
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const endOfDay = new Date(date);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  return await prisma.rescheduledTask.findMany({
+    where: {
+      task: {
+        schedule: {
+          userId
+        }
+      },
+      rescheduledDate: {
+        gte: startOfDay,
+        lte: endOfDay
+      }
+    },
+    include: {
+      task: true
+    },
+    orderBy: {
+      rescheduledTime: 'asc' // Order by rescheduled time
+    }
+  });
+};
+
+/**
  * Get a specific rescheduled task by ID
  * @param id - The ID of the rescheduled task
  * @returns The rescheduled task or null if not found

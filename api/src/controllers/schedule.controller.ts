@@ -7,6 +7,7 @@ import { AuthenticatedRequest } from '../types/request';
 import { PrismaClient } from '@prisma/client';
 import { formatInTimeZone } from 'date-fns-tz';
 import { getCurrentDayCalendarEvents, hasCalendarIntegration } from '../services/calendar.service';
+import { getRescheduledTasksForDate } from '../services/rescheduled-task.service';
 
 const prisma = new PrismaClient();
 
@@ -72,12 +73,29 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
         }
 
         // Create a new schedule with "pending" status
-        const lockedSchedule = await prisma.schedule.create({
-            data: {
-                userId,
-                status: "pending",
-            },
-        });
+        let lockedSchedule;
+        try {
+            lockedSchedule = await prisma.schedule.create({
+                data: {
+                    userId,
+                    status: "pending",
+                },
+            });
+
+            console.log(`Created locked schedule ${lockedSchedule.id} for user ${userId}`);
+
+            // Verify the schedule was created
+            const verifySchedule = await prisma.schedule.findUnique({
+                where: { id: lockedSchedule.id }
+            });
+
+            if (!verifySchedule) {
+                throw new Error(`Failed to verify creation of schedule ${lockedSchedule.id}`);
+            }
+        } catch (createError) {
+            console.error("Error creating locked schedule:", createError);
+            return next(new Error("Failed to create schedule. Please try again later."));
+        }
 
         // Fetch complete user data including onboarding information
         const userWithOnboarding = await prisma.user.findUnique({
@@ -163,17 +181,46 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
             console.log(`[TIME] No calendar integration found at: ${new Date().toISOString()} (${Date.now() - calendarStartTime}ms)`);
         }
 
-        // Add calendar events to user data for schedule generation
+        // Fetch rescheduled tasks for today
+        console.log(`[TIME] Starting rescheduled tasks fetch at: ${new Date().toISOString()}`);
+        const rescheduledTasksStartTime = Date.now();
+        const today = new Date();
+        const rescheduledTasks = await getRescheduledTasksForDate(userId, today);
+        console.log(`[TIME] Rescheduled tasks fetch completed at: ${new Date().toISOString()} (${Date.now() - rescheduledTasksStartTime}ms)`);
+        console.log(`Found ${rescheduledTasks.length} rescheduled tasks for today`);
+
+        // Format rescheduled tasks for the prompt
+        const formattedRescheduledTasks = rescheduledTasks.map(rt => ({
+            name: rt.task.name,
+            description: rt.task.description || '',
+            time: rt.rescheduledTime, // This is already in HH:MM format
+            duration: rt.task.duration,
+            location: rt.task.location || '',
+            isRescheduledTask: true, // Mark as rescheduled task
+            originalTaskId: rt.taskId,
+            originalTaskTime: rt.originalTaskTime,
+            reason: rt.reason || '',
+            priority: rt.task.priority,
+            isEmailEnabled: rt.task.isEmailEnabled,
+            isWhatsAppEnabled: rt.task.isWhatsAppEnabled,
+            isTelegramEnabled: rt.task.isTelegramEnabled,
+            isCallEnabled: rt.task.isCallEnabled
+        }));
+
+        // Add calendar events and rescheduled tasks to user data for schedule generation
         const userDataWithCalendar = {
             ...userWithOnboarding,
             calendarEvents: calendarEvents,
             calendarEventsError,
-            calendarEventsErrorMessage
+            calendarEventsErrorMessage,
+            rescheduledTasks: formattedRescheduledTasks
         };
 
-        // Debug log to verify calendar events
+        // Debug log to verify calendar events and rescheduled tasks
         console.log(`Adding ${calendarEvents.length} calendar events to user data:`,
             calendarEvents.map(event => ({ name: event.name, time: event.time, duration: event.duration })));
+        console.log(`Adding ${formattedRescheduledTasks.length} rescheduled tasks to user data:`,
+            formattedRescheduledTasks.map(task => ({ name: task.name, time: task.time, duration: task.duration })));
 
         // Generate the schedule with complete user information including calendar events
         console.log(`[TIME] Starting schedule generation workflow at: ${new Date().toISOString()}`);
@@ -268,20 +315,125 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
                 };
             });
 
-            // Save the final schedule
-            const createdSchedule = await prisma.schedule.update({
+            // First, check if the schedule still exists
+            const scheduleExists = await prisma.schedule.findUnique({
+                where: { id: lockedSchedule.id }
+            });
+
+            if (!scheduleExists) {
+                console.error(`Schedule ${lockedSchedule.id} no longer exists`);
+                // Instead of throwing an error, create a new schedule
+                console.log(`Attempting to recreate schedule for user ${userId}`);
+                const newSchedule = await prisma.schedule.create({
+                    data: {
+                        userId,
+                        status: "pending",
+                    }
+                });
+                console.log(`Created new schedule ${newSchedule.id} to replace deleted schedule ${lockedSchedule.id}`);
+                lockedSchedule.id = newSchedule.id; // Update the reference to use the new schedule
+            }
+
+            // Use transaction to ensure all operations succeed or fail together
+            try {
+                await prisma.$transaction(async (tx) => {
+                    // Check again if the schedule exists within the transaction
+                    const scheduleInTx = await tx.schedule.findUnique({
+                        where: { id: lockedSchedule.id }
+                    });
+
+                    if (!scheduleInTx) {
+                        console.log(`Schedule ${lockedSchedule.id} not found in transaction, creating a new one`);
+                        const newSchedule = await tx.schedule.create({
+                            data: {
+                                userId,
+                                status: "pending",
+                            }
+                        });
+                        lockedSchedule.id = newSchedule.id;
+                    }
+
+                    // Update the schedule status
+                    await tx.schedule.update({
+                        where: { id: lockedSchedule.id },
+                        data: {
+                            status: "completed"
+                        }
+                    });
+
+                    // Create the tasks separately
+                    for (const task of formattedTasks) {
+                        await tx.task.create({
+                            data: {
+                                ...task,
+                                scheduleId: lockedSchedule.id,
+                                status: 'PENDING',
+                                priority: 'MEDIUM',
+                                description: '',
+                                notes: '',
+                                location: null,
+                                completedAt: null
+                            }
+                        });
+                    }
+                }, {
+                    // Set a longer timeout for the transaction
+                    timeout: 30000 // 30 seconds
+                });
+            } catch (error) {
+                // Type guard to ensure error is an Error object
+                const txError = error instanceof Error ? error : new Error(String(error));
+                console.error(`Transaction failed: ${txError.message}`);
+
+                // Check if this is a "record not found" error
+                if (txError.message.includes("Record to update not found") ||
+                    txError.message.includes("does not exist")) {
+                    console.log("Transaction failed due to missing schedule, creating a new one");
+
+                    // Create a new schedule outside the transaction
+                    const newSchedule = await prisma.schedule.create({
+                        data: {
+                            userId,
+                            status: "completed"
+                        }
+                    });
+
+                    console.log(`Created new schedule ${newSchedule.id}`);
+                    lockedSchedule.id = newSchedule.id;
+
+                    // Create tasks for the new schedule
+                    for (const task of formattedTasks) {
+                        await prisma.task.create({
+                            data: {
+                                ...task,
+                                scheduleId: newSchedule.id,
+                                status: 'PENDING',
+                                priority: 'MEDIUM',
+                                description: '',
+                                notes: '',
+                                location: null,
+                                completedAt: null
+                            }
+                        });
+                    }
+                } else {
+                    // For other errors, rethrow
+                    throw txError;
+                }
+            }
+
+            // Finally, fetch the updated schedule with all its data
+            const createdSchedule = await prisma.schedule.findUnique({
                 where: { id: lockedSchedule.id },
-                data: {
-                    originalData: {
-                        create: formattedTasks
-                    },
-                    status: "completed"
-                },
                 include: {
                     originalData: true,
                     user: true
                 }
             });
+
+            if (!createdSchedule) {
+                throw new Error("Failed to retrieve the created schedule");
+            }
 
             res.status(201).json(createdSchedule);
         } catch (innerError) {
@@ -289,8 +441,34 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
 
             // Clean up the schedule
             try {
-                await prisma.schedule.delete({ where: { id: lockedSchedule.id } });
-                console.log(`Deleted schedule ${lockedSchedule.id} after processing error`);
+                // First check if the schedule still exists
+                const scheduleToDelete = await prisma.schedule.findUnique({
+                    where: { id: lockedSchedule.id }
+                });
+
+                if (scheduleToDelete) {
+                    await prisma.schedule.delete({ where: { id: lockedSchedule.id } });
+                    console.log(`Deleted schedule ${lockedSchedule.id} after processing error`);
+                } else {
+                    console.log(`Schedule ${lockedSchedule.id} already deleted or does not exist`);
+                }
+
+                // Check for any other pending schedules for this user and clean them up
+                const otherPendingSchedules = await prisma.schedule.findMany({
+                    where: {
+                        userId,
+                        status: "pending",
+                        id: { not: lockedSchedule.id }
+                    }
+                });
+
+                if (otherPendingSchedules.length > 0) {
+                    console.log(`Found ${otherPendingSchedules.length} other pending schedules for user ${userId}`);
+                    for (const schedule of otherPendingSchedules) {
+                        await prisma.schedule.delete({ where: { id: schedule.id } });
+                        console.log(`Deleted pending schedule ${schedule.id}`);
+                    }
+                }
             } catch (cleanupError) {
                 console.error("Error cleaning up schedule after processing error:", cleanupError);
             }
@@ -323,8 +501,21 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
                 console.log(`Cleaning up ${pendingSchedules.length} pending schedules for user ${currentUserId}`);
 
                 for (const schedule of pendingSchedules) {
-                    await prisma.schedule.delete({ where: { id: schedule.id } });
-                    console.log(`Deleted pending schedule ${schedule.id}`);
+                    try {
+                        // Check if the schedule still exists before trying to delete it
+                        const scheduleExists = await prisma.schedule.findUnique({
+                            where: { id: schedule.id }
+                        });
+
+                        if (scheduleExists) {
+                            await prisma.schedule.delete({ where: { id: schedule.id } });
+                            console.log(`Deleted pending schedule ${schedule.id}`);
+                        } else {
+                            console.log(`Schedule ${schedule.id} already deleted or does not exist`);
+                        }
+                    } catch (deleteError) {
+                        console.error(`Error deleting schedule ${schedule.id}:`, deleteError);
+                    }
                 }
             } else {
                 console.log(`No pending schedules found for user ${currentUserId}`);

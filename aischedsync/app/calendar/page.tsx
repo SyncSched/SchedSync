@@ -1,10 +1,11 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { CalendarEvent as CalendarEventType, Task, getTodaySchedule, getWeekSchedule, updateSchedule } from '@/api/lib';
+import { CalendarEvent as CalendarEventType, Task, getTodaySchedule, getWeekSchedule, updateSchedule, rescheduleTask, RescheduledTask } from '@/api/lib';
 import CalendarHeader from './components/CalendarHeader';
 import DayView from './components/DayView';
 import WeekView from './components/WeekView';
 import { TaskForm, TaskFormData as ScheduleTaskFormData } from '@/app/components/TaskForm';
+import RescheduleTaskForm from '@/app/components/RescheduleTaskForm';
 import Modal from '@/app/components/ui/Modal';
 import { startOfWeek } from 'date-fns';
 
@@ -33,9 +34,12 @@ export default function CalendarPage() {
   const [lockedEvents, setLockedEvents] = useState<string[]>([]);
   const [aiSuggestedEvents] = useState<string[]>([]);
 
+  // Reschedule related state
+  const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false);
+
   useEffect(() => {
     fetchEvents();
-  }, [currentDate, view]);
+  }, [currentDate, view]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchEvents = async () => {
     try {
@@ -147,6 +151,21 @@ export default function CalendarPage() {
   const handleModalClose = () => {
     setSelectedEvent(null);
     setSelectedHour(null);
+    setIsRescheduleModalOpen(false);
+  };
+
+  const handleOpenRescheduleModal = () => {
+    if (selectedEvent && 'scheduleId' in selectedEvent) {
+      setIsRescheduleModalOpen(true);
+    }
+  };
+
+  const handleRescheduleSuccess = async (rescheduledTask: RescheduledTask) => {
+    // Close the reschedule modal
+    setIsRescheduleModalOpen(false);
+
+    // Refresh the events to show the updated schedule
+    await fetchEvents();
   };
 
   const handleViewRelatedTask = async (taskId: string) => {
@@ -381,11 +400,6 @@ export default function CalendarPage() {
               isWhatsAppEnabled: selectedEvent && 'scheduleId' in selectedEvent ? selectedEvent.isWhatsAppEnabled : false,
               isTelegramEnabled: selectedEvent && 'scheduleId' in selectedEvent ? selectedEvent.isTelegramEnabled : false,
               isCallEnabled: selectedEvent && 'scheduleId' in selectedEvent ? selectedEvent.isCallEnabled : false,
-              // Rescheduled task properties
-              rescheduledFromTaskId: selectedEvent && 'scheduleId' in selectedEvent ? selectedEvent.rescheduledFromTaskId : undefined,
-              rescheduledToTaskId: selectedEvent && 'scheduleId' in selectedEvent ? selectedEvent.rescheduledToTaskId : undefined,
-              rescheduledReason: selectedEvent && 'scheduleId' in selectedEvent ? selectedEvent.rescheduledReason : undefined,
-              rescheduledAt: selectedEvent && 'scheduleId' in selectedEvent ? selectedEvent.rescheduledAt : undefined
             }}
             onSubmit={(formData) => {
               // Convert ScheduleTaskFormData to TaskFormData
@@ -407,6 +421,22 @@ export default function CalendarPage() {
             }}
             onClose={handleModalClose}
             onDelete={selectedEvent && 'scheduleId' in selectedEvent ? () => handleModalDelete(selectedEvent) : undefined}
+            onReschedule={selectedEvent && 'scheduleId' in selectedEvent ? handleOpenRescheduleModal : undefined}
+          />
+        </Modal>
+      )}
+
+      {/* Reschedule Modal */}
+      {isRescheduleModalOpen && selectedEvent && 'scheduleId' in selectedEvent && (
+        <Modal
+          title="Reschedule Task"
+          onClose={() => setIsRescheduleModalOpen(false)}
+          size="md"
+        >
+          <RescheduleTaskForm
+            task={selectedEvent as Task}
+            onClose={() => setIsRescheduleModalOpen(false)}
+            onSuccess={handleRescheduleSuccess}
           />
         </Modal>
       )}
