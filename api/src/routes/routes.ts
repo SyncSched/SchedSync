@@ -8,7 +8,12 @@ import {
     getUserSettingsHandler
 } from '../controllers/user.controller';
 import { updateTaskNotificationSettings, rescheduleTaskHandler } from '../controllers/task.controller';
-import { getUpcomingNotificationsHandler , updateNotificationTimeHandler, deleteNotificationHandler } from '../controllers/notification.controller';
+import { 
+    getUpcomingNotificationsHandler ,
+    updateNotificationTimeHandler, 
+    deleteNotificationHandler,
+    locationNotifyHandler
+} from '../controllers/notification.controller';
 import {
     getUserRescheduledTasksHandler,
     getTaskRescheduledTasksHandler,
@@ -113,4 +118,6 @@ export const attachPrivateRoutes = (app: any): void => {
     app.post('/goals', createGoalHandler);
     app.put('/goals/:goalId', updateGoalHandler);
     app.delete('/goals/:goalId', deleteGoalHandler);
+    // Location notification
+    app.post('/locationNotify', locationNotifyHandler);
 }

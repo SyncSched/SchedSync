@@ -1313,3 +1313,30 @@ export const updateTaskStatus = async (
     throw error;
   }
 };
+
+/**
+ * Send location-based notifications for tasks
+ * @param taskIds - Array of task IDs to notify for
+ */
+export const locationNotify = async (taskIds: string[]): Promise<void> => {
+  const token = getStoredAuthToken(); // Assumes you have this utility
+
+  if (token && !isTokenValid(token)) {
+    throw new Error('Token expired');
+  }
+
+  const response = await fetch(`${API_URL}/locationNotify`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ taskIds })
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to send location-based notifications');
+  }
+
+  console.log("✅ Location-based notifications triggered.");
+};

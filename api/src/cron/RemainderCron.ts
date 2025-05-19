@@ -151,7 +151,7 @@ function formatMessage(task: any, channel: string): string {
     case 'email':
       return `${baseMessage}\n\nThis is an automated reminder from your schedule assistant.`;
     case 'whatsapp':
-      return `📅 ${baseMessage}`;
+      return `📅 ${baseMessage}`; 
     case 'telegram':
       return `<b>🔔 Task Reminder</b>
 
