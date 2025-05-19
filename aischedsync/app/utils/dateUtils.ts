@@ -151,13 +151,26 @@ export const formatDate = (dateString: string | Date, format: string = 'MMM d, y
   const year = date.getFullYear();
   const month = date.getMonth();
   const day = date.getDate();
+  const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
 
   // Month names
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const fullMonthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-  // Replace format tokens
-  return format
+  // Day names
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const fullDayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+  // Process the format string in a specific order to avoid conflicts
+  let result = format;
+
+  // First, handle day name formats (to avoid conflicts with day number 'd')
+  result = result
+    .replace(/dddd/g, fullDayNames[dayOfWeek])
+    .replace(/ddd/g, dayNames[dayOfWeek]);
+
+  // Then handle the rest of the format tokens
+  return result
     .replace(/yyyy/g, year.toString())
     .replace(/yy/g, year.toString().slice(-2))
     .replace(/MMMM/g, fullMonthNames[month])

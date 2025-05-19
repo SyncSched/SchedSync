@@ -1,6 +1,5 @@
 import { useTheme } from '@/contexts/ThemeContext';
 import { Task, RescheduledTask } from '@/api/lib';
-import { formatDate } from '../utils/dateUtils';
 
 interface RescheduledTasksProps {
   rescheduledTasks?: RescheduledTask[];
@@ -67,7 +66,12 @@ export default function RescheduledTasks({
                   </div>
                   <div className="flex items-center justify-between">
                     <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'} transition-colors duration-300`}>
-                      {formatDate(rescheduledTask.rescheduledDate)}
+                      {new Date(rescheduledTask.rescheduledDate).toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
                     </span>
                   </div>
                   {rescheduledTask.reason && (
