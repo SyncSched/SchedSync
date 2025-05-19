@@ -581,22 +581,23 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                       value={locationName || 'No location selected'}
                       readOnly
                       placeholder="Select a location"
-                      className={`w-full px-2 py-2 sm:py-1.5 ${
-                        isDark ? 'bg-gradient-to-r from-blue-900/30 to-indigo-900/30 text-gray-300' : 'bg-gradient-to-r from-blue-50 to-indigo-50 text-gray-700'
+                      className={`w-full px-2.5 py-1.5 ${
+                        isDark ? 'bg-gray-800 text-gray-200 border border-gray-700' : 'bg-gradient-to-r from-blue-50 to-indigo-50 text-gray-700'
                       } rounded-lg text-xs font-medium focus:outline-none focus:ring-1 ${
                         isDark ? 'focus:ring-blue-500/30' : 'focus:ring-blue-200'
-                      } ${isDark ? 'placeholder-gray-500' : ''}`}
+                      } ${isDark ? 'placeholder-gray-500' : ''} truncate pr-8`}
                     />
-                    <div
+                    <button
+                      type="button"
                       onClick={() => setShowMap(true)}
-                      className={`absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer hover:text-blue-500 transition-colors duration-200 ${
-                      isDark ? 'text-gray-500' : 'text-gray-400'
+                      className={`absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer p-0.5 rounded-full hover:bg-blue-100 dark:hover:bg-gray-700 transition-colors duration-200 ${
+                      isDark ? 'text-gray-400 hover:text-blue-400' : 'text-gray-500 hover:text-blue-500'
                     }`}>
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                       </svg>
-                    </div>
+                    </button>
                   </div>
                 </div>
 
@@ -637,15 +638,15 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                       onChange={handleChange}
                       required
                       min="1"
-                      className={`w-full px-2 py-1.5 ${
+                      className={`w-full px-2.5 py-1.5 ${
                         isDark ? 'bg-gray-800 text-gray-200 border border-gray-700' : 'bg-gradient-to-r from-orange-50 to-amber-50 text-gray-700'
                       } rounded-lg text-xs font-medium focus:outline-none focus:ring-1 ${
                         isDark ? 'focus:ring-orange-500/30 focus:border-orange-500/50' : 'focus:ring-orange-200'
-                      }`}
+                      } pr-14`}
                     />
-                    <span className={`absolute right-2 top-1/2 -translate-y-1/2 text-[10px] ${
+                    <div className={`absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-medium ${
                       isDark ? 'text-gray-400' : 'text-gray-500'
-                    }`}>minutes</span>
+                    }`}>minutes</div>
                   </div>
                 </div>
 
@@ -661,28 +662,30 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                       name="priority"
                       value={formData.priority}
                       onChange={handleChange}
-                      className={`w-full px-2 py-1.5 appearance-none rounded-lg text-xs font-medium focus:outline-none focus:ring-1 transition-colors duration-200 ${
-                        isDark ? (
-                          formData.priority === 'HIGH'
-                            ? 'bg-red-900/30 text-red-400 focus:ring-red-500/30'
-                            : formData.priority === 'MEDIUM'
-                            ? 'bg-amber-900/30 text-amber-400 focus:ring-amber-500/30'
-                            : 'bg-green-900/30 text-green-400 focus:ring-green-500/30'
-                        ) : (
-                          formData.priority === 'HIGH'
+                      className={`w-full px-2.5 py-1.5 appearance-none rounded-lg text-xs font-medium focus:outline-none focus:ring-1 transition-colors duration-200 ${
+                        isDark
+                          ? 'bg-gray-800 text-gray-200 border border-gray-700'
+                          : formData.priority === 'HIGH'
                             ? 'bg-red-50 text-red-700 focus:ring-red-200'
                             : formData.priority === 'MEDIUM'
                             ? 'bg-amber-50 text-amber-700 focus:ring-amber-200'
                             : 'bg-green-50 text-green-700 focus:ring-green-200'
-                        )
+                      } ${
+                        isDark
+                          ? formData.priority === 'HIGH'
+                            ? 'focus:ring-red-500/30 focus:border-red-500/50'
+                            : formData.priority === 'MEDIUM'
+                            ? 'focus:ring-amber-500/30 focus:border-amber-500/50'
+                            : 'focus:ring-green-500/30 focus:border-green-500/50'
+                          : ''
                       }`}
                     >
                       <option value="HIGH" className={isDark ? 'bg-gray-800 text-red-400' : 'bg-red-50 text-red-700'}>High</option>
                       <option value="MEDIUM" className={isDark ? 'bg-gray-800 text-amber-400' : 'bg-amber-50 text-amber-700'}>Medium</option>
                       <option value="LOW" className={isDark ? 'bg-gray-800 text-green-400' : 'bg-green-50 text-green-700'}>Low</option>
                     </select>
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <svg className={`size-3.5 ${
+                    <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <svg className={`w-3.5 h-3.5 ${
                         isDark ? (
                           formData.priority === 'HIGH'
                             ? 'text-red-400'
@@ -703,7 +706,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   </div>
                 </div>
 
-                
+
               </div>
 
               {/* Action Buttons */}
