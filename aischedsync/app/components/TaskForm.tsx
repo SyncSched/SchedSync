@@ -703,50 +703,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   </div>
                 </div>
 
-                {/* Status */}
-                <div className={`${isDark ? 'bg-gray-700' : 'bg-white'} rounded-lg p-2 shadow-sm border ${
-                  isDark ? 'border-gray-600/80' : 'border-gray-100/80'
-                }`}>
-                  <label className={`block text-[11px] font-medium ${
-                    isDark ? 'text-gray-400' : 'text-gray-600'
-                  } mb-1`}>Status</label>
-                  <div className="relative">
-                    <select
-                      name="status"
-                      value={formData.status}
-                      onChange={handleChange}
-                      className={`w-full px-2 py-1.5 appearance-none rounded-lg text-xs font-medium focus:outline-none focus:ring-1 transition-colors duration-200 ${
-                        isDark ? (
-                          formData.status === 'PENDING'
-                            ? 'bg-blue-900/30 text-blue-400 focus:ring-blue-500/30'
-                            : 'bg-emerald-900/30 text-emerald-400 focus:ring-emerald-500/30'
-                        ) : (
-                          formData.status === 'PENDING'
-                            ? 'bg-blue-50 text-blue-700 focus:ring-blue-200'
-                            : 'bg-emerald-50 text-emerald-700 focus:ring-emerald-200'
-                        )
-                      }`}
-                    >
-                      <option value="PENDING" className={isDark ? 'bg-gray-800 text-blue-400' : 'bg-blue-50 text-blue-700'}>Pending</option>
-                      <option value="COMPLETED" className={isDark ? 'bg-gray-800 text-emerald-400' : 'bg-emerald-50 text-emerald-700'}>Completed</option>
-                    </select>
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <svg className={`size-3.5 ${
-                        isDark ? (
-                          formData.status === 'PENDING'
-                            ? 'text-blue-400'
-                            : 'text-emerald-400'
-                        ) : (
-                          formData.status === 'PENDING'
-                            ? 'text-blue-500'
-                            : 'text-emerald-500'
-                        )
-                      }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
+                
               </div>
 
               {/* Action Buttons */}

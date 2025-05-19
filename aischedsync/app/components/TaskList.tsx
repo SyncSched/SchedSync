@@ -181,55 +181,65 @@ export default function TaskList({
 
                   {/* Task Status Badge - Only show for tasks up to the current running task */}
                   {task.status && (index <= activeTaskIndex || isPastTask) && (
-                    <div className={`px-2 py-1 rounded-md text-xs font-medium shadow-sm ${
+                    <div className={`px-2.5 py-1 rounded-full text-xs font-medium shadow-sm transition-all duration-200 ${
                       task.status === 'COMPLETED'
-                        ? isDark ? 'bg-green-800/50 text-green-300 border border-green-700' : 'bg-green-100 text-green-700 border border-green-200'
+                        ? isDark
+                          ? 'bg-green-900/40 text-green-300 border border-green-700/60 backdrop-blur-sm'
+                          : 'bg-green-50 text-green-700 border border-green-200 backdrop-blur-sm'
                         : task.status === 'PENDING'
-                          ? isDark ? 'bg-yellow-800/50 text-yellow-300 border border-yellow-700' : 'bg-yellow-100 text-yellow-700 border border-yellow-200'
+                          ? isDark
+                            ? 'bg-yellow-900/40 text-yellow-300 border border-yellow-700/60 backdrop-blur-sm'
+                            : 'bg-yellow-50 text-yellow-700 border border-yellow-200 backdrop-blur-sm'
                           : task.status === 'OVERDUE'
-                            ? isDark ? 'bg-red-800/50 text-red-300 border border-red-700' : 'bg-red-100 text-red-700 border border-red-200'
+                            ? isDark
+                              ? 'bg-red-900/40 text-red-300 border border-red-700/60 backdrop-blur-sm'
+                              : 'bg-red-50 text-red-700 border border-red-200 backdrop-blur-sm'
                             : task.status === 'RESCHEDULED'
-                              ? isDark ? 'bg-purple-800/50 text-purple-300 border border-purple-700' : 'bg-purple-100 text-purple-700 border border-purple-200'
-                              : isDark ? 'bg-blue-800/50 text-blue-300 border border-blue-700' : 'bg-blue-100 text-blue-700 border border-blue-200'
+                              ? isDark
+                                ? 'bg-purple-900/40 text-purple-300 border border-purple-700/60 backdrop-blur-sm'
+                                : 'bg-purple-50 text-purple-700 border border-purple-200 backdrop-blur-sm'
+                              : isDark
+                                ? 'bg-blue-900/40 text-blue-300 border border-blue-700/60 backdrop-blur-sm'
+                                : 'bg-blue-50 text-blue-700 border border-blue-200 backdrop-blur-sm'
                     }`}>
                       {task.status === 'COMPLETED' && (
-                        <div className="flex items-center gap-1">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="flex items-center gap-1.5">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
-                          <span>Completed</span>
+                          <span className="font-medium">Completed</span>
                         </div>
                       )}
                       {task.status === 'PENDING' && (
-                        <div className="flex items-center gap-1">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="flex items-center gap-1.5">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          <span>Pending</span>
+                          <span className="font-medium">Pending</span>
                         </div>
                       )}
                       {task.status === 'OVERDUE' && (
-                        <div className="flex items-center gap-1">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="flex items-center gap-1.5">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                           </svg>
-                          <span>Overdue</span>
+                          <span className="font-medium">Overdue</span>
                         </div>
                       )}
                       {task.status === 'IN_PROGRESS' && (
-                        <div className="flex items-center gap-1">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="flex items-center gap-1.5">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                           </svg>
-                          <span>In Progress</span>
+                          <span className="font-medium">In Progress</span>
                         </div>
                       )}
                       {task.status === 'RESCHEDULED' && (
-                        <div className="flex items-center gap-1">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="flex items-center gap-1.5">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
-                          <span>Rescheduled</span>
+                          <span className="font-medium">Rescheduled</span>
                         </div>
                       )}
                     </div>

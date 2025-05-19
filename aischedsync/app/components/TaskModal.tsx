@@ -156,25 +156,68 @@ export default function TaskModal({
                 <p className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                   Status
                 </p>
-                <div className="mt-1">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                <div className="mt-2">
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium shadow-sm border ${
                     task.status === 'COMPLETED'
                       ? isDark
-                        ? 'bg-green-900 text-green-200'
-                        : 'bg-green-100 text-green-800'
+                        ? 'bg-green-900/40 text-green-300 border-green-700/60 backdrop-blur-sm'
+                        : 'bg-green-50 text-green-700 border-green-200 backdrop-blur-sm'
                       : task.status === 'IN_PROGRESS'
                       ? isDark
-                        ? 'bg-blue-900 text-blue-200'
-                        : 'bg-blue-100 text-blue-800'
+                        ? 'bg-blue-900/40 text-blue-300 border-blue-700/60 backdrop-blur-sm'
+                        : 'bg-blue-50 text-blue-700 border-blue-200 backdrop-blur-sm'
                       : task.status === 'OVERDUE'
                       ? isDark
-                        ? 'bg-red-900 text-red-200'
-                        : 'bg-red-100 text-red-800'
+                        ? 'bg-red-900/40 text-red-300 border-red-700/60 backdrop-blur-sm'
+                        : 'bg-red-50 text-red-700 border-red-200 backdrop-blur-sm'
+                      : task.status === 'RESCHEDULED'
+                      ? isDark
+                        ? 'bg-purple-900/40 text-purple-300 border-purple-700/60 backdrop-blur-sm'
+                        : 'bg-purple-50 text-purple-700 border-purple-200 backdrop-blur-sm'
                       : isDark
-                      ? 'bg-yellow-900 text-yellow-200'
-                      : 'bg-yellow-100 text-yellow-800'
+                      ? 'bg-yellow-900/40 text-yellow-300 border-yellow-700/60 backdrop-blur-sm'
+                      : 'bg-yellow-50 text-yellow-700 border-yellow-200 backdrop-blur-sm'
                   }`}>
-                    {task.status}
+                    {task.status === 'COMPLETED' && (
+                      <div className="flex items-center gap-1.5">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="sr-only">Completed</span>
+                      </div>
+                    )}
+                    {task.status === 'PENDING' && (
+                      <div className="flex items-center gap-1.5">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="sr-only">Pending</span>
+                      </div>
+                    )}
+                    {task.status === 'OVERDUE' && (
+                      <div className="flex items-center gap-1.5">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <span className="sr-only">Overdue</span>
+                      </div>
+                    )}
+                    {task.status === 'IN_PROGRESS' && (
+                      <div className="flex items-center gap-1.5">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        <span className="sr-only">In Progress</span>
+                      </div>
+                    )}
+                    {task.status === 'RESCHEDULED' && (
+                      <div className="flex items-center gap-1.5">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span className="sr-only">Rescheduled</span>
+                      </div>
+                    )}
                   </span>
                 </div>
               </div>
@@ -183,21 +226,44 @@ export default function TaskModal({
                 <p className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                   Priority
                 </p>
-                <div className="mt-1">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                <div className="mt-2">
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium shadow-sm border ${
                     task.priority === 'HIGH'
                       ? isDark
-                        ? 'bg-red-900 text-red-200'
-                        : 'bg-red-100 text-red-800'
+                        ? 'bg-red-900/40 text-red-300 border-red-700/60 backdrop-blur-sm'
+                        : 'bg-red-50 text-red-700 border-red-200 backdrop-blur-sm'
                       : task.priority === 'MEDIUM'
                       ? isDark
-                        ? 'bg-yellow-900 text-yellow-200'
-                        : 'bg-yellow-100 text-yellow-800'
+                        ? 'bg-yellow-900/40 text-yellow-300 border-yellow-700/60 backdrop-blur-sm'
+                        : 'bg-yellow-50 text-yellow-700 border-yellow-200 backdrop-blur-sm'
                       : isDark
-                      ? 'bg-green-900 text-green-200'
-                      : 'bg-green-100 text-green-800'
+                      ? 'bg-green-900/40 text-green-300 border-green-700/60 backdrop-blur-sm'
+                      : 'bg-green-50 text-green-700 border-green-200 backdrop-blur-sm'
                   }`}>
-                    {task.priority}
+                    {task.priority === 'HIGH' && (
+                      <div className="flex items-center gap-1.5">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        <span className="sr-only">High</span>
+                      </div>
+                    )}
+                    {task.priority === 'MEDIUM' && (
+                      <div className="flex items-center gap-1.5">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                        </svg>
+                        <span className="sr-only">Medium</span>
+                      </div>
+                    )}
+                    {task.priority === 'LOW' && (
+                      <div className="flex items-center gap-1.5">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                        <span className="sr-only">Low</span>
+                      </div>
+                    )}
                   </span>
                 </div>
               </div>
