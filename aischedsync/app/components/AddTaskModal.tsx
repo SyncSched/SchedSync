@@ -46,9 +46,9 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose }) => {
         status: formData.status,
         location: formData.location,
         isEmailEnabled: formData.isEmailEnabled,
-        isWhatsAppEnabled: formData.isWhatsAppEnabled,
+        // isWhatsAppEnabled: formData.isWhatsAppEnabled, // WhatsApp notification option commented out
         isTelegramEnabled: formData.isTelegramEnabled,
-        isCallEnabled: formData.isCallEnabled
+        // isCallEnabled: formData.isCallEnabled // Phone Call notification option commented out
       };
 
       const updatedTasks = [...(schedule?.originalData || []), newTaskObject];
@@ -85,9 +85,9 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose }) => {
             priority: 'MEDIUM',
             status: 'PENDING',
             isEmailEnabled: false,
-            isWhatsAppEnabled: false,
+            // isWhatsAppEnabled: false, // WhatsApp notification option commented out
             isTelegramEnabled: false,
-            isCallEnabled: false
+            // isCallEnabled: false // Phone Call notification option commented out
           }}
         />
       </div>

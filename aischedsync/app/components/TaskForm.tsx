@@ -469,6 +469,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
                     <div className="grid grid-cols-2 gap-2.5">
                       {[
+                        /* WhatsApp notification option commented out
                         {
                           name: 'isWhatsAppEnabled',
                           label: 'WhatsApp',
@@ -481,6 +482,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                           ),
                           activeGradient: 'from-emerald-500 to-green-500'
                         },
+                        */
                         {
                           name: 'isTelegramEnabled',
                           label: 'Telegram',
@@ -509,6 +511,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                           ),
                           activeGradient: 'from-amber-500 to-yellow-500'
                         },
+                        /* Phone Call notification option commented out
                         {
                           name: 'isCallEnabled',
                           label: 'Phone Call',
@@ -521,6 +524,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                           ),
                           activeGradient: 'from-purple-500 to-violet-500'
                         },
+                        */
                       ].map(({ name, label, icon, activeGradient }) => (
                         <label key={name} className={`group/toggle relative flex items-center justify-between p-3 ${
                           isDark ? 'bg-gray-800/80 hover:bg-gray-800' : 'bg-gradient-to-r from-gray-50 to-transparent hover:from-gray-100'

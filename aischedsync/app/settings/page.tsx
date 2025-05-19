@@ -88,7 +88,7 @@ export default function SettingsPage() {
       if (!isMounted.current) return;
 
       setUser(userData as ExtendedUserInfo);
-      
+
       const initialData: FormData = {
         timezone: userSettingsData.timezone || defaultFormData.timezone,
         notificationPreferences: {
@@ -126,7 +126,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     isMounted.current = true;
-    
+
     if (isAuthenticated) {
       fetchUserData();
     }
@@ -214,10 +214,10 @@ export default function SettingsPage() {
   return (
     <div className={`min-h-screen -mt-[80px] ${isDark ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}>
       <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-        
+
         {/* Settings Card - Apple Style */}
         <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-[#e2e2e7]'} backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border overflow-hidden transition-colors duration-300`}>
-          
+
           {/* Card Body with Form Fields */}
           <div className="p-8">
             {/* Action Buttons at the top */}
@@ -291,8 +291,8 @@ export default function SettingsPage() {
                         onChange={(e) => handleInputChange('timezone', '', e.target.value)}
                         disabled={!isEditing}
                         className={`block w-full rounded-lg border ${
-                          isDark 
-                            ? 'bg-gray-800 border-gray-600 text-gray-300 focus:border-indigo-500' 
+                          isDark
+                            ? 'bg-gray-800 border-gray-600 text-gray-300 focus:border-indigo-500'
                             : 'bg-white border-gray-300 text-gray-900 focus:border-indigo-600'
                         } px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-50 transition-colors duration-300`}
                       >
@@ -322,9 +322,9 @@ export default function SettingsPage() {
                     <div className="space-y-4">
                       {[
                         ['isEmailEnabled', 'Email', 'Receive email notifications for reminders and updates'],
-                        ['isWhatsAppEnabled', 'WhatsApp', 'Get instant messages via WhatsApp'],
+                        // ['isWhatsAppEnabled', 'WhatsApp', 'Get instant messages via WhatsApp'],
                         ['isTelegramEnabled', 'Telegram', 'Receive notifications through Telegram'],
-                        ['isCallEnabled', 'Phone Call', 'Get important reminders via phone call']
+                        // ['isCallEnabled', 'Phone Call', 'Get important reminders via phone call']
                       ].map(([key, label, description]) => (
                         <div key={key} className="flex items-start">
                           <div className="flex items-center h-5">
@@ -343,7 +343,7 @@ export default function SettingsPage() {
                         </div>
                       ))}
                     </div>
-                    
+
                     {/* Add Notify Before Minutes */}
                     <div className="mt-6 pt-5 border-t border-gray-100">
                       <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
@@ -358,8 +358,8 @@ export default function SettingsPage() {
                           value={formData.notificationPreferences.notifyBeforeMinutes}
                           onChange={(e) => handleInputChange('notificationPreferences', 'notifyBeforeMinutes', parseInt(e.target.value))}
                           className={`rounded-lg border ${
-                            isDark 
-                              ? 'bg-gray-700 border-gray-600 text-gray-300 focus:border-indigo-500' 
+                            isDark
+                              ? 'bg-gray-700 border-gray-600 text-gray-300 focus:border-indigo-500'
                               : 'bg-white border-gray-300 text-gray-900 focus:border-indigo-600'
                           } px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-50 transition-colors duration-300`}
                         >
@@ -389,8 +389,8 @@ export default function SettingsPage() {
                           onClick={handleTelegramConnect}
                           disabled={!isEditing || !!formData.notificationPreferences.telegramChatId}
                           className={`px-3.5 py-1.5 text-xs rounded-full flex items-center gap-1 transition-colors duration-300 ${
-                            formData.notificationPreferences.telegramChatId 
-                              ? 'bg-green-50 text-green-700 border border-green-200' 
+                            formData.notificationPreferences.telegramChatId
+                              ? 'bg-green-50 text-green-700 border border-green-200'
                               : isDark
                                 ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600 disabled:bg-gray-800 disabled:text-gray-500 disabled:border-gray-700'
                                 : 'bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-gray-200 disabled:text-gray-400'
@@ -408,7 +408,7 @@ export default function SettingsPage() {
                           )}
                         </button>
                         <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                          {formData.notificationPreferences.telegramChatId 
+                          {formData.notificationPreferences.telegramChatId
                             ? 'Your Telegram account is linked'
                             : 'Link your account to get notifications'}
                         </span>
@@ -430,8 +430,8 @@ export default function SettingsPage() {
                           value={formData.notificationPreferences.phoneNumber}
                           onChange={(e) => handleInputChange('notificationPreferences', 'phoneNumber', e.target.value)}
                           className={`pl-10 w-full rounded-xl border ${
-                            isDark 
-                              ? 'bg-gray-800 border-gray-600 text-gray-300 focus:border-indigo-500' 
+                            isDark
+                              ? 'bg-gray-800 border-gray-600 text-gray-300 focus:border-indigo-500'
                               : 'bg-white border-gray-300 text-gray-900 focus:border-indigo-600'
                           } px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-50 transition-colors duration-300`}
                           placeholder="Enter your phone number"
@@ -461,8 +461,8 @@ export default function SettingsPage() {
                         value={formData.onboardingData.profession}
                         onChange={(e) => handleInputChange('onboardingData', 'profession', e.target.value)}
                         className={`w-full rounded-xl border ${
-                          isDark 
-                            ? 'bg-gray-800 border-gray-600 text-gray-300 focus:border-indigo-500' 
+                          isDark
+                            ? 'bg-gray-800 border-gray-600 text-gray-300 focus:border-indigo-500'
                             : 'bg-white border-gray-300 text-gray-900 focus:border-indigo-600'
                         } px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-50 transition-colors duration-300`}
                         placeholder="What do you do?"
@@ -477,8 +477,8 @@ export default function SettingsPage() {
                         value={formData.onboardingData.hobbies.join(', ')}
                         onChange={(e) => handleInputChange('onboardingData', 'hobbies', e.target.value.split(',').map(h => h.trim()))}
                         className={`w-full rounded-xl border ${
-                          isDark 
-                            ? 'bg-gray-800 border-gray-600 text-gray-300 focus:border-indigo-500' 
+                          isDark
+                            ? 'bg-gray-800 border-gray-600 text-gray-300 focus:border-indigo-500'
                             : 'bg-white border-gray-300 text-gray-900 focus:border-indigo-600'
                         } px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-50 transition-colors duration-300`}
                         placeholder="Reading, Cooking, Sports, etc. (comma-separated)"
@@ -489,7 +489,7 @@ export default function SettingsPage() {
 
                   <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white'} p-5 rounded-xl shadow-sm border border-[#e8e8ed]`}>
                     <h4 className={`text-lg font-medium ${isDark ? 'text-gray-100' : 'text-gray-800'} mb-6`}>Schedule Preferences</h4>
-                    
+
                     <div className="space-y-8">
                       {/* Working Hours */}
                       <div>
@@ -525,7 +525,7 @@ export default function SettingsPage() {
                           </div>
                         </div>
                       </div>
-                      
+
                       {/* Sleep Schedule */}
                       <div className="pt-6 border-t border-gray-100">
                         <label className={`block text-base font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-3`}>Sleep Schedule</label>
@@ -572,7 +572,7 @@ export default function SettingsPage() {
 
       {/* Toast Notification - Apple Style */}
       {showToast && (
-        <div 
+        <div
           className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 px-5 py-3.5 rounded-full text-white shadow-lg flex items-center gap-2 ${
             toastType === 'success' ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gradient-to-r from-red-500 to-red-600'
           } transition-all duration-300 z-50 backdrop-blur-sm bg-opacity-90`}
@@ -591,4 +591,4 @@ export default function SettingsPage() {
       )}
     </div>
   );
-} 
+}

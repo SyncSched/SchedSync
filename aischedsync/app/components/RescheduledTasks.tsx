@@ -42,9 +42,9 @@ export default function RescheduledTasks({
               scheduleId: "",
               duration: 0,
               isEmailEnabled: false,
-              isWhatsAppEnabled: false,
+              isWhatsAppEnabled: false, // Keep for type compatibility
               isTelegramEnabled: false,
-              isCallEnabled: false
+              isCallEnabled: false // Keep for type compatibility
             };
 
             return (

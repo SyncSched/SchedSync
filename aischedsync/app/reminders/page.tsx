@@ -53,7 +53,7 @@ export default function RemindersPage() {
 
   const handleDeleteConfirm = async () => {
     if (!notificationToDelete) return;
-    
+
     try {
       await deleteNotification(notificationToDelete);
       setNotifications(notifications.filter(notif => notif.id !== notificationToDelete));
@@ -99,6 +99,7 @@ export default function RemindersPage() {
             </svg>
           </div>
         );
+      // WhatsApp notification option commented out
       case 'whatsapp':
         return (
           <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-green-50">
@@ -115,6 +116,7 @@ export default function RemindersPage() {
             </svg>
           </div>
         );
+      // Phone Call notification option commented out
       case 'call':
         return (
           <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-purple-50">
@@ -246,7 +248,7 @@ export default function RemindersPage() {
             <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-6 transition-colors duration-300`}>
               Are you sure you want to delete this reminder? This action cannot be undone.
             </p>
-            
+
             <div className="flex justify-end space-x-4">
               <button
                 onClick={() => {
@@ -259,7 +261,7 @@ export default function RemindersPage() {
               >
                 Cancel
               </button>
-              
+
               <button
                 onClick={handleDeleteConfirm}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"

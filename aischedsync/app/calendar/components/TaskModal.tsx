@@ -50,7 +50,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
     if (typeof selectedHour === 'number') {
       newDate.setHours(selectedHour, 0, 0, 0);
     }
-    
+
     return {
       name: initialTask?.name || '',
       description: initialTask?.description || '',
@@ -79,15 +79,15 @@ const TaskModal: React.FC<TaskModalProps> = ({
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required';
     }
-    
+
     if (formData.duration <= 0) {
       newErrors.duration = 'Duration must be greater than 0';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -297,6 +297,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                 </span>
               </label>
 
+              {/* WhatsApp notification option commented out
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
@@ -310,6 +311,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                   WhatsApp
                 </span>
               </label>
+              */}
 
               <label className="flex items-center space-x-2">
                 <input
@@ -325,6 +327,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                 </span>
               </label>
 
+              {/* Phone Call notification option commented out
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
@@ -338,6 +341,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                   Phone Call
                 </span>
               </label>
+              */}
             </div>
           </div>
 

@@ -57,6 +57,13 @@ export default function Sidebar({ isSidebarOpen, user, onLogout, onAddTask, curr
               <span>Add New Task</span>
             </button>
 
+            <button className={`flex items-center space-x-3 px-3 py-2 ${currentPath === '/' ? (isDark ? 'bg-gray-800 text-white' : 'bg-[#EDEDED] text-black') : (isDark ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100')} rounded-lg`} onClick={() => router.push('/')}>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+              </svg>
+              <span>Schedule</span>
+            </button>
+
             <button
               onClick={() => router.push('/dashboard')}
               className={`flex items-center space-x-3 px-3 py-2 ${currentPath === '/dashboard' ? (isDark ? 'bg-gray-800 text-white' : 'bg-[#EDEDED] text-black') : (isDark ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100')} rounded-lg`}
@@ -65,13 +72,6 @@ export default function Sidebar({ isSidebarOpen, user, onLogout, onAddTask, curr
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
               </svg>
               <span>Dashboard</span>
-            </button>
-
-            <button className={`flex items-center space-x-3 px-3 py-2 ${currentPath === '/' ? (isDark ? 'bg-gray-800 text-white' : 'bg-[#EDEDED] text-black') : (isDark ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100')} rounded-lg`} onClick={() => router.push('/')}>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-              </svg>
-              <span>Schedule</span>
             </button>
 
             <button className={`flex items-center space-x-3 px-3 py-2 ${currentPath === '/calendar' ? (isDark ? 'bg-gray-800 text-white' : 'bg-[#EDEDED] text-black') : (isDark ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100')} rounded-lg`} onClick={() => router.push('/calendar')}>
@@ -95,12 +95,6 @@ export default function Sidebar({ isSidebarOpen, user, onLogout, onAddTask, curr
               <span>Integrations</span>
             </button>
 
-            <button className={`flex items-center space-x-3 px-3 py-2 ${currentPath === '/share' ? (isDark ? 'bg-gray-800 text-white' : 'bg-[#EDEDED] text-black') : (isDark ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100')} rounded-lg`}>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
-              </svg>
-              <span>Share</span>
-            </button>
           </nav>
 
           <div className={`mt-auto pt-4 border-t ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
