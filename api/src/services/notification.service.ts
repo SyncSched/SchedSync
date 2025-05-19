@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { BadUserInputError } from '../errors';
 import { sendEmail } from "../utils/email";
+import axios from "axios";
 
 const prisma = new PrismaClient();
 
@@ -41,8 +42,8 @@ export const updateNotificationTime = async (
     });
 
     if (!notification) {
-        throw new BadUserInputError({ 
-            message: 'Notification not found or unauthorized' 
+        throw new BadUserInputError({
+            message: 'Notification not found or unauthorized'
         });
     }
 
@@ -79,8 +80,8 @@ export const deleteNotification = async (
     });
 
     if (!notification) {
-        throw new BadUserInputError({ 
-            message: 'Notification not found or unauthorized' 
+        throw new BadUserInputError({
+            message: 'Notification not found or unauthorized'
         });
     }
 
@@ -91,15 +92,43 @@ export const deleteNotification = async (
     });
 };
 
+// Utility function to get location name from coordinates
+const getLocationNameFromCoords = async (coords: string): Promise<string> => {
+  try {
+    const [lat, lng] = coords.split(',').map(Number);
+    if (isNaN(lat) || isNaN(lng)) return coords;
+
+    const response = await axios.get(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+      {
+        headers: {
+          'User-Agent': 'SchedSync-App/1.0'
+        },
+        timeout: 5000 // 5 second timeout
+      }
+    );
+
+    // Check if we have a valid response with display_name
+    if (response.data && response.data.display_name) {
+      return response.data.display_name;
+    }
+
+    return coords; // Return original coordinates if no valid location name
+  } catch (error) {
+    console.error('Error getting location name:', error);
+    return coords; // Return original coordinates if there's an error
+  }
+};
+
 export const sendLocationNotifications = async (userId: string, taskIds: string[]) => {
     const user = await prisma.user.findUnique({
         where: { id: userId },
       });
-    
+
       if (!user || !user.email) {
         throw new Error("User not found or missing email");
       }
-    
+
       // Fetch task details using the IDs
       const tasks = await prisma.task.findMany({
         where: {
@@ -112,14 +141,31 @@ export const sendLocationNotifications = async (userId: string, taskIds: string[
           location: true,
         },
       });
-    
-      // Format message
-      const messageLines = tasks.map((task, idx) => {
-        return `${idx + 1}. ${task.name} \n   Time: ${new Date(task.time).toLocaleString()} \n   Duration: ${task.duration} min \n   Location: ${task.location}\n`;
+
+      // Get location names for all tasks
+      const tasksWithLocationNames = await Promise.all(
+        tasks.map(async (task) => {
+          let locationName = task.location || "No location";
+
+          // Only try to get location name if location exists and appears to be coordinates
+          if (task.location && task.location.includes(',')) {
+            locationName = await getLocationNameFromCoords(task.location);
+          }
+
+          return {
+            ...task,
+            locationName
+          };
+        })
+      );
+
+      // Format message with location names instead of coordinates
+      const messageLines = tasksWithLocationNames.map((task, idx) => {
+        return `${idx + 1}. ${task.name} \n   Time: ${new Date(task.time).toLocaleString()} \n   Duration: ${task.duration} min \n   Location: ${task.locationName}\n`;
       });
-    
-      const message = `📌 You have tasks nearby:\n\n${messageLines.join('\n')}`;
-    
+
+      const message = `📌 You have tasks nearby:\n\n${messageLines.join('\n')}\n\nThis notification was sent because you are near the location of these tasks.`;
+
       // Send email
       return await sendEmail(user.email, "Nearby Task Reminder", message);
   };
