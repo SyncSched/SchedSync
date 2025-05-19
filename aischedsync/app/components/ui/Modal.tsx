@@ -17,7 +17,6 @@ const Modal: React.FC<ModalProps> = ({ children, onClose, size = 'md', title }) 
     md: 'max-w-6xl',
     lg: 'max-w-9xl'
   };
-  console.log(title)
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 sm:p-6 lg:p-8">
       <motion.div
@@ -27,10 +26,15 @@ const Modal: React.FC<ModalProps> = ({ children, onClose, size = 'md', title }) 
         transition={{ type: 'spring', duration: 0.5, bounce: 0.2 }}
         className={`relative ${isDark ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-2xl w-[98%] ${sizeClasses[size]} overflow-hidden ${isDark ? 'border-gray-700' : 'border-gray-100'} border transition-colors duration-300`}
       >
-        <div className="flex justify-end px-4 pt-3">
+        <div className="flex justify-between items-center px-4 pt-3">
+          {title && (
+            <h2 className={`text-lg font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {title}
+            </h2>
+          )}
           <button
             onClick={onClose}
-            className={`p-1.5 ${isDark ? 'hover:bg-gray-700/80' : 'hover:bg-gray-100/80'} rounded-lg transition-all duration-200 group`}
+            className={`p-1.5 ${isDark ? 'hover:bg-gray-700/80' : 'hover:bg-gray-100/80'} rounded-lg transition-all duration-200 group ml-auto`}
           >
             <X className={`w-4 h-4 ${isDark ? 'text-gray-400 group-hover:text-gray-200' : 'text-gray-500 group-hover:text-gray-700'} group-hover:scale-110 transition-all`} />
           </button>

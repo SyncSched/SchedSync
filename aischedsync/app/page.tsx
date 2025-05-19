@@ -9,6 +9,7 @@ import {
   getRescheduledTasks,
   updateRescheduledTask,
   deleteRescheduledTask,
+  updateTaskStatus,
   type Task,
   type RescheduledTask
 } from '../api/lib';
@@ -24,6 +25,7 @@ import Goals from './components/Goals';
 import RescheduleTaskForm from './components/RescheduleTaskForm';
 import TaskModal from './components/TaskModal';
 import EditRescheduledTaskForm from './components/EditRescheduledTaskForm';
+import TaskStatusModal from './components/TaskStatusModal';
 
 
 
@@ -46,7 +48,7 @@ export default function Home() {
   const [showDeleteWarning, setShowDeleteWarning] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
   const [showTaskStatusModal, setShowTaskStatusModal] = useState(false);
   const [selectedPastTask, setSelectedPastTask] = useState<Task | null>(null);
   // Goals are now managed by the Goals component
@@ -201,6 +203,13 @@ export default function Home() {
   const showErrorToast = (message: string) => {
     setToastMessage(message);
     setToastType('error');
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  };
+
+  const showInfoToast = (message: string) => {
+    setToastMessage(message);
+    setToastType('info');
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
   };
@@ -361,18 +370,55 @@ export default function Home() {
   };
 
   const handleTaskClick = (task: Task) => {
-    const now = new Date();
-    const taskStart = new Date();
-    taskStart.setHours(parseInt(task.time.split(':')[0]), parseInt(task.time.split(':')[1]));
-    const taskEnd = new Date(taskStart);
-    taskEnd.setMinutes(taskStart.getMinutes() + task.duration);
+    console.log('Task clicked:', task);
 
-    if (now > taskEnd) {
-      setSelectedPastTask(task);
-      setShowTaskStatusModal(true);
-    } else {
+    // Parse the task time correctly
+    const now = new Date();
+    let taskTime: Date;
+
+    try {
+      // Check if time is in HH:MM format or ISO format
+      if (typeof task.time === 'string' && task.time.includes(':') && !task.time.includes('T')) {
+        // Time is in HH:MM format, convert to today's date with this time
+        const [hours, minutes] = task.time.split(':').map(Number);
+        taskTime = new Date();
+        taskTime.setHours(hours, minutes, 0, 0);
+      } else {
+        // Time is in ISO format
+        taskTime = new Date(task.time);
+      }
+
+      console.log('Current time:', now);
+      console.log('Task time:', taskTime);
+
+      const taskEnd = new Date(taskTime.getTime() + task.duration * 60000);
+      console.log('Task end time:', taskEnd);
+      console.log('Is task completed?', now > taskEnd);
+
+      // Only show the task status modal for tasks whose time interval has completed
+      // AND only if they don't already have a status set (other than PENDING or IN_PROGRESS)
+      if (now > taskEnd &&
+          (task.status === 'PENDING' || task.status === 'IN_PROGRESS')) {
+        console.log('Showing task status modal');
+        setSelectedPastTask(task);
+        setShowTaskStatusModal(true);
+      } else if (task.status === 'COMPLETED' || task.status === 'OVERDUE' || task.status === 'RESCHEDULED') {
+        // Don't show any modal for tasks that already have a status
+        console.log('Task already has a status, not showing any modal');
+        // Optionally show a toast to inform the user
+        showInfoToast(`This task is already marked as ${task.status.toLowerCase()}`);
+      } else {
+        console.log('Showing regular edit modal');
+        // For tasks that are not yet completed or don't have a final status, show the regular edit modal
+        setSelectedTask(task);
+        setSelectedRescheduledTask(null); // Clear any previously selected rescheduled task
+        setIsEditModalOpen(true);
+      }
+    } catch (error) {
+      console.error('Error parsing task time:', error);
+      // If there's an error parsing the time, default to showing the edit modal
       setSelectedTask(task);
-      setSelectedRescheduledTask(null); // Clear any previously selected rescheduled task
+      setSelectedRescheduledTask(null);
       setIsEditModalOpen(true);
     }
   };
@@ -682,45 +728,77 @@ export default function Home() {
         </div>
       )}
 
+      {/* Task Status Modal - Highest z-index to ensure it's on top */}
       {showTaskStatusModal && selectedPastTask && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-full max-w-sm mx-4 transition-colors duration-300`}>
-            <h3 className={`text-lg font-medium ${isDark ? 'text-gray-100' : 'text-gray-900'} mb-4 transition-colors duration-300`}>Task Status</h3>
-            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-6 transition-colors duration-300`}>
-              Was this task completed?
-            </p>
+        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center">
+          <TaskStatusModal
+            task={selectedPastTask}
+            onClose={() => {
+              console.log('Closing task status modal');
+              setShowTaskStatusModal(false);
+            }}
+            onComplete={async (task) => {
+              try {
+                console.log('Marking task as completed:', task.id);
+                await updateTaskStatus(task.id, 'COMPLETED');
+                setShowTaskStatusModal(false);
+                showSuccessToast('Task marked as completed');
 
-            <div className="flex justify-end space-x-4">
-              <button
-                onClick={() => {
-                  setShowTaskStatusModal(false);
-                  showErrorToast('Task marked as incomplete');
-                }}
-                className={`inline-flex items-center px-4 py-2 border ${
-                  isDark ? 'border-gray-600 text-gray-300 bg-gray-700 hover:bg-gray-600' : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
-                } text-sm font-medium rounded-md transition-colors duration-300`}
-              >
-                Not Done
-              </button>
+                // Refresh the task list
+                const schedule = await getTodaySchedule();
+                if (schedule && schedule.originalData) {
+                  setMainTasks(schedule.originalData);
+                }
+              } catch (error) {
+                console.error('Error marking task as completed:', error);
+                showErrorToast('Failed to update task status');
+              }
+            }}
+            onNotComplete={async (task) => {
+              try {
+                // Check if the task has a specific status (like OVERDUE)
+                const status = task.status || 'PENDING';
+                console.log(`Marking task as ${status}:`, task.id);
 
-              <button
-                onClick={() => {
-                  setShowTaskStatusModal(false);
-                  showSuccessToast('Task marked as complete');
-                }}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
-              >
-                Done
-              </button>
-            </div>
-          </div>
+                await updateTaskStatus(task.id, status);
+                setShowTaskStatusModal(false);
+
+                if (status === 'OVERDUE') {
+                  showErrorToast('Task marked as overdue');
+                } else if (status === 'RESCHEDULED') {
+                  showSuccessToast('Task marked as rescheduled');
+                } else {
+                  showErrorToast('Task marked as not completed');
+                }
+
+                // Refresh the task list
+                const schedule = await getTodaySchedule();
+                if (schedule && schedule.originalData) {
+                  setMainTasks(schedule.originalData);
+                }
+              } catch (error) {
+                console.error('Error updating task status:', error);
+                showErrorToast('Failed to update task status');
+              }
+            }}
+            onReschedule={(task) => {
+              console.log('Rescheduling task:', task.id);
+              setSelectedTask(task);
+              setShowTaskStatusModal(false);
+              setIsRescheduleModalOpen(true);
+            }}
+          />
         </div>
       )}
 
       {/* Toast Notification */}
       {showToast && (
         <div className={`fixed bottom-4 right-4 px-4 py-2 rounded-lg text-white ${
-          toastType === 'success' ? 'bg-green-500' : 'bg-red-500'
+          toastType === 'success'
+            ? 'bg-green-500'
+            : toastType === 'error'
+              ? 'bg-red-500'
+              : 'bg-blue-500'  // info toast
         } transition-opacity duration-300`}>
           {toastMessage}
         </div>

@@ -91,7 +91,7 @@ export interface Schedule {
     notes?: string;
     time: string;    // ISO format string
     duration: number;
-    status?: 'PENDING' | 'COMPLETED' | 'IN_PROGRESS' | 'OVERDUE';
+    status?: 'PENDING' | 'COMPLETED' | 'IN_PROGRESS' | 'OVERDUE' | 'RESCHEDULED';
     priority?: 'LOW' | 'MEDIUM' | 'HIGH';
     location?: string | null;
     scheduleId: string;
@@ -123,7 +123,7 @@ export interface Schedule {
     duration: number;
     endTime: string;
     priority: 'HIGH' | 'MEDIUM' | 'LOW';
-    status: 'PENDING' | 'COMPLETED';
+    status: 'PENDING' | 'COMPLETED' | 'IN_PROGRESS' | 'OVERDUE' | 'RESCHEDULED';
     location?: string | null;
     isEmailEnabled: boolean;
     isWhatsAppEnabled: boolean;
@@ -1265,6 +1265,51 @@ export const deleteRescheduledTask = async (id: string): Promise<{ message: stri
     return data;
   } catch (error) {
     console.error('Error deleting rescheduled task:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update a task's status
+ * @param taskId - ID of the task to update
+ * @param status - New status for the task ('COMPLETED', 'PENDING', etc.)
+ * @returns The updated task
+ */
+export const updateTaskStatus = async (
+  taskId: string,
+  status: 'PENDING' | 'COMPLETED' | 'IN_PROGRESS' | 'OVERDUE' | 'RESCHEDULED'
+): Promise<Task> => {
+  try {
+    const token = getStoredAuthToken();
+
+    if (token && !isTokenValid(token)) {
+      throw new Error('Token expired');
+    }
+
+    // Find the task in the current schedule
+    const schedule = await getTodaySchedule();
+    const task = schedule.originalData.find(t => t.id === taskId);
+
+    if (!task) {
+      throw new Error('Task not found in today\'s schedule');
+    }
+
+    // Update the task status
+    const updatedTask = {
+      ...task,
+      status
+    };
+
+    // Update the schedule with the modified task
+    const updatedTasks = schedule.originalData.map(t =>
+      t.id === taskId ? updatedTask : t
+    );
+
+    await updateSchedule(schedule.id, updatedTasks);
+
+    return updatedTask;
+  } catch (error) {
+    console.error('Error updating task status:', error);
     throw error;
   }
 };

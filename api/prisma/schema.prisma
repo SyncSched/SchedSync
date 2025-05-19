@@ -119,6 +119,7 @@ enum TaskStatus {
   IN_PROGRESS
   COMPLETED
   OVERDUE
+  RESCHEDULED
 }
 
 enum Priority {
