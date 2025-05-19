@@ -61,16 +61,27 @@ export default function CalendarPage() {
         try {
           const weekSchedules = await getWeekSchedule(weekStart, weekEnd);
 
-          // Combine all tasks from all schedules
+          // Combine all tasks from all schedules with deduplication
           const allTasks: Task[] = [];
+          const taskIds = new Set<string>(); // Track task IDs to avoid duplicates
+
           weekSchedules.forEach(schedule => {
             if (schedule?.originalData && schedule.originalData.length > 0) {
-              console.log(`Adding ${schedule.originalData.length} tasks from schedule ${schedule.id}`);
-              allTasks.push(...schedule.originalData);
+              console.log(`Processing ${schedule.originalData.length} tasks from schedule ${schedule.id}`);
+
+              // Only add tasks that haven't been added yet (by ID)
+              schedule.originalData.forEach(task => {
+                if (!taskIds.has(task.id)) {
+                  taskIds.add(task.id);
+                  allTasks.push(task);
+                } else {
+                  console.log(`Skipping duplicate task: ${task.id} - ${task.name}`);
+                }
+              });
             }
           });
 
-          console.log(`Total tasks for week view: ${allTasks.length}`);
+          console.log(`Total unique tasks for week view: ${allTasks.length}`);
           setEvents(allTasks);
         } catch (weekError) {
           console.error('Error fetching week schedule:', weekError);
@@ -128,10 +139,13 @@ export default function CalendarPage() {
         await updateSchedule(event.scheduleId, updatedScheduleTasks);
 
         // Update the events in the state by replacing the dragged event
-        const updatedEvents = events.map(ev =>
-          'scheduleId' in ev && ev.id === eventId ? newEvent : ev
+        // First filter out any potential duplicates of the same event
+        const filteredEvents = events.filter(ev =>
+          !('scheduleId' in ev) || ev.id !== eventId
         );
-        setEvents(updatedEvents);
+
+        // Then add the updated event
+        setEvents([...filteredEvents, newEvent]);
       } catch (error) {
         console.error('Error updating event:', error);
       }
@@ -270,25 +284,61 @@ export default function CalendarPage() {
 
         if (scheduleToUpdate) {
           const updatedTasks = [...scheduleToUpdate.originalData, newTask as Task];
-          await updateSchedule(scheduleToUpdate.originalData[0].scheduleId, updatedTasks);
-          await fetchEvents();
+          const result = await updateSchedule(scheduleToUpdate.originalData[0].scheduleId, updatedTasks);
+
+          // Find the newly created task in the result
+          if (result && result.originalData) {
+            // Get the actual task with server-generated ID from the result
+            const serverTask = result.originalData.find(task => {
+              const taskTime = new Date(task.time).getTime();
+              const newTaskTime = newTask.time ? new Date(newTask.time).getTime() : 0;
+              return task.name === newTask.name && taskTime === newTaskTime;
+            });
+
+            if (serverTask) {
+              // Add the new task to the local state
+              setEvents(prevEvents => [...prevEvents, serverTask]);
+            } else {
+              // Fallback to fetching all events if we can't find the new task
+              await fetchEvents();
+            }
+          } else {
+            await fetchEvents();
+          }
         }
       } else if (modalMode === 'edit' && selectedEvent && 'scheduleId' in selectedEvent) {
         // Update existing task - this works the same for both day and week views
         // since we already have the scheduleId from the selected event
-        const updatedTasks = events.map(e => {
-          if ('scheduleId' in e && e.id === selectedEvent.id) {
-            return {
-              ...e,
-              ...formData,
-              time: formData.time || e.time || new Date().toISOString()
-            };
-          }
-          return e;
-        }) as Task[];
 
+        // Get all tasks from the same schedule
+        const tasksFromSameSchedule = events.filter(e =>
+          'scheduleId' in e && e.scheduleId === selectedEvent.scheduleId
+        ) as Task[];
+
+        // Create the updated task
+        const updatedTask = {
+          ...selectedEvent,
+          ...formData,
+          time: formData.time || selectedEvent.time || new Date().toISOString()
+        };
+
+        // Update the tasks in the schedule
+        const updatedTasks = tasksFromSameSchedule.map(task =>
+          task.id === selectedEvent.id ? updatedTask : task
+        );
+
+        // Update the schedule on the server
         await updateSchedule(selectedEvent.scheduleId, updatedTasks);
-        await fetchEvents();
+
+        // Update the local state to avoid duplicates
+        setEvents(prevEvents => {
+          // First remove the old version of the task
+          const filteredEvents = prevEvents.filter(e =>
+            !('scheduleId' in e) || e.id !== selectedEvent.id
+          );
+          // Then add the updated task
+          return [...filteredEvents, updatedTask];
+        });
       }
       handleModalClose();
     } catch (error) {
@@ -327,7 +377,11 @@ export default function CalendarPage() {
               );
 
               await updateSchedule(event.scheduleId, updatedScheduleTasks);
-              await fetchEvents();
+
+              // Update local state to remove the deleted event
+              setEvents(prevEvents => prevEvents.filter(e =>
+                !('scheduleId' in e) || e.id !== event.id
+              ));
             }
           }}
           onEventLockToggle={handleEventLockToggle}
@@ -359,7 +413,11 @@ export default function CalendarPage() {
               );
 
               await updateSchedule(event.scheduleId, updatedScheduleTasks);
-              await fetchEvents();
+
+              // Update local state to remove the deleted event
+              setEvents(prevEvents => prevEvents.filter(e =>
+                !('scheduleId' in e) || e.id !== event.id
+              ));
             }
           }}
           onEventLockToggle={handleEventLockToggle}

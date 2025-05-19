@@ -93,10 +93,25 @@ const WeekView: React.FC<WeekViewProps> = ({
 
   // Get events for a specific day
   const getEventsForDay = (date: Date) => {
-    return events.filter(event => {
+    // First filter events by date
+    const dayEvents = events.filter(event => {
       const eventDate = new Date('scheduleId' in event ? event.time : (event.start?.dateTime || ''));
       return eventDate.toDateString() === date.toDateString();
     });
+
+    // Then deduplicate events by ID to prevent showing the same task twice
+    const uniqueEvents = [];
+    const seenIds = new Set();
+
+    for (const event of dayEvents) {
+      const eventId = 'scheduleId' in event ? event.id : (event as CalendarEventType).id;
+      if (!seenIds.has(eventId)) {
+        seenIds.add(eventId);
+        uniqueEvents.push(event);
+      }
+    }
+
+    return uniqueEvents;
   };
 
   // Helper function to get event ID
