@@ -3,29 +3,23 @@ import React from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { CalendarEvent as CalendarEventType, Task } from '@/api/lib';
 import { format } from 'date-fns';
-import { Lock, LockOpen, Trash2, Edit, Sparkles } from 'lucide-react';
+import { Trash2, Edit, Sparkles } from 'lucide-react';
 
 interface CalendarEventProps {
   event: CalendarEventType | Task;
   isGoogleEvent?: boolean;
-  isAiSuggested?: boolean;
-  isLocked?: boolean;
-  onClick?: (event: CalendarEventType | Task) => void;
+  isAiSuggested?: boolean;  onClick?: (event: CalendarEventType | Task) => void;
   onEdit?: (event: CalendarEventType | Task) => void;
   onDelete?: (event: CalendarEventType | Task) => void;
-  onLockToggle?: (event: CalendarEventType | Task, locked: boolean) => void;
   style?: React.CSSProperties;
 }
 
 const CalendarEvent: React.FC<CalendarEventProps> = ({
   event,
-  isGoogleEvent = false,
-  isAiSuggested = false,
-  isLocked = false,
+  isGoogleEvent = false,  isAiSuggested = false,
   onClick,
   onEdit,
   onDelete,
-  onLockToggle,
   style
 }) => {
   const { isDark } = useTheme();
@@ -106,8 +100,7 @@ const CalendarEvent: React.FC<CalendarEventProps> = ({
             >
               <Edit className="w-3 h-3" />
             </button>
-          )}
-          {onDelete && (
+          )}          {onDelete && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -116,21 +109,6 @@ const CalendarEvent: React.FC<CalendarEventProps> = ({
               className="p-0.5 rounded hover:bg-black/10"
             >
               <Trash2 className="w-3 h-3" />
-            </button>
-          )}
-          {onLockToggle && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onLockToggle(event, !isLocked);
-              }}
-              className="p-0.5 rounded hover:bg-black/10"
-            >
-              {isLocked ? (
-                <Lock className="w-3 h-3" />
-              ) : (
-                <LockOpen className="w-3 h-3" />
-              )}
             </button>
           )}
         </div>
