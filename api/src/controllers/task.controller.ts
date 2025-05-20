@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { PrismaClient } from "@prisma/client";
-import { rescheduleTask } from "../services/task.service";
+import { PrismaClient, TaskStatus } from "@prisma/client";
+import { rescheduleTask, updateTaskStatus } from "../services/task.service";
 import { BadUserInputError } from "../errors";
 import { AuthenticatedRequest } from "../types/request";
 
@@ -34,6 +34,41 @@ export const rescheduleTaskHandler = async (req: AuthenticatedRequest, res: Resp
         return res.json({
             message: "Task rescheduled successfully",
             rescheduledTask
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Update a task's status
+ */
+export const updateTaskStatusHandler = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.user?.id;
+        const { taskId } = req.params;
+        const { status } = req.body;
+
+        if (!userId) {
+            return next(new BadUserInputError({ message: "User ID is missing from request" }));
+        }
+
+        if (!taskId) {
+            return next(new BadUserInputError({ message: "Task ID is required" }));
+        }
+
+        if (!status || !Object.values(TaskStatus).includes(status as TaskStatus)) {
+            return next(new BadUserInputError({
+                message: `Invalid status. Must be one of: ${Object.values(TaskStatus).join(', ')}`
+            }));
+        }
+
+        // Update the task status
+        const updatedTask = await updateTaskStatus(taskId, userId, status as TaskStatus);
+
+        return res.json({
+            message: "Task status updated successfully",
+            task: updatedTask
         });
     } catch (error) {
         next(error);

@@ -82,34 +82,27 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
                 }
             }
 
-            // Now use a transaction to ensure atomicity
-            lockedSchedule = await prisma.$transaction(async (tx) => {
-                // Check for any existing pending schedules within the transaction
-                const existingSchedule = await tx.schedule.findFirst({
-                    where: {
-                        userId,
-                        status: "pending",
-                    },
-                });
-
-                if (existingSchedule) {
-                    throw new BadUserInputError({ message: "A schedule generation is already in progress" });
-                }
-
-                // Create a new schedule with "pending" status
-                const newSchedule = await tx.schedule.create({
-                    data: {
-                        userId,
-                        status: "pending",
-                    },
-                });
-
-                console.log(`Created locked schedule ${newSchedule.id} for user ${userId} in transaction`);
-                return newSchedule;
-            }, {
-                timeout: 10000, // 10 seconds timeout for this transaction
-                isolationLevel: "Serializable" // Highest isolation level to prevent race conditions
+            // Check for existing pending schedules outside of transaction first
+            const existingSchedule = await prisma.schedule.findFirst({
+                where: {
+                    userId,
+                    status: "pending",
+                },
             });
+
+            if (existingSchedule) {
+                throw new BadUserInputError({ message: "A schedule generation is already in progress" });
+            }
+
+            // Create a new schedule with "pending" status directly
+            lockedSchedule = await prisma.schedule.create({
+                data: {
+                    userId,
+                    status: "pending",
+                },
+            });
+
+            console.log(`Created locked schedule ${lockedSchedule.id} for user ${userId}`);
         } catch (createError) {
             if (createError instanceof BadUserInputError) {
                 return next(createError);
@@ -273,61 +266,69 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
                 };
             });
 
-            // Use a single transaction for all database operations to ensure consistency
+            // Split operations into smaller chunks instead of one large transaction
             try {
-                // Use a transaction with a longer timeout and serializable isolation level
-                const createdScheduleWithTasks = await prisma.$transaction(async (tx) => {
-                    // First, check if the schedule still exists
-                    const scheduleExists = await tx.schedule.findUnique({
-                        where: { id: lockedSchedule.id }
-                    });
+                console.log(`Processing schedule ${lockedSchedule.id} for user ${userId}`);
 
-                    let scheduleId = lockedSchedule.id;
+                // First, check if the schedule still exists
+                const scheduleExists = await prisma.schedule.findUnique({
+                    where: { id: lockedSchedule.id }
+                });
 
-                    if (!scheduleExists) {
-                        console.log(`Schedule ${lockedSchedule.id} no longer exists, creating a new one in transaction`);
-                        // Create a new schedule within the transaction
-                        const newSchedule = await tx.schedule.create({
-                            data: {
-                                userId,
-                                status: "pending",
-                            }
-                        });
-                        scheduleId = newSchedule.id;
-                        console.log(`Created new schedule ${scheduleId} in transaction`);
-                    }
+                let scheduleId = lockedSchedule.id;
 
-                    // Check for any other pending schedules for this user and mark them as failed
-                    const otherPendingSchedules = await tx.schedule.findMany({
-                        where: {
+                if (!scheduleExists) {
+                    console.log(`Schedule ${lockedSchedule.id} no longer exists, creating a new one`);
+                    // Create a new schedule
+                    const newSchedule = await prisma.schedule.create({
+                        data: {
                             userId,
                             status: "pending",
-                            id: { not: scheduleId }
                         }
                     });
+                    scheduleId = newSchedule.id;
+                    console.log(`Created new schedule ${scheduleId}`);
+                }
 
-                    if (otherPendingSchedules.length > 0) {
-                        console.log(`Found ${otherPendingSchedules.length} other pending schedules for user ${userId}`);
-                        for (const schedule of otherPendingSchedules) {
-                            await tx.schedule.update({
-                                where: { id: schedule.id },
-                                data: { status: "failed" }
-                            });
-                            console.log(`Marked pending schedule ${schedule.id} as failed`);
-                        }
+                // Check for any other pending schedules for this user and mark them as failed
+                const otherPendingSchedules = await prisma.schedule.findMany({
+                    where: {
+                        userId,
+                        status: "pending",
+                        id: { not: scheduleId }
                     }
+                });
 
-                    // Update the schedule status
-                    await tx.schedule.update({
-                        where: { id: scheduleId },
-                        data: {
-                            status: "completed"
-                        }
-                    });
+                if (otherPendingSchedules.length > 0) {
+                    console.log(`Found ${otherPendingSchedules.length} other pending schedules for user ${userId}`);
+                    for (const schedule of otherPendingSchedules) {
+                        await prisma.schedule.update({
+                            where: { id: schedule.id },
+                            data: { status: "failed" }
+                        });
+                        console.log(`Marked pending schedule ${schedule.id} as failed`);
+                    }
+                }
 
-                    // Create all tasks in a batch
-                    const taskPromises = formattedTasks.map(task =>
-                        tx.task.create({
+                // Update the schedule status to "in_progress" first
+                await prisma.schedule.update({
+                    where: { id: scheduleId },
+                    data: {
+                        status: "in_progress"
+                    }
+                });
+
+                console.log(`Creating ${formattedTasks.length} tasks for schedule ${scheduleId}`);
+
+                // Create tasks in smaller batches to avoid transaction timeouts
+                const BATCH_SIZE = 10;
+                for (let i = 0; i < formattedTasks.length; i += BATCH_SIZE) {
+                    const batch = formattedTasks.slice(i, i + BATCH_SIZE);
+                    console.log(`Processing batch ${i/BATCH_SIZE + 1} of ${Math.ceil(formattedTasks.length/BATCH_SIZE)}`);
+
+                    // Create each task individually to avoid transaction issues
+                    for (const task of batch) {
+                        await prisma.task.create({
                             data: {
                                 ...task,
                                 scheduleId: scheduleId,
@@ -338,34 +339,41 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
                                 location: null,
                                 completedAt: null
                             }
-                        })
-                    );
+                        });
+                    }
 
-                    await Promise.all(taskPromises);
+                    console.log(`Completed batch ${i/BATCH_SIZE + 1}`);
+                }
 
-                    // Return the updated schedule with tasks
-                    return tx.schedule.findUnique({
-                        where: { id: scheduleId },
-                        include: {
-                            originalData: true,
-                            user: true
-                        }
-                    });
-                }, {
-                    timeout: 60000, // 60 seconds timeout for this transaction
-                    isolationLevel: "Serializable" // Highest isolation level to prevent race conditions
+                // Finally, mark the schedule as completed
+                await prisma.schedule.update({
+                    where: { id: scheduleId },
+                    data: {
+                        status: "completed"
+                    }
+                });
+
+                console.log(`All tasks created successfully for schedule ${scheduleId}`);
+
+                // Fetch the completed schedule with tasks
+                const createdScheduleWithTasks = await prisma.schedule.findUnique({
+                    where: { id: scheduleId },
+                    include: {
+                        originalData: true,
+                        user: true
+                    }
                 });
 
                 if (!createdScheduleWithTasks) {
-                    throw new Error("Failed to create schedule with tasks");
+                    throw new Error("Failed to retrieve the created schedule with tasks");
                 }
 
                 // Send the response with the created schedule
                 res.status(201).json(createdScheduleWithTasks);
                 return; // Return to prevent further execution
 
-            } catch (txError) {
-                console.error(`Transaction failed: ${txError instanceof Error ? txError.message : String(txError)}`);
+            } catch (error) {
+                console.error(`Error processing schedule: ${error instanceof Error ? error.message : String(error)}`);
 
                 // Clean up any pending schedules for this user
                 try {
@@ -377,21 +385,31 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
                         }
                     });
 
-                    // Delete all pending schedules
-                    if (pendingSchedules.length > 0) {
-                        console.log(`Cleaning up ${pendingSchedules.length} pending schedules for user ${userId}`);
+                    // Also find in_progress schedules that might be stuck
+                    const inProgressSchedules = await prisma.schedule.findMany({
+                        where: {
+                            userId,
+                            status: "in_progress"
+                        }
+                    });
 
-                        for (const schedule of pendingSchedules) {
+                    const schedulesToCleanup = [...pendingSchedules, ...inProgressSchedules];
+
+                    // Delete all pending/in_progress schedules
+                    if (schedulesToCleanup.length > 0) {
+                        console.log(`Cleaning up ${schedulesToCleanup.length} schedules for user ${userId}`);
+
+                        for (const schedule of schedulesToCleanup) {
                             await prisma.schedule.delete({ where: { id: schedule.id } });
-                            console.log(`Deleted pending schedule ${schedule.id}`);
+                            console.log(`Deleted schedule ${schedule.id} with status ${schedule.status}`);
                         }
                     }
                 } catch (cleanupError) {
-                    console.error("Error cleaning up pending schedules:", cleanupError);
+                    console.error("Error cleaning up schedules:", cleanupError);
                 }
 
                 // Throw the error to be caught by the outer catch block
-                throw new Error(`Failed to create schedule: ${txError instanceof Error ? txError.message : 'Unknown error'}`);
+                throw new Error(`Failed to create schedule: ${error instanceof Error ? error.message : 'Unknown error'}`);
             }
         } catch (innerError) {
             console.error("Error processing generated schedule:", innerError);
@@ -443,21 +461,21 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
             name: error.name
         } : error);
 
-        // Always attempt to clean up any pending schedules for this user
+        // Always attempt to clean up any pending or in-progress schedules for this user
         try {
-            // Find ALL pending schedules for this user, not just the one we created
-            const pendingSchedules = await prisma.schedule.findMany({
+            // Find ALL pending and in-progress schedules for this user
+            const schedulesToCleanup = await prisma.schedule.findMany({
                 where: {
                     userId: currentUserId,
-                    status: "pending"
+                    status: { in: ["pending", "in_progress"] }
                 }
             });
 
-            // Delete all pending schedules
-            if (pendingSchedules.length > 0) {
-                console.log(`Cleaning up ${pendingSchedules.length} pending schedules for user ${currentUserId}`);
+            // Delete all pending/in-progress schedules
+            if (schedulesToCleanup.length > 0) {
+                console.log(`Cleaning up ${schedulesToCleanup.length} schedules for user ${currentUserId}`);
 
-                for (const schedule of pendingSchedules) {
+                for (const schedule of schedulesToCleanup) {
                     try {
                         // Check if the schedule still exists before trying to delete it
                         const scheduleExists = await prisma.schedule.findUnique({
@@ -466,19 +484,45 @@ export const generateScheduleHandler = async (req: AuthenticatedRequest, res: Re
 
                         if (scheduleExists) {
                             await prisma.schedule.delete({ where: { id: schedule.id } });
-                            console.log(`Deleted pending schedule ${schedule.id}`);
+                            console.log(`Deleted schedule ${schedule.id} with status ${schedule.status}`);
                         } else {
                             console.log(`Schedule ${schedule.id} already deleted or does not exist`);
                         }
                     } catch (deleteError) {
                         console.error(`Error deleting schedule ${schedule.id}:`, deleteError);
+                        // Continue with other schedules even if one fails
                     }
                 }
             } else {
-                console.log(`No pending schedules found for user ${currentUserId}`);
+                console.log(`No pending or in-progress schedules found for user ${currentUserId}`);
+            }
+
+            // Also check for any stale schedules (older than 1 hour)
+            const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+            const staleSchedules = await prisma.schedule.findMany({
+                where: {
+                    userId: currentUserId,
+                    createdAt: { lt: oneHourAgo },
+                    status: { in: ["pending", "in_progress"] }
+                }
+            });
+
+            if (staleSchedules.length > 0) {
+                console.log(`Found ${staleSchedules.length} stale schedules for user ${currentUserId}`);
+                for (const schedule of staleSchedules) {
+                    try {
+                        await prisma.schedule.update({
+                            where: { id: schedule.id },
+                            data: { status: "failed" }
+                        });
+                        console.log(`Marked stale schedule ${schedule.id} as failed`);
+                    } catch (updateError) {
+                        console.error(`Error updating stale schedule ${schedule.id}:`, updateError);
+                    }
+                }
             }
         } catch (cleanupError) {
-            console.error("Error cleaning up locked schedules:", cleanupError);
+            console.error("Error cleaning up schedules:", cleanupError);
         }
 
         // Return a more descriptive error to the client
@@ -548,7 +592,7 @@ export const updateScheduleHandler = async(req: AuthenticatedRequest, res: Respo
 };
 
 /**
- * Cleans up any pending schedules for the current user
+ * Cleans up any pending or in-progress schedules for the current user
  */
 export const cleanupPendingSchedulesHandler = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -558,29 +602,38 @@ export const cleanupPendingSchedulesHandler = async (req: AuthenticatedRequest, 
             return next(new BadUserInputError({ message: "User ID is missing from request" }));
         }
 
-        // Find all pending schedules for this user
+        // Find all pending and in-progress schedules for this user
         const pendingSchedules = await prisma.schedule.findMany({
             where: {
                 userId,
-                status: "pending"
+                status: { in: ["pending", "in_progress"] }
             }
         });
 
-        // Delete all pending schedules
+        // Delete all pending/in-progress schedules
         let deletedCount = 0;
         if (pendingSchedules.length > 0) {
-            console.log(`Cleaning up ${pendingSchedules.length} pending schedules for user ${userId}`);
+            console.log(`Cleaning up ${pendingSchedules.length} schedules for user ${userId}`);
 
             for (const schedule of pendingSchedules) {
-                await prisma.schedule.delete({ where: { id: schedule.id } });
-                console.log(`Deleted pending schedule ${schedule.id}`);
-                deletedCount++;
+                try {
+                    await prisma.schedule.delete({ where: { id: schedule.id } });
+                    console.log(`Deleted schedule ${schedule.id} with status ${schedule.status}`);
+                    deletedCount++;
+                } catch (deleteError) {
+                    console.error(`Error deleting schedule ${schedule.id}:`, deleteError);
+                    // Continue with other schedules even if one fails
+                }
             }
         }
 
-        res.status(200).json({ success: true, deletedCount });
+        res.status(200).json({
+            success: true,
+            deletedCount,
+            message: `Successfully cleaned up ${deletedCount} schedules`
+        });
     } catch (error) {
-        console.error("Error cleaning up pending schedules:", error);
+        console.error("Error cleaning up schedules:", error);
         next(error);
     }
 };

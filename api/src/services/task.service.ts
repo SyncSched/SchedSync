@@ -172,4 +172,54 @@ export const createTask = async (
     });
 };
 
+/**
+ * Update a task's status
+ * @param taskId - ID of the task to update
+ * @param userId - ID of the user making the request
+ * @param status - New status for the task
+ * @returns The updated task
+ */
+export const updateTaskStatus = async (
+    taskId: string,
+    userId: string,
+    status: TaskStatus
+) => {
+    try {
+        // First, verify the task exists and belongs to the user
+        const task = await prisma.task.findFirst({
+            where: {
+                id: taskId,
+                schedule: {
+                    userId
+                }
+            }
+        });
 
+        if (!task) {
+            throw new EntityNotFoundError("Task not found or unauthorized");
+        }
+
+        // If the status is being set to COMPLETED, set the completedAt timestamp
+        const updateData: any = { status };
+        if (status === TaskStatus.COMPLETED) {
+            updateData.completedAt = new Date();
+        } else if (status === TaskStatus.PENDING || status === TaskStatus.IN_PROGRESS) {
+            // Clear completedAt if task is being marked as not completed
+            updateData.completedAt = null;
+        }
+
+        // Update the task directly without using a transaction
+        const updatedTask = await prisma.task.update({
+            where: { id: taskId },
+            data: updateData
+        });
+
+        return updatedTask;
+    } catch (error) {
+        // Log the error for debugging
+        console.error("Error updating task status:", error);
+
+        // Re-throw the error to be handled by the controller
+        throw error;
+    }
+};

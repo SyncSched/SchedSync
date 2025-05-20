@@ -1285,28 +1285,23 @@ export const updateTaskStatus = async (
       throw new Error('Token expired');
     }
 
-    // Find the task in the current schedule
-    const schedule = await getTodaySchedule();
-    const task = schedule.originalData.find(t => t.id === taskId);
+    // Use the dedicated API endpoint for updating task status
+    const response = await fetch(`${API_URL}/task/${taskId}/status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ status })
+    });
 
-    if (!task) {
-      throw new Error('Task not found in today\'s schedule');
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to update task status');
     }
 
-    // Update the task status
-    const updatedTask = {
-      ...task,
-      status
-    };
-
-    // Update the schedule with the modified task
-    const updatedTasks = schedule.originalData.map(t =>
-      t.id === taskId ? updatedTask : t
-    );
-
-    await updateSchedule(schedule.id, updatedTasks);
-
-    return updatedTask;
+    const data = await response.json();
+    return data.task;
   } catch (error) {
     console.error('Error updating task status:', error);
     throw error;

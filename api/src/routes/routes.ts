@@ -7,10 +7,10 @@ import {
     updateUserSettingsHandler,
     getUserSettingsHandler
 } from '../controllers/user.controller';
-import { updateTaskNotificationSettings, rescheduleTaskHandler } from '../controllers/task.controller';
-import { 
+import { updateTaskNotificationSettings, rescheduleTaskHandler, updateTaskStatusHandler } from '../controllers/task.controller';
+import {
     getUpcomingNotificationsHandler ,
-    updateNotificationTimeHandler, 
+    updateNotificationTimeHandler,
     deleteNotificationHandler,
     locationNotifyHandler
 } from '../controllers/notification.controller';
@@ -73,6 +73,7 @@ export const attachPrivateRoutes = (app: any): void => {
     app.put('/schedule/:id/update', updateScheduleHandler);
     app.patch('/task/:taskId/notifications', updateTaskNotificationSettings);
     app.post('/task/:taskId/reschedule', rescheduleTaskHandler);
+    app.put('/task/:taskId/status', updateTaskStatusHandler);
 
     // Rescheduled Task routes
     app.get('/rescheduled-tasks', getUserRescheduledTasksHandler);
