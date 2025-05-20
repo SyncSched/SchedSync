@@ -46,9 +46,9 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose }) => {
         status: formData.status,
         location: formData.location,
         isEmailEnabled: formData.isEmailEnabled,
-        // isWhatsAppEnabled: formData.isWhatsAppEnabled, // WhatsApp notification option commented out
+        isWhatsAppEnabled: formData.isWhatsAppEnabled, // WhatsApp notification option commented out
         isTelegramEnabled: formData.isTelegramEnabled,
-        // isCallEnabled: formData.isCallEnabled // Phone Call notification option commented out
+        isCallEnabled: formData.isCallEnabled // Phone Call notification option commented out
       };
 
       const updatedTasks = [...(schedule?.originalData || []), newTaskObject];

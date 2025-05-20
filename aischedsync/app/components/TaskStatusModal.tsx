@@ -69,7 +69,7 @@ export default function TaskStatusModal({
       <div className={`p-6 ${isDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
         <motion.div className="mb-6" variants={itemVariants}>
           <h3 className="text-xl font-semibold mb-2 flex items-center">
-            <span className="mr-2">"{task.name}"</span>
+            <span className="mr-2">&quot;{task.name}&quot;</span>
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
               isDark ? 'bg-blue-900/50 text-blue-200 border border-blue-800' : 'bg-blue-100 text-blue-800 border border-blue-200'
             }`}>
@@ -77,7 +77,7 @@ export default function TaskStatusModal({
             </span>
           </h3>
           <p className={`text-sm mb-4 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-            This task's scheduled time has passed. Please update its status:
+            This task&apos;s scheduled time has passed. Please update its status:
           </p>
         </motion.div>
 

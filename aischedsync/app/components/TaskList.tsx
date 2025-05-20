@@ -45,7 +45,7 @@ export default function TaskList({
   // Find the active task index
   const activeTaskIndex = tasks.findIndex(task => isTaskActive(task.time, task.duration));
 
-  const handleTaskClick = (task: Task, index: number, isPastTask: boolean) => {
+  const handleTaskClick = (task: Task) => {
     // Only allow clicking on tasks that are PENDING or IN_PROGRESS
     // Tasks with other statuses (COMPLETED, OVERDUE, RESCHEDULED) should not be clickable
     if (task.status === 'PENDING' || task.status === 'IN_PROGRESS' || !task.status) {
@@ -83,7 +83,7 @@ export default function TaskList({
                 onDragOver={onDragOver}
                 onDragLeave={onDragLeave}
                 onDrop={(e) => onDrop(e, 'main', index)}
-                onClick={() => handleTaskClick(task, index, isPastTask)}
+                onClick={() => handleTaskClick(task)}
                 className={`p-4 rounded-xl border shadow-sm transition-all ${
                   // Make tasks with statuses not appear clickable
                   task.status === 'COMPLETED' || task.status === 'OVERDUE' || task.status === 'RESCHEDULED'

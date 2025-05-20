@@ -93,8 +93,7 @@ export interface Schedule {
     duration: number;
     status?: 'PENDING' | 'COMPLETED' | 'IN_PROGRESS' | 'OVERDUE' | 'RESCHEDULED';
     priority?: 'LOW' | 'MEDIUM' | 'HIGH';
-    location?: string | null;
-    scheduleId: string;
+    location?: string | null;    scheduleId: string;
     isEmailEnabled: boolean;
     isWhatsAppEnabled: boolean;
     isTelegramEnabled: boolean;

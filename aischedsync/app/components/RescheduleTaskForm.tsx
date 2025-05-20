@@ -19,7 +19,6 @@ export const RescheduleTaskForm: React.FC<RescheduleTaskFormProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   // Initialize with current task date and time
-  const taskDate = new Date(task.time);
   const initialDate = formatDate(task.time, 'yyyy-MM-dd');
   const initialTime = formatToHHMM(task.time);
 
@@ -29,11 +28,6 @@ export const RescheduleTaskForm: React.FC<RescheduleTaskFormProps> = ({
     reason: ''
   });
 
-  // Get current date and time for the pickers
-  const getCurrentDate = () => {
-    const now = new Date();
-    return now.toISOString().split('T')[0]; // YYYY-MM-DD format
-  };
 
   const getCurrentTime = () => {
     const now = new Date();

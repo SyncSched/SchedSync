@@ -5,7 +5,6 @@ import {
   getTodaySchedule,
   updateSchedule,
   updateUserTimezone,
-  rescheduleTask,
   getRescheduledTasks,
   updateRescheduledTask,
   deleteRescheduledTask,
@@ -28,11 +27,26 @@ import TaskModal from './components/TaskModal';
 import EditRescheduledTaskForm from './components/EditRescheduledTaskForm';
 import TaskStatusModal from './components/TaskStatusModal';
 
+const toRadians = (degree: number) => degree * (Math.PI / 180);
 
+// Haversine formula to calculate distance between two coordinates
+function getDistanceInMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371e3; // radius of Earth in meters
+  const φ1 = toRadians(lat1);
+  const φ2 = toRadians(lat2);
+  const Δφ = toRadians(lat2 - lat1);
+  const Δλ = toRadians(lon2 - lon1);
+
+  const a =
+    Math.sin(Δφ / 2) ** 2 +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c; // in meters
+}
 
 export default function Home() {
-
-
 
   const [mainTasks, setMainTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -136,24 +150,6 @@ export default function Home() {
   
     
   }, [mainTasks]);
-  const toRadians = (degree: number) => degree * (Math.PI / 180);
-
-// Haversine formula to calculate distance between two coordinates
-function getDistanceInMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371e3; // radius of Earth in meters
-  const φ1 = toRadians(lat1);
-  const φ2 = toRadians(lat2);
-  const Δφ = toRadians(lat2 - lat1);
-  const Δλ = toRadians(lon2 - lon1);
-
-  const a =
-    Math.sin(Δφ / 2) ** 2 +
-    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
-
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-  return R * c; // in meters
-}
 
   interface TaskFormData {
     name: string;

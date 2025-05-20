@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Task, RescheduledTask } from '@/api/lib';
+import { RescheduledTask } from '@/api/lib';
 import { formatToHHMM, formatDate } from '../utils/dateUtils';
 
 interface EditRescheduledTaskFormProps {

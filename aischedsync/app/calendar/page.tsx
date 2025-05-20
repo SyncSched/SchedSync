@@ -1,10 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { CalendarEvent as CalendarEventType, Task, getTodaySchedule, getWeekSchedule, updateSchedule, rescheduleTask, RescheduledTask } from '@/api/lib';
+import { CalendarEvent as CalendarEventType, Task, getTodaySchedule, getWeekSchedule, updateSchedule } from '@/api/lib';
 import CalendarHeader from './components/CalendarHeader';
 import DayView from './components/DayView';
 import WeekView from './components/WeekView';
-import { TaskForm, TaskFormData as ScheduleTaskFormData } from '@/app/components/TaskForm';
+import { TaskForm, TaskFormData as ImportedTaskFormData } from '@/app/components/TaskForm';
 import RescheduleTaskForm from '@/app/components/RescheduleTaskForm';
 import Modal from '@/app/components/ui/Modal';
 import { startOfWeek } from 'date-fns';
@@ -174,7 +174,7 @@ export default function CalendarPage() {
     }
   };
 
-  const handleRescheduleSuccess = async (rescheduledTask: RescheduledTask) => {
+  const handleRescheduleSuccess = async () => {
     // Close the reschedule modal
     setIsRescheduleModalOpen(false);
 
@@ -458,9 +458,8 @@ export default function CalendarPage() {
               isWhatsAppEnabled: selectedEvent && 'scheduleId' in selectedEvent ? selectedEvent.isWhatsAppEnabled : false,
               isTelegramEnabled: selectedEvent && 'scheduleId' in selectedEvent ? selectedEvent.isTelegramEnabled : false,
               isCallEnabled: selectedEvent && 'scheduleId' in selectedEvent ? selectedEvent.isCallEnabled : false,
-            }}
-            onSubmit={(formData) => {
-              // Convert ScheduleTaskFormData to TaskFormData
+            }}            onSubmit={(formData: ImportedTaskFormData) => {
+              // Convert ImportedTaskFormData to TaskFormData
               const taskFormData: TaskFormData = {
                 name: formData.name,
                 description: formData.description,
