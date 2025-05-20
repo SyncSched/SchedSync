@@ -175,10 +175,8 @@ export const generateSchedule = async ( user: any) => {
       throw new Error('Invalid user data: Missing required onboarding information');
     }
 
-    // Check if there are calendar events to include
-    const hasCalendarEvents = user.calendarEvents && Array.isArray(user.calendarEvents) && user.calendarEvents.length > 0;
-    console.log(`[TIME] Calendar events check completed at: ${new Date().toISOString()} (${Date.now() - startTime}ms)`);
-    console.log(`Found ${hasCalendarEvents ? user.calendarEvents.length : 0} calendar events`);
+    // Calendar integration has been removed to avoid timeouts in production
+    console.log(`[TIME] Calendar integration has been disabled at: ${new Date().toISOString()}`);
 
     // Check if there are rescheduled tasks to include
     const hasRescheduledTasks = user.rescheduledTasks && Array.isArray(user.rescheduledTasks) && user.rescheduledTasks.length > 0;
@@ -207,32 +205,11 @@ export const generateSchedule = async ( user: any) => {
       // }
     });
     console.log(`[TIME] Retriever creation completed at: ${new Date().toISOString()} (${Date.now() - retrieverStartTime}ms)`);
-    // Debug log to verify calendar events in workflow
-    console.log('Workflow received user data with calendar events:',
-      hasCalendarEvents ? `${user.calendarEvents.length} events found` : 'No events found',
-      hasCalendarEvents ? user.calendarEvents.map((event: any) => ({ name: event.name, time: event.time })) : []);
+    // Calendar integration has been removed
+    console.log('Calendar integration has been disabled');
 
-    // Format calendar events for the prompt if they exist
+    // No calendar events section
     let calendarEventsSection = '';
-    if (hasCalendarEvents) {
-      // Check if there was an error fetching calendar events
-      if (user.calendarEventsError) {
-        console.log('Warning: Calendar events had errors but will try to use available events');
-        calendarEventsSection = `
-        ### **Google Calendar Events (INCLUDE IF POSSIBLE):**
-        The following events from the user's Google Calendar should be included if possible, but there were some errors fetching all events:
-        ${user.calendarEvents.map((event: any, index: number) => `
-        ${index + 1}. "${event.name}" at ${event.time} for ${event.duration} minutes${event.location ? ` at ${event.location}` : ''}`).join('')}
-        `;
-      } else {
-        calendarEventsSection = `
-        ### **Google Calendar Events (MUST INCLUDE):**
-        The following events from the user's Google Calendar MUST be included in the schedule exactly as specified:
-        ${user.calendarEvents.map((event: any, index: number) => `
-        ${index + 1}. "${event.name}" at ${event.time} for ${event.duration} minutes${event.location ? ` at ${event.location}` : ''}`).join('')}
-        `;
-      }
-    }
 
     // Format rescheduled tasks for the prompt if they exist
     let rescheduledTasksSection = '';
@@ -290,8 +267,7 @@ export const generateSchedule = async ( user: any) => {
       12. No more than **4 continuous hours of work**. Insert breaks after that.
       13. Make use of the weights to optimize placement of tasks and adapt based on the retrieved context.
       14. Ensure balance between productivity, breaks, and leisure.
-      ${hasCalendarEvents ? '15. **CRITICAL: ALL Google Calendar events MUST be included exactly as specified**' : ''}
-      ${hasRescheduledTasks ? `${hasCalendarEvents ? '16' : '15'}. **CRITICAL: ALL rescheduled tasks MUST be included exactly at the specified times**` : ''}
+      ${hasRescheduledTasks ? '15. **CRITICAL: ALL rescheduled tasks MUST be included exactly at the specified times**' : ''}
 
       ### **Output Format:**
       Return a JSON array where each object MUST contain:
@@ -306,8 +282,7 @@ export const generateSchedule = async ( user: any) => {
       4. Time format must be "HH:mm" (e.g., "09:00", "14:30")
       5. All times must be chronologically ordered
       6. Duration must be a positive integer
-      ${hasCalendarEvents ? '7. All Google Calendar events must be included with exact name, time, and duration' : ''}
-      ${hasRescheduledTasks ? `${hasCalendarEvents ? '8' : '7'}. All rescheduled tasks must be included with exact name, time, and duration` : ''}
+      ${hasRescheduledTasks ? '7. All rescheduled tasks must be included with exact name, time, and duration' : ''}
 
       **Return ONLY the JSON array with no additional text or explanation.**
     `;
