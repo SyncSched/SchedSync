@@ -1,7 +1,5 @@
 import crypto from 'crypto';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from './prisma-client';
 
 // Store temporary tokens in the database using the TelegramAuth model
 export const generateAuthToken = async (userId: string): Promise<string> => {

@@ -1,9 +1,7 @@
 
-import { PrismaClient } from '@prisma/client';
 import { CreateUserInput, User , UserSettings } from '../models/user.model';
 import { BadUserInputError } from '../errors';
-
-const prisma = new PrismaClient();
+import { prisma } from '../utils/prisma-client';
 
 export const createUser = async (data: CreateUserInput): Promise<User | null> => {
   const existingUser = await prisma.user.findUnique({
@@ -11,11 +9,11 @@ export const createUser = async (data: CreateUserInput): Promise<User | null> =>
   });
 
   if (existingUser) {
-    return existingUser; 
+    return existingUser;
   }
-  
+
   data.weights= new Array(1440).fill(0)
-  
+
   return prisma.user.create({
     data,
   });

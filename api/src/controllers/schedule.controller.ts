@@ -4,11 +4,9 @@ import { BadUserInputError, EntityNotFoundError } from '../errors';
 import { CreateScheduleInput } from '../models/schedule.model';
 import { generateSchedule } from '../workflow';
 import { AuthenticatedRequest } from '../types/request';
-import { PrismaClient } from '@prisma/client';
 import { formatInTimeZone } from 'date-fns-tz';
 import { getRescheduledTasksForDate } from '../services/rescheduled-task.service';
-
-const prisma = new PrismaClient();
+import { prisma } from '../utils/prisma-client';
 
 export const getScheduleHandler = async(req:AuthenticatedRequest, res:Response, next:NextFunction) : Promise<void> =>{
     try{

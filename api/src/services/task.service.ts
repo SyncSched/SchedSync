@@ -1,9 +1,8 @@
-import { PrismaClient, TaskStatus } from "@prisma/client";
+import { TaskStatus } from "@prisma/client";
 import { BadUserInputError, EntityNotFoundError } from "../errors";
 import { createRescheduledTask } from "./rescheduled-task.service";
 import { format } from "date-fns";
-
-const prisma = new PrismaClient();
+import { prisma } from '../utils/prisma-client';
 
 /**
  * Function to reschedule a task

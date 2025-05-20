@@ -1,10 +1,7 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy, StrategyOptions } from 'passport-google-oauth20';
-import { PrismaClient } from '@prisma/client';
 import { createUser } from '../services/user.service'; // Import the createUser function
-
-// Initialize Prisma Client
-const prisma = new PrismaClient();
+import { prisma } from './prisma-client';
 
 // Define a type for the Google profile
 interface GoogleProfile {

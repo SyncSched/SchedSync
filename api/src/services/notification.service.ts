@@ -1,9 +1,7 @@
-import { PrismaClient } from "@prisma/client";
 import { BadUserInputError } from '../errors';
 import { sendEmail } from "../utils/email";
 import axios from "axios";
-
-const prisma = new PrismaClient();
+import { prisma } from '../utils/prisma-client';
 
 export const getUpcomingNotifications = async (userId: string) => {
     const now = new Date();

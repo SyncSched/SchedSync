@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client';
 import cron from 'node-cron';
 import { storeDailySchedules } from '../workflow';
-
-const prisma = new PrismaClient();
+import { prisma } from '../utils/prisma-client';
 
 export async function processUserSchedules() {
   try {
@@ -17,7 +15,7 @@ export async function processUserSchedules() {
 
     for (const user of users) {
       const timezone = user.timezone || 'UTC';
-      
+
       // Check if it's 23:30 in this timezone
       const userTime = new Date().toLocaleString('en-US', { timeZone: timezone });
       const userDateTime = new Date(userTime);
@@ -43,7 +41,7 @@ export async function processUserSchedules() {
           }
         });
 
-        
+
         for (const schedule of todaySchedules) {
           if (!schedule.user) {
             console.error(`User not found for schedule: ${schedule.id}`);

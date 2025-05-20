@@ -1,9 +1,7 @@
-import { PrismaClient } from "@prisma/client";
 import { sendEmail } from "../utils/email";
 import { sendTelegram } from "../utils/telegram";
 import cron from 'node-cron';
-
-const prisma = new PrismaClient();
+import { prisma } from '../utils/prisma-client';
 
 // Add interfaces for different notification services
 interface NotificationService {
@@ -63,7 +61,7 @@ export async function processNotifications() {
 
     for (const notification of notifications) {
       const { user, task, channel } = notification;
-      
+
       // Channel-specific validation
       switch (channel.toLowerCase()) {
         case 'email':
@@ -151,7 +149,7 @@ function formatMessage(task: any, channel: string): string {
     case 'email':
       return `${baseMessage}\n\nThis is an automated reminder from your schedule assistant.`;
     case 'whatsapp':
-      return `📅 ${baseMessage}`; 
+      return `📅 ${baseMessage}`;
     case 'telegram':
       return `<b>🔔 Task Reminder</b>
 

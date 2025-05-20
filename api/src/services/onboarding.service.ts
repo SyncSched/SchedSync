@@ -1,6 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from '../utils/prisma-client';
 
 export const checkUserOnboarding = async (userId: string) => {
   const user = await prisma.user.findUnique({
@@ -60,7 +58,7 @@ export const createOnboardingData = async (data: OnboardingData): Promise<boolea
     }
 
     // Create the onboarding data
-    
+
     await prisma.onboardingData.create({
       data: {
         userId: data.userId,

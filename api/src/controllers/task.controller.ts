@@ -1,10 +1,9 @@
 import { Request, Response, NextFunction } from "express";
-import { PrismaClient, TaskStatus } from "@prisma/client";
+import { TaskStatus } from "@prisma/client";
 import { rescheduleTask, updateTaskStatus } from "../services/task.service";
 import { BadUserInputError } from "../errors";
 import { AuthenticatedRequest } from "../types/request";
-
-const prisma = new PrismaClient();
+import { prisma } from '../utils/prisma-client';
 
 /**
  * Reschedule a task to a new date and time

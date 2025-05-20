@@ -63,7 +63,6 @@ export default function EditRescheduledTaskForm({
   return (
     <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} p-4 rounded-lg`}>
       <h2 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-        Edit Rescheduled Task
       </h2>
 
       <div className={`mb-4 p-3 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>

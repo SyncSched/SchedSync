@@ -1,11 +1,9 @@
 import TelegramBot from 'node-telegram-bot-api';
 import dotenv from "dotenv";
-import { PrismaClient } from '@prisma/client';
 import { validateAuthToken, generateAuthToken } from './authToken';
+import { prisma } from './prisma-client';
 
 dotenv.config();
-
-const prisma = new PrismaClient();
 
 // Initialize the Telegram bot with the token from environment variables
 let bot: TelegramBot;

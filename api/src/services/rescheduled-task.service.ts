@@ -1,8 +1,6 @@
-import { PrismaClient } from "@prisma/client";
 import { EntityNotFoundError } from "../errors";
 import { CreateRescheduledTaskInput } from "../models/rescheduled-task.model";
-
-const prisma = new PrismaClient();
+import { prisma } from '../utils/prisma-client';
 
 /**
  * Create a new rescheduled task record

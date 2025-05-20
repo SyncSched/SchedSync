@@ -1,7 +1,8 @@
-import { Prisma, PrismaClient, TaskStatus, Priority } from '@prisma/client';
+import { Prisma, TaskStatus, Priority } from '@prisma/client';
 import { CreateScheduleInput, Task, Schedule } from '../models/schedule.model';
 import { createScheduleSchema } from '../validations/schedule.schema';
 import { toZonedTime, formatInTimeZone } from 'date-fns-tz';
+import { prisma } from '../utils/prisma-client';
 
 // Define the task select type
 const taskSelect = {
@@ -33,8 +34,6 @@ type TaskWithNotifications = Prisma.TaskGetPayload<{
 export type ScheduleWithRelations = Prisma.ScheduleGetPayload<{
   include: { user: true ;originalData:true };
 }>;
-
-const prisma = new PrismaClient();
 
 function getTimezoneOffset(timezone: string, date: Date): number {
   const localDate = new Date(date.toLocaleString('en-US', { timeZone: timezone }));
@@ -492,25 +491,37 @@ export const updateSchedule = async (
     throw new Error('Schedule ID is required');
   }
 
+  // First, get the schedule and user data outside the transaction
+  const scheduleWithUser = await prisma.schedule.findUnique({
+    where: { id: scheduleId },
+    include: { user: true }
+  });
+
+  if (!scheduleWithUser || !scheduleWithUser.user) {
+    throw new Error('Schedule or user not found');
+  }
+
+  // Get existing tasks outside the transaction
+  const existingTasks = await prisma.task.findMany({
+    where: { scheduleId }
+  });
+
+  // Create sets of task IDs for comparison
+  const existingTaskIds = new Set(existingTasks.map(task => task.id));
+  const newTaskIds = new Set(data.originalData.map(task => task.id));
+
+  // Find tasks to delete (exist in DB but not in new data)
+  const tasksToDelete = existingTasks.filter(task => !newTaskIds.has(task.id));
+  const tasksToDeleteIds = tasksToDelete.map(task => task.id);
+
+  // Now run the transaction with pre-computed data
   return await prisma.$transaction(async (tx) => {
-    // First, get existing tasks
-    const existingTasks = await tx.task.findMany({
-      where: { scheduleId }
-    });
-
-    // Create sets of task IDs for comparison
-    const existingTaskIds = new Set(existingTasks.map(task => task.id));
-    const newTaskIds = new Set(data.originalData.map(task => task.id));
-
-    // Find tasks to delete (exist in DB but not in new data)
-    const tasksToDelete = existingTasks.filter(task => !newTaskIds.has(task.id));
-
-    if (tasksToDelete.length > 0) {
-      // Delete notifications for removed tasks
+    // Delete notifications for removed tasks if any
+    if (tasksToDeleteIds.length > 0) {
       await tx.taskNotification.deleteMany({
         where: {
           taskId: {
-            in: tasksToDelete.map(task => task.id)
+            in: tasksToDeleteIds
           }
         }
       });
@@ -519,18 +530,22 @@ export const updateSchedule = async (
       await tx.task.deleteMany({
         where: {
           id: {
-            in: tasksToDelete.map(task => task.id)
+            in: tasksToDeleteIds
           }
         }
       });
     }
 
-    // Update existing tasks and create new ones
-    const taskOperations = data.originalData.map(task => {
+    // Prepare task operations
+    const updateOperations = [];
+    const createOperations = [];
+
+    // Separate update and create operations
+    for (const task of data.originalData) {
       if (existingTaskIds.has(task.id)) {
         // Update existing task
-        return tx.task.update({
-          where: { id: task.id },
+        updateOperations.push({
+          id: task.id,
           data: {
             name: task.name,
             description: task.description,
@@ -548,54 +563,51 @@ export const updateSchedule = async (
         });
       } else {
         // Create new task
-        return tx.task.create({
-          data: {
-            name: task.name,
-            description: task.description,
-            notes: task.notes,
-            time: typeof task.time === 'string' ? new Date(convertTimeStringToDate(task.time)) : task.time,
-            duration: task.duration,
-            status: 'PENDING',
-            priority: task.priority,
-            location: task.location,
-            isEmailEnabled: task.isEmailEnabled,
-            isWhatsAppEnabled: task.isWhatsAppEnabled,
-            isTelegramEnabled: task.isTelegramEnabled,
-            isCallEnabled: task.isCallEnabled,
-            scheduleId
-          }
+        createOperations.push({
+          name: task.name,
+          description: task.description,
+          notes: task.notes,
+          time: typeof task.time === 'string' ? new Date(convertTimeStringToDate(task.time)) : task.time,
+          duration: task.duration,
+          status: TaskStatus.PENDING,
+          priority: task.priority,
+          location: task.location,
+          isEmailEnabled: task.isEmailEnabled,
+          isWhatsAppEnabled: task.isWhatsAppEnabled,
+          isTelegramEnabled: task.isTelegramEnabled,
+          isCallEnabled: task.isCallEnabled,
+          scheduleId
         });
       }
-    });
-
-    // Execute all task operations
-    await Promise.all(taskOperations);
-
-    // Update schedule and get updated data
-    const schedule = await tx.schedule.findUnique({
-      where: { id: scheduleId },
-      include: {
-        user: true,
-        originalData: true
-      }
-    });
-
-    if (!schedule || !schedule.user) {
-      throw new Error('Schedule or user not found');
     }
 
-    // Get existing notifications for comparison
-    const existingNotifications = await tx.taskNotification.findMany({
-      where: {
-        taskId: {
-          in: schedule.originalData.map(task => task.id)
-        },
-        status: 'pending'
-      }
+    // Execute update operations in batches
+    for (const op of updateOperations) {
+      await tx.task.update({
+        where: { id: op.id },
+        data: op.data
+      });
+    }
+
+    // Execute create operations in batches
+    if (createOperations.length > 0) {
+      await tx.task.createMany({
+        data: createOperations
+      });
+    }
+
+    // Get updated tasks
+    const updatedTasks = await tx.task.findMany({
+      where: { scheduleId },
+      include: { rescheduledTasks: true }
     });
 
-    // For each task, check if time or notification settings changed
-    for (const task of schedule.originalData) {
+    // Process notifications for changed tasks
+    const notificationBatches = [];
+    const tasksToUpdateNotifications = [];
+
+    // Identify tasks that need notification updates
+    for (const task of updatedTasks) {
       const existingTask = existingTasks.find(et => et.id === task.id);
 
       // Check if task time or notification settings changed
@@ -608,68 +620,70 @@ export const updateSchedule = async (
         existingTask.isCallEnabled !== task.isCallEnabled
       );
 
-
       // Only update notifications if task is new or has changes
       if (!existingTask || timeChanged || settingsChanged) {
-        // Mark existing notifications as cancelled
-        const taskNotifications = existingNotifications.filter(n => n.taskId === task.id);
-        if (taskNotifications.length > 0) {
-          await tx.taskNotification.updateMany({
-            where: {
-              id: {
-                in: taskNotifications.map(n => n.id)
-              }
-            },
-            data: {
-              status: 'cancelled'
-            }
-          });
-        }
+        tasksToUpdateNotifications.push(task);
+      }
+    }
 
-        // Create new notifications
+    // Get existing notifications for tasks that need updates
+    if (tasksToUpdateNotifications.length > 0) {
+      const taskIdsToUpdate = tasksToUpdateNotifications.map(t => t.id);
+
+      // Cancel existing notifications
+      await tx.taskNotification.updateMany({
+        where: {
+          taskId: { in: taskIdsToUpdate },
+          status: 'pending'
+        },
+        data: { status: 'cancelled' }
+      });
+
+      // Create new notifications
+      for (const task of tasksToUpdateNotifications) {
         const taskDate = new Date(task.time);
         const hours = taskDate.getHours();
         const minutes = taskDate.getMinutes();
         const scheduledTime = new Date();
         scheduledTime.setHours(hours, minutes, 0, 0);
-        const notifyAt = new Date(scheduledTime.getTime() - (schedule.user.notifyBeforeMinutes * 60000));
+        const notifyAt = new Date(scheduledTime.getTime() - (scheduleWithUser.user.notifyBeforeMinutes * 60000));
 
         const notificationData = [];
 
-        if (schedule.user.isEmailEnabled && schedule.user.email && task.isEmailEnabled) {
+        if (scheduleWithUser.user.isEmailEnabled && scheduleWithUser.user.email && task.isEmailEnabled) {
           notificationData.push({
             taskId: task.id,
-            userId: schedule.user.id,
+            userId: scheduleWithUser.user.id,
             channel: 'email',
             notifyAt,
             status: 'pending'
           });
         }
 
-        if (schedule.user.isWhatsAppEnabled && schedule.user.phoneNumber && task.isWhatsAppEnabled) {
+        if (scheduleWithUser.user.isWhatsAppEnabled && scheduleWithUser.user.phoneNumber && task.isWhatsAppEnabled) {
           notificationData.push({
             taskId: task.id,
-            userId: schedule.user.id,
+            userId: scheduleWithUser.user.id,
             channel: 'whatsapp',
             notifyAt,
             status: 'pending'
           });
         }
 
-        if (schedule.user.isTelegramEnabled && schedule.user.telegramChatId && task.isTelegramEnabled) {
+        if (scheduleWithUser.user.isTelegramEnabled && scheduleWithUser.user.telegramChatId && task.isTelegramEnabled) {
           notificationData.push({
             taskId: task.id,
-            userId: schedule.user.id,
+            userId: scheduleWithUser.user.id,
             channel: 'telegram',
             notifyAt,
             status: 'pending'
           });
         }
 
-        if (schedule.user.isCallEnabled && schedule.user.phoneNumber && task.isCallEnabled) {
+        if (scheduleWithUser.user.isCallEnabled && scheduleWithUser.user.phoneNumber && task.isCallEnabled) {
           notificationData.push({
             taskId: task.id,
-            userId: schedule.user.id,
+            userId: scheduleWithUser.user.id,
             channel: 'call',
             notifyAt,
             status: 'pending'
@@ -677,14 +691,23 @@ export const updateSchedule = async (
         }
 
         if (notificationData.length > 0) {
-          await tx.taskNotification.createMany({
-            data: notificationData
-          });
+          notificationBatches.push(...notificationData);
         }
+      }
+
+      // Create notifications in a single batch operation
+      if (notificationBatches.length > 0) {
+        await tx.taskNotification.createMany({
+          data: notificationBatches
+        });
       }
     }
 
-    return schedule;
+    // Return the updated schedule
+    return {
+      ...scheduleWithUser,
+      originalData: updatedTasks
+    };
   });
 };
 

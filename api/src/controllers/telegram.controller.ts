@@ -1,12 +1,9 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { bot } from '../utils/telegram';
 import { validateAuthToken } from '../utils/authToken';
 import { disconnectTelegramForUser } from '../services/user.service';
 import { AuthenticatedRequest } from '../types/request';
-
-
-const prisma = new PrismaClient();
+import { prisma } from '../utils/prisma-client';
 
 /**
  * Handle Telegram webhook events

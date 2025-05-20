@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client';
 import { CreateGoalInput, Goal, UpdateGoalInput } from '../models/goal.model';
 import { EntityNotFoundError } from '../errors';
-
-const prisma = new PrismaClient();
+import { prisma } from '../utils/prisma-client';
 
 /**
  * Get all goals for a user
@@ -13,7 +11,7 @@ export const getUserGoals = async (userId: string): Promise<Goal[]> => {
       where: { userId },
       orderBy: { createdAt: 'desc' }
     });
-    
+
     return goals;
   } catch (error) {
     console.error('Error fetching user goals:', error);
@@ -33,7 +31,7 @@ export const createGoal = async (input: CreateGoalInput): Promise<Goal> => {
         isCompleted: false
       }
     });
-    
+
     return goal;
   } catch (error) {
     console.error('Error creating goal:', error);
@@ -66,7 +64,7 @@ export const updateGoal = async (goalId: string, userId: string, input: UpdateGo
         ...(input.isCompleted !== undefined && { isCompleted: input.isCompleted })
       }
     });
-    
+
     return updatedGoal;
   } catch (error) {
     console.error('Error updating goal:', error);
