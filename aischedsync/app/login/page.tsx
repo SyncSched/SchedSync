@@ -49,8 +49,6 @@ const Login = () => {
         window.open(url, "_self");
     };
 
-    
-
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
