@@ -213,22 +213,22 @@ export default function SettingsPage() {
 
   return (
     <div className={`min-h-screen -mt-[80px] ${isDark ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}>
-      <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 pt-24 pb-8 sm:pt-24 sm:pb-12 sm:px-6 lg:px-8">
 
         {/* Settings Card - Apple Style */}
         <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-[#e2e2e7]'} backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border overflow-hidden transition-colors duration-300`}>
 
           {/* Card Body with Form Fields */}
-          <div className="p-8">
+          <div className="p-4 md:p-8">
             {/* Action Buttons at the top */}
-            <div className="flex justify-end mb-8">
+            <div className="flex justify-end mb-6 md:mb-8">
               {isEditing ? (
                 <>
                   <button
                     onClick={handleCancel}
-                    className={`px-5 py-2.5 rounded-full ${
+                    className={`px-4 py-2 sm:px-5 sm:py-2.5 rounded-full ${
                       isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                    } border transition-colors duration-200 font-medium text-sm flex items-center gap-1.5 mr-3`}
+                    } border transition-colors duration-200 font-medium text-sm flex items-center gap-1.5 mr-2 sm:mr-3`}
                     disabled={isSubmitting}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -238,7 +238,7 @@ export default function SettingsPage() {
                   </button>
                   <button
                     onClick={handleSubmit}
-                    className="px-5 py-2.5 rounded-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200 font-medium text-sm flex items-center gap-1.5 disabled:opacity-70 shadow-sm"
+                    className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200 font-medium text-sm flex items-center gap-1.5 disabled:opacity-70 shadow-sm"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (
@@ -259,7 +259,7 @@ export default function SettingsPage() {
               ) : (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="px-5 py-2.5 rounded-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200 font-medium text-sm flex items-center gap-1.5 shadow-sm"
+                  className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200 font-medium text-sm flex items-center gap-1.5 shadow-sm"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -269,9 +269,9 @@ export default function SettingsPage() {
               )}
             </div>
 
-            <div className="space-y-10">
+            <div className="space-y-8 md:space-y-10">
               {/* Timezone Section */}
-              <div className={`${isDark ? 'bg-gray-900 border-gray-700' : 'bg-[#f9f9fc] border-[#e8e8ed]'} p-6 rounded-2xl border transition-colors duration-300`}>
+              <div className={`${isDark ? 'bg-gray-900 border-gray-700' : 'bg-[#f9f9fc] border-[#e8e8ed]'} p-4 md:p-6 rounded-2xl border transition-colors duration-300`}>
                 <h3 className={`text-md font-semibold ${isDark ? 'text-gray-100' : 'text-gray-900'} mb-5 flex items-center transition-colors duration-300`}>
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -308,16 +308,16 @@ export default function SettingsPage() {
               </div>
 
               {/* Notification Section */}
-              <div className={`${isDark ? 'bg-gray-900 border-gray-700' : 'bg-[#f9f9fc] border-[#e8e8ed]'} p-6 rounded-2xl border transition-colors duration-300`}>
+              <div className={`${isDark ? 'bg-gray-900 border-gray-700' : 'bg-[#f9f9fc] border-[#e8e8ed]'} p-4 md:p-6 rounded-2xl border transition-colors duration-300`}>
                 <h3 className={`text-md font-semibold ${isDark ? 'text-gray-100' : 'text-gray-900'} mb-5 flex items-center transition-colors duration-300`}>
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
                   Notification Settings
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                   {/* Notification Preferences */}
-                  <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white'} p-5 rounded-xl shadow-sm border border-[#e8e8ed]`}>
+                  <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white'} p-3 md:p-5 rounded-xl shadow-sm border border-[#e8e8ed]`}>
                     <h4 className={`text-sm font-medium ${isDark ? 'text-gray-100' : 'text-gray-800'} mb-4`}>Notification Channels</h4>
                     <div className="space-y-4">
                       {[
@@ -378,8 +378,8 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Telegram Connection */}
-                  <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white'} p-5 rounded-xl shadow-sm border border-[#e8e8ed]`}>
-                    <div className="flex justify-between items-start mb-4">
+                  <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white'} p-3 md:p-5 rounded-xl shadow-sm border border-[#e8e8ed]`}>
+                    <div className="flex flex-col sm:flex-row justify-between items-start mb-4">
                       <div>
                         <h4 className={`text-sm font-medium ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Telegram Notifications</h4>
                         <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'} mt-1`}>Connect your Telegram account to receive instant notifications</p>
@@ -444,14 +444,14 @@ export default function SettingsPage() {
               </div>
 
               {/* Personal Information Section */}
-              <div className={`${isDark ? 'bg-gray-900 border-gray-700' : 'bg-[#f9f9fc] border-[#e8e8ed]'} p-6 rounded-2xl border transition-colors duration-300`}>
+              <div className={`${isDark ? 'bg-gray-900 border-gray-700' : 'bg-[#f9f9fc] border-[#e8e8ed]'} p-4 md:p-6 rounded-2xl border transition-colors duration-300`}>
                 <h3 className={`text-md font-semibold ${isDark ? 'text-gray-100' : 'text-gray-900'} mb-5 flex items-center transition-colors duration-300`}>
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                   Personal Information
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                   <div className="space-y-5">
                     <div>
                       <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Profession</label>
@@ -487,14 +487,14 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white'} p-5 rounded-xl shadow-sm border border-[#e8e8ed]`}>
+                  <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white'} p-3 md:p-5 rounded-xl shadow-sm border border-[#e8e8ed]`}>
                     <h4 className={`text-lg font-medium ${isDark ? 'text-gray-100' : 'text-gray-800'} mb-6`}>Schedule Preferences</h4>
 
                     <div className="space-y-8">
                       {/* Working Hours */}
                       <div>
                         <label className={`block text-base font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-3`}>Working Hours</label>
-                        <div className="grid grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                           <div>
                             <label className={`block text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-2`}>Start Time</label>
                             <div className={`relative rounded-xl p-3 h-14 flex items-center ${
@@ -505,7 +505,7 @@ export default function SettingsPage() {
                                 disabled={!isEditing}
                                 value={formData.onboardingData.workingStart}
                                 onChange={(e) => handleInputChange('onboardingData', 'workingStart', e.target.value)}
-                                className={`appearance-none bg-transparent w-full border-none focus:ring-0 text-xl font-medium ${isDark ? 'text-gray-300' : 'text-gray-800'}`}
+                                className={`appearance-none bg-transparent w-full border-none focus:ring-0 text-lg sm:text-xl font-medium ${isDark ? 'text-gray-300' : 'text-gray-800'}`}
                               />
                             </div>
                           </div>
@@ -519,7 +519,7 @@ export default function SettingsPage() {
                                 disabled={!isEditing}
                                 value={formData.onboardingData.workingEnd}
                                 onChange={(e) => handleInputChange('onboardingData', 'workingEnd', e.target.value)}
-                                className={`appearance-none bg-transparent w-full border-none focus:ring-0 text-xl font-medium ${isDark ? 'text-gray-300' : 'text-gray-800'}`}
+                                className={`appearance-none bg-transparent w-full border-none focus:ring-0 text-lg sm:text-xl font-medium ${isDark ? 'text-gray-300' : 'text-gray-800'}`}
                               />
                             </div>
                           </div>
@@ -529,7 +529,7 @@ export default function SettingsPage() {
                       {/* Sleep Schedule */}
                       <div className="pt-6 border-t border-gray-100">
                         <label className={`block text-base font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-3`}>Sleep Schedule</label>
-                        <div className="grid grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                           <div>
                             <label className={`block text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-2`}>Bedtime</label>
                             <div className={`relative rounded-xl p-3 h-14 flex items-center ${
@@ -540,7 +540,7 @@ export default function SettingsPage() {
                                 disabled={!isEditing}
                                 value={formData.onboardingData.sleepingStart}
                                 onChange={(e) => handleInputChange('onboardingData', 'sleepingStart', e.target.value)}
-                                className={`appearance-none bg-transparent w-full border-none focus:ring-0 text-xl font-medium ${isDark ? 'text-gray-300' : 'text-gray-800'}`}
+                                className={`appearance-none bg-transparent w-full border-none focus:ring-0 text-lg sm:text-xl font-medium ${isDark ? 'text-gray-300' : 'text-gray-800'}`}
                               />
                             </div>
                           </div>
@@ -554,7 +554,7 @@ export default function SettingsPage() {
                                 disabled={!isEditing}
                                 value={formData.onboardingData.sleepingEnd}
                                 onChange={(e) => handleInputChange('onboardingData', 'sleepingEnd', e.target.value)}
-                                className={`appearance-none bg-transparent w-full border-none focus:ring-0 text-xl font-medium ${isDark ? 'text-gray-300' : 'text-gray-800'}`}
+                                className={`appearance-none bg-transparent w-full border-none focus:ring-0 text-lg sm:text-xl font-medium ${isDark ? 'text-gray-300' : 'text-gray-800'}`}
                               />
                             </div>
                           </div>
@@ -573,7 +573,7 @@ export default function SettingsPage() {
       {/* Toast Notification - Apple Style */}
       {showToast && (
         <div
-          className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 px-5 py-3.5 rounded-full text-white shadow-lg flex items-center gap-2 ${
+          className={`fixed bottom-4 left-4 right-4 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:right-auto px-4 py-3 sm:px-5 sm:py-3.5 rounded-full text-white shadow-lg flex items-center justify-center sm:justify-start gap-2 ${
             toastType === 'success' ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gradient-to-r from-red-500 to-red-600'
           } transition-all duration-300 z-50 backdrop-blur-sm bg-opacity-90`}
         >
