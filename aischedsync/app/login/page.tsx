@@ -48,6 +48,7 @@ const Login = () => {
 
         window.open(url, "_self");
     };
+
     
 
     useEffect(() => {
