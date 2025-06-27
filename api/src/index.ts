@@ -9,6 +9,7 @@ const server = serverless.createServer(app);
 export const handler = async (event: any, context: Context) => {
 
   // Check directly for jobType in the event
+  
   const jobType = event.jobType;
   if (jobType) {
     try {
