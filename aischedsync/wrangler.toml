@@ -1,0 +1,13 @@
+  main = ".open-next/worker.js"
+  name = "my-app"
+  compatibility_date = "2025-03-25"
+  compatibility_flags = ["nodejs_compat"]
+  [assets]
+  directory = ".open-next/assets"
+  binding = "ASSETS"
+
+[env.staging]
+vars = { NODE_ENV = "staging", NEXT_PUBLIC_API_URL = "https://api.schedsync.com" }
+
+[env.production]
+vars = { NODE_ENV = "production", NEXT_PUBLIC_API_URL = "https://api.schedsync.com" }
